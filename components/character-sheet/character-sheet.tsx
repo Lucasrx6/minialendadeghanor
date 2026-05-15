@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Edit, FileText, Sparkles, Trash2 } from "lucide-react";
+import { Edit, FileText, Sparkles, Trash2, User, Heart, Shield, Wind, Ruler } from "lucide-react";
 import { deleteCharacter } from "@/app/characters/actions";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
@@ -102,7 +102,9 @@ export function CharacterSheet({ character }: { character: CharacterRow }) {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={portraitUrl} alt={`Retrato de ${character.name}`} className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full items-center justify-center p-6 text-center text-sm text-amber-50">Retrato aguardando magia</div>
+            <div className="flex h-full items-center justify-center bg-stone-900 text-stone-700">
+              <User size={96} className="opacity-50" />
+            </div>
           )}
         </div>
         <div className="space-y-4">
@@ -156,11 +158,11 @@ export function CharacterSheet({ character }: { character: CharacterRow }) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-5">
-        <Fact label="PV" value={character.hp_max} />
-        <Fact label="PM" value={character.mp_max} />
-        <Fact label="Defesa" value={character.defense} />
-        <Fact label="Deslocamento" value={`${character.movement_m}m`} />
-        <Fact label="Tamanho" value={character.size} />
+        <Fact label="PV" value={character.hp_max} icon={<Heart size={20} />} colorClass="bg-red-950/20 text-red-700 border-red-900/20" valueClass="text-red-700" />
+        <Fact label="PM" value={character.mp_max} icon={<Sparkles size={20} />} colorClass="bg-blue-950/20 text-blue-700 border-blue-900/20" valueClass="text-blue-700" />
+        <Fact label="Defesa" value={character.defense} icon={<Shield size={20} />} colorClass="bg-slate-900 text-slate-200 border-slate-700" valueClass="text-white" />
+        <Fact label="Deslocamento" value={`${character.movement_m}m`} icon={<Wind size={20} />} colorClass="bg-emerald-950/20 text-emerald-700 border-emerald-900/20" valueClass="text-emerald-700" />
+        <Fact label="Tamanho" value={character.size} icon={<Ruler size={20} />} colorClass="bg-amber-950/20 text-amber-900 border-amber-900/20" valueClass="text-amber-900" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -201,11 +203,26 @@ export function CharacterSheet({ character }: { character: CharacterRow }) {
   );
 }
 
-function Fact({ label, value }: { label: string; value: string | number }) {
+function Fact({ 
+  label, 
+  value, 
+  icon, 
+  colorClass = "bg-stone-950 text-amber-50 border-stone-800",
+  valueClass = "text-amber-50"
+}: { 
+  label: string; 
+  value: string | number;
+  icon?: React.ReactNode;
+  colorClass?: string;
+  valueClass?: string;
+}) {
   return (
-    <Card className="bg-stone-950 text-amber-50">
-      <p className="text-xs text-amber-200">{label}</p>
-      <p className="text-2xl font-black capitalize">{value}</p>
+    <Card className={`flex flex-col items-center justify-center p-4 border shadow-sm ${colorClass}`}>
+      <div className="flex items-center gap-1.5 opacity-80 mb-1">
+        {icon}
+        <p className="text-xs font-bold uppercase tracking-wider">{label}</p>
+      </div>
+      <p className={`text-3xl font-black capitalize ${valueClass}`}>{value}</p>
     </Card>
   );
 }

@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { classById } from "@/lib/ghanor/classes";
 import { originById } from "@/lib/ghanor/origins";
 import { raceById } from "@/lib/ghanor/races";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 export default async function CharactersPage() {
   const supabase = await createClient();
@@ -38,9 +39,12 @@ export default async function CharactersPage() {
           <h1 className="text-4xl font-black">Personagens</h1>
           <p className="text-stone-700">Escolha um herói salvo ou comece uma nova lenda.</p>
         </div>
-        <Link href="/">
-          <Button><Plus size={16} /> Novo personagem</Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/">
+            <Button><Plus size={16} /> Novo personagem</Button>
+          </Link>
+          <LogoutButton variant="secondary" />
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -52,7 +56,9 @@ export default async function CharactersPage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={character.portrait_url} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-amber-50">Sem retrato</div>
+                  <div className="flex h-full items-center justify-center bg-stone-900 text-stone-700">
+                    <User size={64} className="opacity-50" />
+                  </div>
                 )}
               </div>
               <h2 className="text-xl font-black">{character.name}</h2>
