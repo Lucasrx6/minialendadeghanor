@@ -71,7 +71,7 @@ No Supabase Auth, adicione as URLs de callback:
 - `https://SEU-PROJETO.vercel.app/auth/callback`
 
 O cadastro usa nome de usuario + senha. Internamente o app cria um email tecnico
-`usuario@users.ghanor.local` ja confirmado via `SUPABASE_SERVICE_ROLE_KEY`, e salva
+`usuario@users.minialendadeghanor.app` ja confirmado via `SUPABASE_SERVICE_ROLE_KEY`, e salva
 o email real informado em `user_metadata.recovery_email` para recuperacao futura.
 
 ## Aviso
