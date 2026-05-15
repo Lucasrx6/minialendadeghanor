@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Edit, FileText, Sparkles, Trash2, User, Heart, Shield, Wind, Ruler } from "lucide-react";
+import { Edit, FileText, Sparkles, Trash2, User, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X } from "lucide-react";
 import { deleteCharacter } from "@/app/characters/actions";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
@@ -11,7 +11,10 @@ import { originById } from "@/lib/ghanor/origins";
 import { raceById } from "@/lib/ghanor/races";
 import { calculateSkillBonus } from "@/lib/ghanor/rules";
 import { skillById } from "@/lib/ghanor/skills";
-import type { CharacterBuild } from "@/lib/ghanor/types";
+import { formatClassLevels, tierForLevel, TIER_LABELS, TIER_FLAVOR, computeSkillRollModifier, type Tier } from "@/lib/ghanor/leveling";
+import { RollDialog } from "@/components/dice/RollDialog";
+import { JourneySection } from "@/components/character-sheet/journey-section";
+import type { CharacterBuild, Attribute } from "@/lib/ghanor/types";
 
 type CharacterRow = {
   id: string;
@@ -45,30 +48,118 @@ type CharacterRow = {
   history: string | null;
   objective: string | null;
   portrait_url: string | null;
+  current_level?: number;
+  class_levels?: Record<string, number>;
 };
 
-export function CharacterSheet({ character }: { character: CharacterRow }) {
+type LevelUpEntry = {
+  id: string;
+  from_level: number;
+  to_level: number;
+  class_taken: string;
+  is_multiclass: boolean;
+  hp_gained: number;
+  mp_gained: number;
+  power_chosen: string | null;
+  new_spells: string[];
+  attr_increased: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+type RollConfig = {
+  label: string;
+  modifierBase: number;
+  modifierTrain: number;
+  modifierLevel: number;
+  modifierBreakdown: string;
+  defaultCd?: number;
+};
+
+const ATTR_LABELS: Record<string, string> = {
+  str: "Força", dex: "Destreza", con: "Constituição",
+  int: "Inteligência", wis: "Sabedoria", cha: "Carisma",
+};
+
+export function CharacterSheet({
+  character,
+  levelUpHistory = [],
+  justLeveledUpTo,
+}: {
+  character: CharacterRow;
+  levelUpHistory?: LevelUpEntry[];
+  justLeveledUpTo?: number;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [portraitUrl, setPortraitUrl] = useState(character.portrait_url);
   const [portraitMessage, setPortraitMessage] = useState<string>();
+  const [rollConfig, setRollConfig] = useState<RollConfig | null>(null);
+  const [showToast, setShowToast] = useState(!!justLeveledUpTo);
+
+  // Auto-dismiss toast after 6s
+  useEffect(() => {
+    if (!showToast) return;
+    const t = setTimeout(() => setShowToast(false), 6000);
+    return () => clearTimeout(t);
+  }, [showToast]);
+
+  const toastTier = justLeveledUpTo ? tierForLevel(justLeveledUpTo) : null;
+  const prevTier = justLeveledUpTo ? tierForLevel(justLeveledUpTo - 1) : null;
+  const tierJustChanged = toastTier && prevTier && toastTier !== prevTier;
+
+  const level = character.current_level ?? 1;
+  const tier = tierForLevel(level);
+  const halfLevel = Math.floor(level / 2);
+
+  const attrs: Record<string, number> = {
+    str: character.attr_str, dex: character.attr_dex, con: character.attr_con,
+    int: character.attr_int, wis: character.attr_wis, cha: character.attr_cha,
+  };
+
   const build: CharacterBuild = {
     race: character.race as CharacterBuild["race"],
     class: character.class as CharacterBuild["class"],
     origin: character.origin,
     extraOrigin: character.origin_choices?.extraOrigin,
     baseAttributes: {
-      str: character.attr_str,
-      dex: character.attr_dex,
-      con: character.attr_con,
-      int: character.attr_int,
-      wis: character.attr_wis,
-      cha: character.attr_cha,
+      str: character.attr_str, dex: character.attr_dex, con: character.attr_con,
+      int: character.attr_int, wis: character.attr_wis, cha: character.attr_cha,
     },
     raceChoices: character.race_choices ?? undefined,
     classChoices: character.class_choices ?? undefined,
     trainedSkills: character.trained_skills,
+    level,
   };
+
+  function openAttrRoll(attr: string) {
+    const attrMod = attrs[attr];
+    setRollConfig({
+      label: ATTR_LABELS[attr] ?? attr,
+      modifierBase: attrMod,
+      modifierTrain: 0,
+      modifierLevel: halfLevel,
+      modifierBreakdown: `${ATTR_LABELS[attr]} ${attrMod >= 0 ? "+" : ""}${attrMod} + nível/2 ${halfLevel >= 0 ? "+" : ""}${halfLevel}`,
+    });
+  }
+
+  function openSkillRoll(skillId: string) {
+    const skill = skillById[skillId];
+    if (!skill) return;
+    const trained = character.trained_skills.includes(skillId);
+    const { attrMod, trainBonus, halfLevel: hl, total } = computeSkillRollModifier({
+      level, attrMod: attrs[skill.attribute], trained,
+    });
+    setRollConfig({
+      label: skill.name,
+      modifierBase: attrMod,
+      modifierTrain: trainBonus,
+      modifierLevel: hl,
+      modifierBreakdown: `${ATTR_LABELS[skill.attribute]} ${attrMod >= 0 ? "+" : ""}${attrMod}${trained ? ` + treino +${trainBonus}` : ""} + nível/2 +${hl}`,
+      defaultCd: 15,
+    });
+    void total; // usado internamente
+  }
 
   function generatePortrait() {
     setPortraitMessage(undefined);
@@ -77,26 +168,25 @@ export function CharacterSheet({ character }: { character: CharacterRow }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          characterId: character.id,
-          race: character.race,
-          class: character.class,
-          appearance: character.appearance,
-          age: character.age,
-          concept: character.concept,
+          characterId: character.id, race: character.race, class: character.class,
+          appearance: character.appearance, age: character.age, concept: character.concept,
         }),
       });
       const json = await response.json();
-      if (!response.ok) {
-        setPortraitMessage(json.error ?? "Não conseguimos gerar o retrato agora.");
-        return;
-      }
+      if (!response.ok) { setPortraitMessage(json.error ?? "Não conseguimos gerar o retrato agora."); return; }
       setPortraitUrl(json.url);
     });
   }
 
+  const classDisplay = character.class_levels && Object.keys(character.class_levels).length > 0
+    ? formatClassLevels(character.class_levels)
+    : `${classById[character.class as keyof typeof classById]?.name ?? character.class} ${level}`;
+
   return (
     <div className="space-y-6 print:bg-white">
+      {/* Hero card */}
       <Card className="grid gap-5 md:grid-cols-[220px_1fr]">
+        {/* Retrato */}
         <div className="aspect-square overflow-hidden rounded-lg border border-amber-900/20 bg-stone-900">
           {portraitUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -107,15 +197,23 @@ export function CharacterSheet({ character }: { character: CharacterRow }) {
             </div>
           )}
         </div>
+
+        {/* Info principal */}
         <div className="space-y-4">
           <div>
             <h1 className="text-4xl font-black text-stone-950">{character.name}</h1>
-            <p className="text-stone-700">
-              {raceById[character.race as keyof typeof raceById]?.name} {classById[character.class as keyof typeof classById]?.name} -
-              {originById[character.origin]?.name}
+            <p className="text-stone-600 font-semibold mt-1">
+              {raceById[character.race as keyof typeof raceById]?.name}
+              {" · "}
+              {classDisplay}
+              {" · "}
+              <span className="text-amber-800">Nível {level}</span>
+              {" · "}
+              <em className="text-stone-500">{TIER_LABELS[tier]}</em>
             </p>
             {character.concept && <p className="mt-2 italic text-amber-900">{character.concept}</p>}
           </div>
+
           <div className="flex flex-wrap gap-2 print:hidden">
             <Button variant="secondary" onClick={() => router.push(`/characters/${character.id}/edit`)}>
               <Edit size={16} /> Editar
@@ -125,6 +223,14 @@ export function CharacterSheet({ character }: { character: CharacterRow }) {
             </Button>
             <Button variant="secondary" disabled={isPending} onClick={generatePortrait}>
               <Sparkles size={16} /> Gerar retrato
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => router.push(`/characters/${character.id}/levelup`)}
+              disabled={level >= 20}
+              title={level >= 20 ? "Nível máximo atingido" : ""}
+            >
+              <TrendingUp size={16} /> Subir de Nível
             </Button>
             <Button
               variant="danger"
@@ -141,22 +247,26 @@ export function CharacterSheet({ character }: { character: CharacterRow }) {
         </div>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-6">
-        {[
-          ["For", character.attr_str],
-          ["Des", character.attr_dex],
-          ["Con", character.attr_con],
-          ["Int", character.attr_int],
-          ["Sab", character.attr_wis],
-          ["Car", character.attr_cha],
-        ].map(([label, value]) => (
-          <Card key={label} className="text-center">
-            <p className="text-xs font-bold text-stone-600">{label}</p>
-            <p className="text-3xl font-black">{value}</p>
-          </Card>
-        ))}
+      {/* Atributos */}
+      <div className="grid gap-3 grid-cols-3 md:grid-cols-6">
+        {(["str", "dex", "con", "int", "wis", "cha"] as Attribute[]).map((attr) => {
+          const val = attrs[attr];
+          return (
+            <button
+              key={attr}
+              onClick={() => openAttrRoll(attr)}
+              className="group relative rounded-xl border border-amber-900/20 bg-amber-50 p-3 text-center shadow-sm transition hover:border-amber-500 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              title={`Rolar teste de ${ATTR_LABELS[attr]}`}
+            >
+              <p className="text-xs font-bold text-stone-600 uppercase tracking-wider">{ATTR_LABELS[attr].slice(0, 3)}</p>
+              <p className="text-3xl font-black text-stone-950">{val >= 0 ? `+${val}` : val}</p>
+              <Dices size={12} className="absolute top-2 right-2 text-amber-400 opacity-0 group-hover:opacity-100 transition" />
+            </button>
+          );
+        })}
       </div>
 
+      {/* Stats de combate */}
       <div className="grid gap-4 md:grid-cols-5">
         <Fact label="PV" value={character.hp_max} icon={<Heart size={20} />} colorClass="bg-red-950/20 text-red-700 border-red-900/20" valueClass="text-red-700" />
         <Fact label="PM" value={character.mp_max} icon={<Sparkles size={20} />} colorClass="bg-blue-950/20 text-blue-700 border-blue-900/20" valueClass="text-blue-700" />
@@ -165,52 +275,135 @@ export function CharacterSheet({ character }: { character: CharacterRow }) {
         <Fact label="Tamanho" value={character.size} icon={<Ruler size={20} />} colorClass="bg-amber-950/20 text-amber-900 border-amber-900/20" valueClass="text-amber-900" />
       </div>
 
+      {/* Perícias e Habilidades */}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <SectionTitle>Perícias</SectionTitle>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {character.trained_skills.map((skill) => (
-              <p key={skill} className="rounded-md bg-white/70 px-3 py-2 text-sm">
-                {skillById[skill]?.name ?? skill}: <strong>+{calculateSkillBonus(build, skill)}</strong>
-              </p>
-            ))}
+            {character.trained_skills.map((skillId) => {
+              const skill = skillById[skillId];
+              const bonus = calculateSkillBonus(build, skillId);
+              return (
+                <button
+                  key={skillId}
+                  onClick={() => openSkillRoll(skillId)}
+                  className="group flex items-center justify-between rounded-md bg-white/70 px-3 py-2 text-sm text-left transition hover:bg-amber-50 hover:shadow-sm"
+                  title={`Rolar teste de ${skill?.name ?? skillId}`}
+                >
+                  <span className="font-medium">{skill?.name ?? skillId}</span>
+                  <span className="flex items-center gap-1 font-bold text-amber-900">
+                    +{bonus}
+                    <Dices size={12} className="text-amber-400 opacity-0 group-hover:opacity-100 transition" />
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </Card>
+
         <Card>
           <SectionTitle>Habilidades e magias</SectionTitle>
           <p className="mt-3 text-sm">{classById[character.class as keyof typeof classById]?.firstLevelAbility}</p>
           <p className="mt-2 text-sm">{raceById[character.race as keyof typeof raceById]?.abilities.join("; ")}</p>
+          {character.powers?.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {character.powers.map((p, i) => (
+                <p key={i} className="text-sm text-stone-700">• {p}</p>
+              ))}
+            </div>
+          )}
           {character.spells.length > 0 && <p className="mt-2 text-sm">Magias: {character.spells.join(", ")}</p>}
         </Card>
       </div>
 
+      {/* Equipamento */}
       <Card>
         <SectionTitle>Equipamento</SectionTitle>
         <p className="mt-3 text-sm">{character.equipment?.map((item) => `${item.qty}x ${item.name}`).join(", ") || "Starter kit pendente."}</p>
         <p className="mt-2 text-sm font-semibold">{character.silver_pieces} PP</p>
       </Card>
 
+      {/* Descrição */}
       <Card>
         <SectionTitle>Descrição</SectionTitle>
         <div className="mt-3 grid gap-3 text-sm md:grid-cols-2">
-          <p><strong>Aparência:</strong> {character.appearance}</p>
-          <p><strong>Personalidade:</strong> {character.personality}</p>
-          <p><strong>Histórico:</strong> {character.history}</p>
-          <p><strong>Objetivo:</strong> {character.objective}</p>
+          {character.appearance && <p><strong>Aparência:</strong> {character.appearance}</p>}
+          {character.personality && <p><strong>Personalidade:</strong> {character.personality}</p>}
+          {character.history && <p><strong>Histórico:</strong> {character.history}</p>}
+          {character.objective && <p><strong>Objetivo:</strong> {character.objective}</p>}
         </div>
       </Card>
+
+      {/* FAB de dados */}
+      <button
+        onClick={() => setRollConfig({
+          label: "Livre",
+          modifierBase: 0, modifierTrain: 0, modifierLevel: halfLevel,
+          modifierBreakdown: `nível/2 +${halfLevel}`,
+        })}
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-xl print:hidden transition hover:scale-110"
+        style={{ background: "linear-gradient(135deg, #78350f, #b45309)" }}
+        title="Rolar dado"
+        aria-label="Abrir rolagem de dado"
+      >
+        <Dices size={24} className="text-amber-50" />
+      </button>
+
+      {/* Jornada (histórico de evoluções) */}
+      {levelUpHistory.length > 0 && (
+        <JourneySection history={levelUpHistory} />
+      )}
+
+      {/* Modal de rolagem */}
+      {rollConfig && (
+        <RollDialog
+          open={!!rollConfig}
+          onClose={() => setRollConfig(null)}
+          characterId={character.id}
+          label={rollConfig.label}
+          modifierBase={rollConfig.modifierBase}
+          modifierTrain={rollConfig.modifierTrain}
+          modifierLevel={rollConfig.modifierLevel}
+          modifierBreakdown={rollConfig.modifierBreakdown}
+          defaultCd={rollConfig.defaultCd}
+        />
+      )}
+
+      {/* Toast de level up */}
+      {showToast && justLeveledUpTo && (
+        <div
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl px-6 py-4 shadow-2xl text-amber-50 animate-in slide-in-from-bottom-4"
+          style={{ background: "linear-gradient(135deg, #78350f, #b45309)", minWidth: 280 }}
+        >
+          <div className="flex-1">
+            <p className="font-black text-lg">
+              {tierJustChanged ? "🌟" : "🎉"} Subiu para o nível {justLeveledUpTo}!
+            </p>
+            {tierJustChanged && toastTier && (
+              <p className="text-amber-200 text-sm mt-0.5">
+                {TIER_LABELS[toastTier as Tier]} — {TIER_FLAVOR[toastTier as Tier]}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setShowToast(false)}
+            className="rounded-full p-1 hover:bg-amber-900/40 transition"
+            aria-label="Fechar"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-function Fact({ 
-  label, 
-  value, 
-  icon, 
+function Fact({
+  label, value, icon,
   colorClass = "bg-stone-950 text-amber-50 border-stone-800",
-  valueClass = "text-amber-50"
-}: { 
-  label: string; 
+  valueClass = "text-amber-50",
+}: {
+  label: string;
   value: string | number;
   icon?: React.ReactNode;
   colorClass?: string;
