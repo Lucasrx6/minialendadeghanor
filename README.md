@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Forja de Ghanor
 
-## Getting Started
+Mini-aplicativo web para criar personagens de 1º nível de **A Lenda de Ghanor RPG**. É uma ferramenta auxiliar feita por fãs, com wizard de criação, cálculo de atributos derivados, ficha imprimível, Supabase Auth/Database/Storage e retrato por IA.
 
-First, run the development server:
+## Stack
+
+- Next.js App Router + TypeScript
+- Tailwind CSS
+- Supabase Auth, Postgres e Storage
+- Zod, React Hook Form e Zustand
+- OpenAI Images API
+- Vitest
+
+## Configuração
+
+Crie `.env.local` com:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://goijhxeefrecehuqobrn.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxx
+SUPABASE_SERVICE_ROLE_KEY=
+OPENAI_API_KEY=
+```
+
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` pode ficar no client. `SUPABASE_SERVICE_ROLE_KEY` e `OPENAI_API_KEY` devem existir apenas no ambiente server/Vercel. Se uma chave secreta foi compartilhada em chat, rotacione no painel do Supabase antes de usar.
+
+## Banco de dados
+
+O schema está em [`lib/supabase/schema.sql`](./lib/supabase/schema.sql).
+
+Aplicar pelo SQL Editor:
+
+1. Abra o projeto no Supabase.
+2. Vá em **SQL Editor**.
+3. Cole o conteúdo de `lib/supabase/schema.sql`.
+4. Execute.
+
+Aplicar pela CLI:
+
+```bash
+supabase login
+supabase link --project-ref goijhxeefrecehuqobrn
+supabase db push
+```
+
+O schema cria a tabela `characters`, políticas RLS por `auth.uid()`, trigger de `updated_at` e bucket `character-portraits`.
+
+## Desenvolvimento
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run lint
+npm run test
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy na Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Configure as variáveis:
 
-## Learn More
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `OPENAI_API_KEY`
 
-To learn more about Next.js, take a look at the following resources:
+No Supabase Auth, adicione as URLs de callback:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `http://localhost:3000/auth/callback`
+- `https://SEU-PROJETO.vercel.app/auth/callback`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Aviso
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ferramenta criada por fãs. A Lenda de Ghanor é marca registrada da Jambô Editora. Este projeto não é afiliado nem endossado por Jovem Nerd ou Jambô.
