@@ -69,11 +69,8 @@ type LevelUpEntry = {
 
 type RollConfig = {
   label: string;
-  modifierBase: number;
-  modifierTrain: number;
-  modifierLevel: number;
-  modifierBreakdown: string;
-  defaultCd?: number;
+  preModifier: number;
+  preModifierBreakdown?: string;
 };
 
 const ATTR_LABELS: Record<string, string> = {
@@ -134,12 +131,11 @@ export function CharacterSheet({
 
   function openAttrRoll(attr: string) {
     const attrMod = attrs[attr];
+    const mod = attrMod + halfLevel;
     setRollConfig({
       label: ATTR_LABELS[attr] ?? attr,
-      modifierBase: attrMod,
-      modifierTrain: 0,
-      modifierLevel: halfLevel,
-      modifierBreakdown: `${ATTR_LABELS[attr]} ${attrMod >= 0 ? "+" : ""}${attrMod} + nível/2 ${halfLevel >= 0 ? "+" : ""}${halfLevel}`,
+      preModifier: mod,
+      preModifierBreakdown: `${ATTR_LABELS[attr]} ${attrMod >= 0 ? "+" : ""}${attrMod} + nível/2 +${halfLevel}`,
     });
   }
 
@@ -147,18 +143,12 @@ export function CharacterSheet({
     const skill = skillById[skillId];
     if (!skill) return;
     const trained = character.trained_skills.includes(skillId);
-    const { attrMod, trainBonus, halfLevel: hl, total } = computeSkillRollModifier({
-      level, attrMod: attrs[skill.attribute], trained,
-    });
+    const { total, attrMod, trainBonus, halfLevel: hl } = computeSkillRollModifier({ level, attrMod: attrs[skill.attribute], trained });
     setRollConfig({
       label: skill.name,
-      modifierBase: attrMod,
-      modifierTrain: trainBonus,
-      modifierLevel: hl,
-      modifierBreakdown: `${ATTR_LABELS[skill.attribute]} ${attrMod >= 0 ? "+" : ""}${attrMod}${trained ? ` + treino +${trainBonus}` : ""} + nível/2 +${hl}`,
-      defaultCd: 15,
+      preModifier: total,
+      preModifierBreakdown: `${ATTR_LABELS[skill.attribute]} ${attrMod >= 0 ? "+" : ""}${attrMod}${trained ? ` + treino +${trainBonus}` : ""} + nível/2 +${hl}`,
     });
-    void total; // usado internamente
   }
 
   function generatePortrait() {
@@ -336,11 +326,7 @@ export function CharacterSheet({
 
       {/* FAB de dados */}
       <button
-        onClick={() => setRollConfig({
-          label: "Livre",
-          modifierBase: 0, modifierTrain: 0, modifierLevel: halfLevel,
-          modifierBreakdown: `nível/2 +${halfLevel}`,
-        })}
+        onClick={() => setRollConfig({ label: "", preModifier: 0 })}
         className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-xl print:hidden transition hover:scale-110"
         style={{ background: "linear-gradient(135deg, #78350f, #b45309)" }}
         title="Rolar dado"
@@ -359,13 +345,9 @@ export function CharacterSheet({
         <RollDialog
           open={!!rollConfig}
           onClose={() => setRollConfig(null)}
-          characterId={character.id}
-          label={rollConfig.label}
-          modifierBase={rollConfig.modifierBase}
-          modifierTrain={rollConfig.modifierTrain}
-          modifierLevel={rollConfig.modifierLevel}
-          modifierBreakdown={rollConfig.modifierBreakdown}
-          defaultCd={rollConfig.defaultCd}
+          preLabel={rollConfig.label || undefined}
+          preModifier={rollConfig.preModifier}
+          preModifierBreakdown={rollConfig.preModifierBreakdown}
         />
       )}
 

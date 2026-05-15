@@ -1,363 +1,277 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback } from "react";
-import { Dice20 } from "./Dice20";
-import { useDiceRoller } from "./useDiceRoller";
-import { rollDice, type RollInput, type RollResult } from "@/app/actions/roll";
-import { STANDARD_CDS } from "@/lib/ghanor/leveling";
-import { Button } from "@/components/ui/button";
-import { X, CheckCircle2, XCircle, Swords, Sparkles } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { X, RotateCcw, Plus, Minus } from "lucide-react";
+
+// ─── Tipos de dado disponíveis ───────────────────────────────────────────────
+const DICE_TYPES = [4, 6, 8, 10, 12, 20] as const;
+type DieType = (typeof DICE_TYPES)[number];
+
+type DiceCount = Record<DieType, number>;
+
+const INITIAL: DiceCount = { 4: 0, 6: 0, 8: 0, 10: 0, 12: 0, 20: 0 };
+
+type RollEntry = { die: DieType; result: number };
+
+// ─── Animação de roll ────────────────────────────────────────────────────────
+const COLORS: Record<DieType, { bg: string; border: string; text: string }> = {
+  4:  { bg: "#7c2d12", border: "#ea580c", text: "#fed7aa" },
+  6:  { bg: "#1e3a5f", border: "#3b82f6", text: "#bfdbfe" },
+  8:  { bg: "#14532d", border: "#22c55e", text: "#bbf7d0" },
+  10: { bg: "#4a1d96", border: "#a855f7", text: "#e9d5ff" },
+  12: { bg: "#881337", border: "#f43f5e", text: "#fecdd3" },
+  20: { bg: "#78350f", border: "#d97706", text: "#fef3c7" },
+};
+
+function rollDie(sides: number): number {
+  return Math.floor(Math.random() * sides) + 1;
+}
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  characterId: string;
-  /** Rótulo pré-configurado, ex: "Cura", "Força" */
-  label: string;
-  /** Modificadores já calculados */
-  modifierBase: number;
-  modifierTrain: number;
-  modifierLevel: number;
-  /** Descrição dos componentes para exibir ao usuário */
-  modifierBreakdown: string;
-  /** CD pré-sugerida, opcional */
-  defaultCd?: number;
+  /** Se informado, abre com 1d20 pré-selecionado e esse modificador somado */
+  preLabel?: string;
+  preModifier?: number;
+  preModifierBreakdown?: string;
 };
 
-export function RollDialog({
-  open,
-  onClose,
-  characterId,
-  label,
-  modifierBase,
-  modifierTrain,
-  modifierLevel,
-  modifierBreakdown,
-  defaultCd,
-}: Props) {
-  const { phase, naturalRoll, startRoll, reset } = useDiceRoller(1500);
-  const [isPending, startTransition] = useTransition();
+export function RollDialog({ open, onClose, preLabel, preModifier = 0, preModifierBreakdown }: Props) {
+  const [counts, setCounts] = useState<DiceCount>({ ...INITIAL, 20: preLabel ? 1 : 0 });
+  const [results, setResults] = useState<RollEntry[] | null>(null);
+  const [rolling, setRolling] = useState(false);
+  const [animNumbers, setAnimNumbers] = useState<Record<string, number>>({});
 
-  const [cdPreset, setCdPreset] = useState<number | null>(defaultCd ?? 10);
-  const [cdCustom, setCdCustom] = useState<string>("");
-  const [useCustomCd, setUseCustomCd] = useState(false);
-  const [sceneModifier, setSceneModifier] = useState(0);
-  const [mode, setMode] = useState<"standard" | "opposed">("standard");
-  const [opponentMod, setOpponentMod] = useState(0);
-  const [result, setResult] = useState<RollResult | null>(null);
+  const totalDice = Object.values(counts).reduce((s, n) => s + n, 0);
+  const naturalSum = results?.reduce((s, r) => s + r.result, 0) ?? 0;
+  const finalTotal = naturalSum + preModifier;
 
-  const effectiveCd = useCustomCd ? (parseInt(cdCustom) || null) : cdPreset;
-  const modifierTotal = modifierBase + modifierTrain + modifierLevel + sceneModifier;
-
-  // Reset quando o modal abre
+  // Reset ao abrir
   useEffect(() => {
     if (open) {
-      reset();
-      setResult(null);
-      setCdPreset(defaultCd ?? 10);
-      setSceneModifier(0);
-      setMode("standard");
+      setCounts({ ...INITIAL, 20: preLabel ? 1 : 0 });
+      setResults(null);
+      setRolling(false);
     }
-  }, [open, reset, defaultCd]);
+  }, [open, preLabel]);
 
   // Atalhos de teclado
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (!open) return;
-      if (e.key === "Escape") onClose();
-      if ((e.key === "Enter" || e.key === " ") && phase === "idle" && !isPending) {
-        e.preventDefault();
-        handleRoll();
-      }
-      if (e.key === "r" && phase === "landed") {
-        handleRoll();
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [open, phase, isPending]
-  );
+  const handleKey = useCallback((e: KeyboardEvent) => {
+    if (!open) return;
+    if (e.key === "Escape") onClose();
+    if ((e.key === "Enter" || e.key === " ") && !rolling) { e.preventDefault(); handleRoll(); }
+    if (e.key === "r" && results) handleRoll();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, rolling, results]);
 
   useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [handleKey]);
+
+  function changeCount(die: DieType, delta: number) {
+    setCounts((prev) => ({ ...prev, [die]: Math.max(0, Math.min(9, prev[die] + delta)) }));
+    setResults(null);
+  }
 
   function handleRoll() {
-    setResult(null);
-    const input: RollInput = {
-      characterId,
-      label,
-      modifierBase,
-      modifierTrain,
-      modifierLevel,
-      modifierScene: sceneModifier,
-      cd: effectiveCd,
-      mode,
-      ...(mode === "opposed" ? { opponent: { modifier: opponentMod } } : {}),
-    };
+    if (totalDice === 0 || rolling) return;
+    setRolling(true);
+    setResults(null);
 
-    startTransition(async () => {
-      const res = await rollDice(input);
-      startRoll(res.naturalRoll);
-      // Aguarda a animação terminar antes de mostrar o resultado
-      setTimeout(() => setResult(res), 1600);
-    });
+    // Coleta todos os dados a rolar
+    const rolls: RollEntry[] = [];
+    for (const [dieStr, count] of Object.entries(counts)) {
+      const die = Number(dieStr) as DieType;
+      for (let i = 0; i < count; i++) rolls.push({ die, result: 0 });
+    }
+
+    // Anima por 800ms trocando números aleatórios
+    const interval = setInterval(() => {
+      const fake: Record<string, number> = {};
+      rolls.forEach((_, i) => { fake[i] = rollDie(rolls[i].die); });
+      setAnimNumbers(fake);
+    }, 80);
+
+    setTimeout(() => {
+      clearInterval(interval);
+      // Rola valores finais
+      const final = rolls.map((r) => ({ die: r.die, result: rollDie(r.die) }));
+      setResults(final);
+      setAnimNumbers({});
+      setRolling(false);
+    }, 800);
+  }
+
+  function handleClear() {
+    setCounts({ ...INITIAL });
+    setResults(null);
   }
 
   if (!open) return null;
 
-  const succeeded =
-    result &&
-    (result.outcome === "success" ||
-      result.outcome === "crit_success" ||
-      result.outcome === "opposed_win");
-  const failed =
-    result &&
-    (result.outcome === "failure" ||
-      result.outcome === "crit_failure" ||
-      result.outcome === "opposed_lose");
-  const isCrit = result?.outcome === "crit_success";
-  const isFumble = result?.outcome === "crit_failure";
+  // Dados realmente selecionados (count > 0)
+  const activeDice = DICE_TYPES.filter((d) => counts[d] > 0);
 
   return (
-    /* Backdrop */
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
       role="dialog"
       aria-modal="true"
-      aria-label={`Teste de ${label}`}
+      aria-label="Rolagem de dados"
     >
-      <div className="relative w-full max-w-md rounded-2xl bg-stone-950 border border-amber-900/30 shadow-2xl overflow-hidden">
+      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl bg-stone-950 border border-stone-800 shadow-2xl overflow-hidden">
+
+        {/* Handle bar (mobile) */}
+        <div className="flex justify-center pt-3 pb-1 sm:hidden">
+          <div className="w-10 h-1 rounded-full bg-stone-700" />
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-stone-800">
-          <h2 className="text-xl font-black text-amber-50">Teste de {label}</h2>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 text-stone-500 hover:text-amber-200 hover:bg-stone-800 transition"
-            aria-label="Fechar"
-          >
-            <X size={20} />
+        <div className="flex items-center justify-between px-5 pt-3 pb-4">
+          <div>
+            <h2 className="text-lg font-black text-amber-50">
+              {preLabel ? `Teste de ${preLabel}` : "Rolar Dados"}
+            </h2>
+            {preModifier !== 0 && preModifierBreakdown && (
+              <p className="text-xs text-stone-500 mt-0.5">{preModifierBreakdown} = <span className="text-amber-400 font-bold">{preModifier >= 0 ? "+" : ""}{preModifier}</span></p>
+            )}
+          </div>
+          <button onClick={onClose} className="rounded-full p-1.5 text-stone-600 hover:text-stone-300 hover:bg-stone-800 transition" aria-label="Fechar">
+            <X size={18} />
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-5">
-          {/* Dado */}
-          <div className="flex justify-center py-2">
-            <Dice20 phase={phase} naturalRoll={naturalRoll} size={180} />
-          </div>
-
-          {/* Modificador detalhado */}
-          <div className="rounded-lg bg-stone-900 px-4 py-3 text-sm text-stone-400 text-center">
-            <span className="text-stone-500">{modifierBreakdown}</span>
-            <span className="ml-2 text-amber-200 font-black text-base">
-              = {modifierTotal >= 0 ? "+" : ""}{modifierTotal}
-            </span>
-            {sceneModifier !== 0 && (
-              <span className="ml-1 text-stone-400 text-xs">
-                + cena {sceneModifier >= 0 ? "+" : ""}{sceneModifier}
-              </span>
-            )}
-          </div>
-
-          {/* Resultado */}
-          {result && phase === "landed" && (
-            <div
-              className={`rounded-xl p-4 text-center border-2 transition-all ${
-                isCrit
-                  ? "bg-amber-950/30 border-amber-500"
-                  : isFumble
-                  ? "bg-red-950/30 border-red-500"
-                  : succeeded
-                  ? "bg-emerald-950/30 border-emerald-600"
-                  : failed
-                  ? "bg-red-950/30 border-red-700"
-                  : "bg-stone-900 border-stone-700"
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2 mb-1">
-                {succeeded ? (
-                  <CheckCircle2 size={20} className="text-emerald-400" />
-                ) : failed ? (
-                  <XCircle size={20} className="text-red-400" />
-                ) : null}
-                <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
-                  {mode === "opposed" ? "Teste Oposto" : effectiveCd ? `vs CD ${effectiveCd}` : "Rolagem Livre"}
-                </span>
-              </div>
-
-              <div className="text-stone-400 text-sm mb-2">
-                <span className={`font-black text-2xl ${
-                  result.naturalRoll === 20 ? "text-amber-400" :
-                  result.naturalRoll === 1 ? "text-red-400" : "text-amber-200"
-                }`}>{result.naturalRoll}</span>
-                <span className="mx-1">+</span>
-                <span className="text-stone-300">{modifierTotal}</span>
-                <span className="mx-1">=</span>
-                <span className="font-black text-white text-2xl">{result.total}</span>
-              </div>
-
-              <div className={`font-black text-2xl ${
-                isCrit ? "text-amber-400" :
-                isFumble ? "text-red-400" :
-                succeeded ? "text-emerald-400" :
-                failed ? "text-red-400" : "text-stone-300"
-              }`}>
-                {isCrit && "⚡ ACERTO CRÍTICO!"}
-                {isFumble && "💀 FALHA CRÍTICA!"}
-                {!isCrit && !isFumble && succeeded && "✓ SUCESSO"}
-                {!isCrit && !isFumble && failed && "✗ FALHA"}
-                {result.outcome === "opposed_tie" && "⚖️ EMPATE — Role de novo"}
-                {result.outcome === "no_cd" && `Total: ${result.total}`}
-              </div>
-
-              {mode === "opposed" && result.opponent && (
-                <div className="mt-2 text-xs text-stone-500">
-                  Adversário: {result.opponent.naturalRoll} + {opponentMod} = {result.opponent.total}
+        {/* Seletor de dados */}
+        <div className="grid grid-cols-3 gap-2 px-4 pb-4">
+          {DICE_TYPES.map((die) => {
+            const c = COLORS[die];
+            const count = counts[die];
+            return (
+              <div
+                key={die}
+                className="rounded-xl overflow-hidden"
+                style={{ border: `1.5px solid ${count > 0 ? c.border : "#374151"}` }}
+              >
+                {/* Die label */}
+                <div
+                  className="flex items-center justify-center py-2 font-black text-sm"
+                  style={{ background: count > 0 ? c.bg : "#1f2937", color: count > 0 ? c.text : "#6b7280" }}
+                >
+                  d{die}
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Configurações */}
-          {phase !== "rolling" && (
-            <div className="space-y-3">
-              {/* CD */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-stone-500 mb-1 uppercase tracking-wider">
-                    Dificuldade (CD)
-                  </label>
-                  {!useCustomCd ? (
-                    <select
-                      className="w-full rounded-lg bg-stone-900 border border-stone-700 text-amber-100 text-sm px-3 py-2 focus:outline-none focus:border-amber-600"
-                      value={cdPreset ?? ""}
-                      onChange={(e) => setCdPreset(e.target.value ? Number(e.target.value) : null)}
-                    >
-                      <option value="">Sem CD</option>
-                      {STANDARD_CDS.map((cd) => (
-                        <option key={cd.value} value={cd.value}>{cd.label}</option>
-                      ))}
-                      <option value="__custom">Personalizada...</option>
-                    </select>
-                  ) : (
-                    <input
-                      type="number"
-                      min={1} max={99}
-                      placeholder="Ex: 18"
-                      className="w-full rounded-lg bg-stone-900 border border-stone-700 text-amber-100 text-sm px-3 py-2 focus:outline-none focus:border-amber-600"
-                      value={cdCustom}
-                      onChange={(e) => setCdCustom(e.target.value)}
-                    />
-                  )}
+                {/* Counter */}
+                <div className="flex items-center justify-between px-1 py-1 bg-stone-900">
                   <button
-                    className="text-xs text-amber-800 hover:text-amber-500 mt-1"
-                    onClick={() => setUseCustomCd(!useCustomCd)}
+                    onClick={() => changeCount(die, -1)}
+                    disabled={count === 0}
+                    className="rounded-lg p-1.5 text-stone-400 hover:text-white hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed transition"
                   >
-                    {useCustomCd ? "← Usar predefinida" : "CD personalizada"}
+                    <Minus size={12} />
+                  </button>
+                  <span className="font-black text-sm" style={{ color: count > 0 ? c.text : "#6b7280", minWidth: 16, textAlign: "center" }}>
+                    {count}
+                  </span>
+                  <button
+                    onClick={() => changeCount(die, 1)}
+                    disabled={count === 9}
+                    className="rounded-lg p-1.5 text-stone-400 hover:text-white hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  >
+                    <Plus size={12} />
                   </button>
                 </div>
-
-                {/* Modificador da cena */}
-                <div>
-                  <label className="block text-xs font-bold text-stone-500 mb-1 uppercase tracking-wider">
-                    Mod. da Cena
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setSceneModifier((s) => Math.max(-10, s - 1))}
-                      className="w-8 h-9 rounded bg-stone-800 text-amber-200 font-bold hover:bg-stone-700 transition"
-                    >−</button>
-                    <span className="flex-1 text-center font-bold text-amber-100 text-sm">
-                      {sceneModifier >= 0 ? "+" : ""}{sceneModifier}
-                    </span>
-                    <button
-                      onClick={() => setSceneModifier((s) => Math.min(10, s + 1))}
-                      className="w-8 h-9 rounded bg-stone-800 text-amber-200 font-bold hover:bg-stone-700 transition"
-                    >+</button>
-                  </div>
-                </div>
               </div>
+            );
+          })}
+        </div>
 
-              {/* Modo */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setMode("standard")}
-                  className={`flex-1 flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider transition ${
-                    mode === "standard"
-                      ? "bg-amber-700 text-amber-50"
-                      : "bg-stone-900 text-stone-400 hover:bg-stone-800"
-                  }`}
-                >
-                  Padrão
-                </button>
-                <button
-                  onClick={() => setMode("opposed")}
-                  className={`flex-1 flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider transition ${
-                    mode === "opposed"
-                      ? "bg-amber-700 text-amber-50"
-                      : "bg-stone-900 text-stone-400 hover:bg-stone-800"
-                  }`}
-                >
-                  <Swords size={12} /> Oposto
-                </button>
-              </div>
-
-              {mode === "opposed" && (
-                <div>
-                  <label className="block text-xs font-bold text-stone-500 mb-1 uppercase tracking-wider">
-                    Modificador do Adversário
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setOpponentMod((s) => Math.max(-20, s - 1))}
-                      className="w-8 h-9 rounded bg-stone-800 text-amber-200 font-bold hover:bg-stone-700 transition"
-                    >−</button>
-                    <span className="flex-1 text-center font-bold text-amber-100">
-                      {opponentMod >= 0 ? "+" : ""}{opponentMod}
+        {/* Resultado */}
+        {(rolling || results) && (
+          <div className="mx-4 mb-4 rounded-xl bg-stone-900 border border-stone-800 px-4 py-4">
+            {/* Dados individuais */}
+            <div className="flex flex-wrap gap-2 justify-center mb-3">
+              {rolling
+                ? // Animação
+                  activeDice.flatMap((die) =>
+                    Array.from({ length: counts[die] }).map((_, i) => (
+                      <span
+                        key={`${die}-${i}`}
+                        className="inline-flex items-center justify-center rounded-lg w-10 h-10 font-black text-base animate-pulse"
+                        style={{ background: COLORS[die].bg, color: COLORS[die].text, border: `1.5px solid ${COLORS[die].border}` }}
+                      >
+                        {animNumbers[String(activeDice.indexOf(die) * 10 + i)] ?? "?"}
+                      </span>
+                    ))
+                  )
+                : // Resultados finais
+                  results?.map((r, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex flex-col items-center justify-center rounded-lg w-10 h-10"
+                      style={{ background: COLORS[r.die].bg, border: `1.5px solid ${COLORS[r.die].border}` }}
+                    >
+                      <span className="font-black text-base leading-none" style={{ color: COLORS[r.die].text }}>
+                        {r.result}
+                      </span>
+                      <span className="text-[9px] opacity-50" style={{ color: COLORS[r.die].text }}>
+                        d{r.die}
+                      </span>
                     </span>
-                    <button
-                      onClick={() => setOpponentMod((s) => Math.min(50, s + 1))}
-                      className="w-8 h-9 rounded bg-stone-800 text-amber-200 font-bold hover:bg-stone-700 transition"
-                    >+</button>
-                  </div>
-                </div>
-              )}
+                  ))
+              }
             </div>
-          )}
+
+            {/* Total */}
+            {!rolling && results && (
+              <div className="text-center border-t border-stone-800 pt-3">
+                {preModifier !== 0 ? (
+                  <>
+                    <p className="text-xs text-stone-500 mb-0.5">
+                      {naturalSum} {preModifier >= 0 ? "+" : ""}{preModifier} (mod.)
+                    </p>
+                    <p className="text-4xl font-black text-amber-400">{finalTotal}</p>
+                  </>
+                ) : (
+                  <p className="text-4xl font-black text-amber-400">{naturalSum}</p>
+                )}
+                {results.length === 1 && results[0].die === 20 && (
+                  <p className={`text-xs font-bold mt-1 ${results[0].result === 20 ? "text-amber-400" : results[0].result === 1 ? "text-red-400" : "text-stone-500"}`}>
+                    {results[0].result === 20 ? "⚡ ACERTO CRÍTICO!" : results[0].result === 1 ? "💀 FALHA CRÍTICA!" : ""}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Botões de ação */}
+        <div className="flex gap-2 px-4 pb-5">
+          <button
+            onClick={handleClear}
+            className="rounded-xl p-3 bg-stone-900 border border-stone-800 text-stone-400 hover:text-white hover:bg-stone-800 transition"
+            aria-label="Limpar"
+            title="Limpar"
+          >
+            <RotateCcw size={18} />
+          </button>
+
+          <button
+            onClick={handleRoll}
+            disabled={totalDice === 0 || rolling}
+            className="flex-1 rounded-xl py-3.5 font-black text-base uppercase tracking-widest transition disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              background: totalDice > 0 ? "linear-gradient(135deg, #78350f, #b45309)" : "#1f2937",
+              color: totalDice > 0 ? "#fef3c7" : "#4b5563",
+              boxShadow: totalDice > 0 ? "0 4px 15px rgba(120,53,15,0.4)" : "none",
+            }}
+          >
+            {rolling ? "Rolando…" : totalDice === 0 ? "Selecione dados" : `Rolar ${totalDice > 1 ? totalDice + " dados" : "1 dado"}`}
+          </button>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 pb-5 flex gap-3">
-          {phase === "landed" ? (
-            <>
-              <Button variant="secondary" className="flex-1" onClick={() => { reset(); setResult(null); }}>
-                Rolar de novo (R)
-              </Button>
-              <Button variant="ghost" onClick={onClose}>Fechar</Button>
-            </>
-          ) : (
-            <button
-              onClick={handleRoll}
-              disabled={isPending || phase === "rolling"}
-              className="flex-1 flex items-center justify-center gap-2 rounded-xl py-4 font-black text-lg uppercase tracking-widest transition disabled:opacity-50"
-              style={{
-                background: "linear-gradient(135deg, #78350f, #b45309)",
-                color: "#fef3c7",
-                boxShadow: "0 4px 15px rgba(120,53,15,0.5)",
-              }}
-            >
-              <Sparkles size={20} />
-              {phase === "rolling" ? "Rolando..." : "Rolar D20"}
-            </button>
-          )}
-        </div>
-
-        {/* Hint de teclado */}
-        <div className="text-center pb-3 text-xs text-stone-700">
-          Enter para rolar · Esc para fechar · R para rolar de novo
-        </div>
+        <p className="text-center pb-4 text-xs text-stone-700">Enter para rolar · R para rolar de novo · Esc para fechar</p>
       </div>
     </div>
   );
