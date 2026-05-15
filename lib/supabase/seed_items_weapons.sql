@@ -65,7 +65,7 @@ values
 -- ARMAS EXÓTICAS DISTÂNCIA
 ('arco_guerra','Arco de guerra','arma',2000,2,'O maior arco existente, precisa de força sobre-humana.','exotica','duas_maos','disparo','1d12','x3','longo','perfuracao','{}',false,false,101),
 ('arpao','Arpão','arma',300,2,'Arma de arremesso que prende a vítima com cordas.','exotica','duas_maos','disparo','1d10','x3','curto','perfuracao','{}',false,false,101),
-('rede','Rede','arma',200,2,'Rede de arremesso para aprisionar oponentes.','exotica','duas_maos','disparo',null,null,'curto',null,'{}',false,false,101)
+('rede','Rede','arma',200,2,'Rede de arremesso para aprisionar oponentes.','exotica','duas_maos','disparo',null,null,'curto',null,'{}',true,false,101)
 on conflict (slug) do update set
   name = excluded.name,
   price_pc = excluded.price_pc;

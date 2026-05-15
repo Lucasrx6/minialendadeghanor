@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   toPc, fromPc, formatMoney,
-  carryCapacity, totalSpaces, isOverloaded,
+  carryCapacity, maxCarryCapacity, totalSpaces, isOverloaded,
   maxWornItems,
   priceWithImprovements, priceWithArcanium, ARCANIUM_COST_PC,
-  computeDefenseWithEquipment,
+  computeDefenseWithEquipment, computeMovementWithEquipment,
   getArmorPenaltyForSkill, ARMOR_PENALTY_SKILLS,
   hasMartialProficiency, hasHeavyArmorProficiency, hasShieldProficiency,
   getStarterItems,
@@ -71,10 +71,19 @@ describe("isOverloaded", () => {
 // ─── Itens vestidos ────────────────────────────────────────────────────────────
 
 describe("maxWornItems", () => {
-  it("nível 1 = 3 itens",   () => expect(maxWornItems(1)).toBe(3));
-  it("nível 4 = 5 itens",   () => expect(maxWornItems(4)).toBe(5));
-  it("nível 10 = 8 itens",  () => expect(maxWornItems(10)).toBe(8));
-  it("nível 20 = 13 itens", () => expect(maxWornItems(20)).toBe(13));
+  it("sempre 4 itens, independentemente do nível", () => {
+    expect(maxWornItems(1)).toBe(4);
+    expect(maxWornItems(4)).toBe(4);
+    expect(maxWornItems(10)).toBe(4);
+    expect(maxWornItems(20)).toBe(4);
+  });
+});
+
+describe("maxCarryCapacity", () => {
+  it("é o dobro da capacidade normal de carga", () => {
+    expect(maxCarryCapacity(0)).toBe(carryCapacity(0) * 2);
+    expect(maxCarryCapacity(3)).toBe(carryCapacity(3) * 2);
+  });
 });
 
 // ─── Preços ───────────────────────────────────────────────────────────────────
@@ -119,6 +128,15 @@ describe("computeDefenseWithEquipment", () => {
   it("com armadura de couro (+2): 10 + Des + 2", () => {
     const { total } = computeDefenseWithEquipment(2, { armor_defense_bonus: 2, armor_penalty: 0 });
     expect(total).toBe(14);
+  });
+
+  it("com armadura pesada ignora o bônus de Destreza", () => {
+    const { total, breakdown } = computeDefenseWithEquipment(
+      3,
+      { armor_defense_bonus: 5, armor_penalty: -2, armor_category: "pesada" },
+    );
+    expect(total).toBe(15);
+    expect(breakdown).toContain("Des 0 (armadura pesada)");
   });
 
   it("com armadura + escudo: soma bônus de ambos", () => {
@@ -173,6 +191,16 @@ describe("getArmorPenaltyForSkill", () => {
     ARMOR_PENALTY_SKILLS.forEach(s => {
       expect(getArmorPenaltyForSkill(s, 0)).toBe(0);
     });
+  });
+});
+
+describe("computeMovementWithEquipment", () => {
+  it("reduz deslocamento em 3m quando usando armadura pesada", () => {
+    expect(computeMovementWithEquipment(9, "pesada")).toBe(6);
+  });
+
+  it("não reduz deslocamento sem armadura pesada", () => {
+    expect(computeMovementWithEquipment(9, "leve")).toBe(9);
   });
 });
 

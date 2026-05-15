@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="12" y="12" width="104" height="104" rx="16" fill="#F5E6C8" stroke="#000" stroke-width="6"/>
+  <!-- Adaga -->
+  <path d="M78 40 98 60l-6 6-20-20 6-6Z" fill="#22C55E" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M50 60 30 80l6 6 20-20-6-6Z" fill="#111827" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <!-- Olho/Visão (furtividade) -->
+  <path d="M40 72c8-14 40-14 48 0-8 14-40 14-48 0Z" fill="#3B82F6" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="64" cy="72" r="10" fill="#22C55E" stroke="#000" stroke-width="6"/>
+  <!-- Texto -->
+  <text x="64" y="108" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto" font-size="18" font-weight="900" fill="#000">BUC</text>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="12" y="12" width="104" height="104" rx="16" fill="#F5E6C8" stroke="#000" stroke-width="6"/>
+  <!-- Espada -->
+  <path d="M74 34 94 54l-6 6-20-20 6-6Z" fill="#F97316" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M52 56 34 74l6 6 18-18-6-6Z" fill="#22C55E" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <!-- Escudo -->
+  <path d="M64 32c18 8 22 10 22 10v22c0 18-12 30-22 34-10-4-22-16-22-34V42s4-2 22-10Z" fill="#EAB308" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M64 48c6 2 10 4 10 4v10c0 10-6 16-10 18-4-2-10-8-10-18V52s4-2 10-4Z" fill="#111827" opacity="0.15"/>
+  <!-- Texto -->
+  <text x="64" y="108" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto" font-size="18" font-weight="900" fill="#000">SOL</text>
+</svg>

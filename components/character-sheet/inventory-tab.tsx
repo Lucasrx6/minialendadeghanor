@@ -7,7 +7,7 @@ import {
   Plus, Minus, ShoppingBag, ArrowUpDown, Trash2, Pencil, ChevronDown
 } from "lucide-react";
 import {
-  formatMoney, formatMoneyPP, carryCapacity, totalSpaces,
+  formatMoney, formatMoneyPP, carryCapacity, maxCarryCapacity, totalSpaces,
   isOverloaded, maxWornItems, priceWithArcanium,
 } from "@/lib/ghanor/inventory";
 import {
@@ -125,9 +125,11 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
   const active = [...carried, ...equipped, ...worn];
   const usedSpaces = active.reduce((s, i) => s + itemSpaces(i), 0);
   const capacity = carryCapacity(strMod);
+  const maxCarry = maxCarryCapacity(strMod);
   const overloaded = isOverloaded(usedSpaces, strMod);
   const wornCount = [...equipped, ...worn].length;
   const maxWorn = maxWornItems(level);
+  const isMaxCarry = usedSpaces > maxCarry;
 
   const pct = Math.min(100, (usedSpaces / capacity) * 100);
 
@@ -167,8 +169,9 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
           <span className="font-bold text-amber-200 flex items-center gap-2">
             <Package size={16} /> Carga
           </span>
-          <span className={overloaded ? "text-red-400 font-bold" : "text-stone-400"}>
+          <span className={isMaxCarry ? "text-red-400 font-bold" : overloaded ? "text-amber-300 font-semibold" : "text-stone-400"}>
             {usedSpaces.toFixed(1)} / {capacity} espaços
+            {isMaxCarry ? ` (máx. ${maxCarry})` : overloaded ? " (sobrecarregado)" : ""}
           </span>
         </div>
         <div className="h-2 rounded-full bg-stone-800 overflow-hidden">
@@ -177,11 +180,15 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
             style={{ width: `${pct}%` }}
           />
         </div>
-        {overloaded && (
+        {isMaxCarry ? (
+          <p className="mt-2 text-red-400 text-xs font-semibold">
+            ⚠ CARGA MÁXIMA — reduz o personagem a zero progresso e exige descarte imediato.
+          </p>
+        ) : overloaded ? (
           <p className="mt-2 text-red-400 text-xs font-semibold">
             ⚠ SOBRECARGA — −5 em penalidade de armadura, deslocamento −3m
           </p>
-        )}
+        ) : null}
         <div className="mt-2 flex items-center justify-between text-xs text-stone-500">
           <span>Itens vestidos: <span className={wornCount > maxWorn ? "text-red-400 font-bold" : "text-stone-300"}>{wornCount}/{maxWorn}</span></span>
           <span className="text-amber-300 font-bold">{formatMoney(moneyPc)}</span>

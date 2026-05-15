@@ -43,6 +43,11 @@ export function carryCapacity(strMod: number): number {
   return Math.max(1, 10 + strMod); // Força negativa usa multiplicador 1
 }
 
+/** Capacidade máxima de carga antes de atingir o limite físico extremo. */
+export function maxCarryCapacity(strMod: number): number {
+  return carryCapacity(strMod) * 2;
+}
+
 /** Soma total de espaços usados por uma lista de itens do inventário */
 export function totalSpaces(items: Array<{ spaces: number; quantity: number }>): number {
   return items.reduce((sum, item) => sum + item.spaces * item.quantity, 0);
@@ -56,9 +61,9 @@ export function isOverloaded(usedSpaces: number, strMod: number): boolean {
 
 // ─── Limite de itens vestidos ──────────────────────────────────────────────────
 
-/** Máximo de itens vestidos conforme o nível (pág. 97): 3 + floor(nível/2) */
-export function maxWornItems(level: number): number {
-  return 3 + Math.floor(level / 2);
+/** Máximo de itens vestidos. Agora fixo em 4 itens independentemente do nível. */
+export function maxWornItems(_level: number): number {
+  return 4;
 }
 
 
@@ -146,7 +151,7 @@ export function hasWeaponProficiency(
 
 // ─── Cálculo de Defesa com inventário ─────────────────────────────────────────
 
-type EquippedArmor  = { armor_defense_bonus: number; armor_penalty: number };
+type EquippedArmor  = { armor_defense_bonus: number; armor_penalty: number; armor_category?: string | null };
 type EquippedShield = { armor_defense_bonus: number; armor_penalty: number };
 
 export function computeDefenseWithEquipment(
@@ -165,11 +170,16 @@ export function computeDefenseWithEquipment(
   const armorPen   = (equippedArmor?.armor_penalty  ?? 0)
                    + (equippedShield?.armor_penalty  ?? 0)
                    + (overloaded ? -5 : 0);
+  const effectiveDex = equippedArmor?.armor_category === "pesada" ? 0 : dexMod;
 
-  const total = 10 + dexMod + armorDef + shieldDef + otherBonus;
+  const total = 10 + effectiveDex + armorDef + shieldDef + otherBonus;
 
   const parts: string[] = [`10 base`];
-  if (dexMod !== 0) parts.push(`Des ${dexMod >= 0 ? "+" : ""}${dexMod}`);
+  if (equippedArmor?.armor_category === "pesada") {
+    parts.push(`Des 0 (armadura pesada)`);
+  } else if (dexMod !== 0) {
+    parts.push(`Des ${dexMod >= 0 ? "+" : ""}${dexMod}`);
+  }
   if (armorDef)     parts.push(`armadura +${armorDef}`);
   if (shieldDef)    parts.push(`escudo +${shieldDef}`);
   if (otherBonus)   parts.push(`outros +${otherBonus}`);
@@ -179,6 +189,10 @@ export function computeDefenseWithEquipment(
     armorPenalty: armorPen,
     breakdown: parts.join(" + ") + ` = ${total}`,
   };
+}
+
+export function computeMovementWithEquipment(baseMovementM: number, equippedArmorCategory?: string | null): number {
+  return equippedArmorCategory === "pesada" ? Math.max(0, baseMovementM - 3) : baseMovementM;
 }
 
 
