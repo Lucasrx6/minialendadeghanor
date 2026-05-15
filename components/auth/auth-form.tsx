@@ -51,7 +51,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   }
 
   return (
-    <Card className="mx-auto max-w-md space-y-4">
+    <Card className="w-full space-y-5 p-5">
       <SectionTitle>{mode === "signup" ? "Criar conta" : "Entrar"}</SectionTitle>
       <label className="block text-sm font-semibold">
         Nome de usuario
@@ -86,11 +86,14 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           </span>
         </label>
       )}
-      <div className="flex flex-wrap gap-2">
-        <Button disabled={isPending || !username || !password || (mode === "signup" && !recoveryEmail)} onClick={submit}>
-          {mode === "signup" ? "Cadastrar" : "Entrar"}
-        </Button>
-      </div>
+      <Button
+        fullWidth
+        size="lg"
+        disabled={isPending || !username || !password || (mode === "signup" && !recoveryEmail)}
+        onClick={submit}
+      >
+        {mode === "signup" ? "Cadastrar" : "Entrar"}
+      </Button>
       {message && <p className="text-sm font-semibold text-amber-900">{message}</p>}
     </Card>
   );

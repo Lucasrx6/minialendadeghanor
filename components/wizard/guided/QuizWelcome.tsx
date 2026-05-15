@@ -1,3 +1,4 @@
+import { BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -6,14 +7,17 @@ interface Props {
 
 export function QuizWelcome({ onStart }: Props) {
   return (
-    <div className="flex flex-col items-center justify-center space-y-8 text-center py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <h1 className="text-4xl font-black text-stone-950 md:text-5xl">
+    <div className="flex flex-col items-center gap-6 py-6 text-center">
+      <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-900 ring-1 ring-amber-900/15">
+        <BookOpen size={32} />
+      </span>
+      <h1 className="text-2xl font-black leading-tight text-stone-950 sm:text-3xl">
         Vamos contar uma pequena história
       </h1>
-      <p className="max-w-2xl text-xl leading-relaxed text-stone-800">
-        Antes da aventura começar, precisamos saber quem você é. Suas respostas vão moldar seus atributos, sua classe e suas perícias. Não há resposta certa — só seja honesto com o tipo de herói que você quer ser.
+      <p className="text-base leading-relaxed text-stone-700">
+        Suas respostas moldam atributos, classe e perícias. Não há resposta certa — seja honesto com o herói que você quer ser.
       </p>
-      <Button className="mt-8 text-lg px-8 py-6" onClick={onStart}>
+      <Button fullWidth size="lg" className="mt-2" onClick={onStart}>
         Começar a história
       </Button>
     </div>

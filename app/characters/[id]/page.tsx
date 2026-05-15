@@ -3,6 +3,8 @@ import { CharacterSheet } from "@/components/character-sheet/character-sheet";
 import { createClient } from "@/lib/supabase/server";
 import { getLevelUpHistory } from "@/app/actions/levelup";
 import { getInventory, getMoneyTransactions } from "@/app/actions/inventory";
+import { PageContainer } from "@/components/layout/page-container";
+import { PageHeader } from "@/components/layout/page-header";
 
 export default async function CharacterPage({
   params,
@@ -30,15 +32,17 @@ export default async function CharacterPage({
   ]);
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 py-8">
-      <CharacterSheet
-        character={character}
-        levelUpHistory={levelUpHistory}
-        justLeveledUpTo={levelup ? Number(levelup) : undefined}
-        inventory={inventory as Parameters<typeof CharacterSheet>[0]["inventory"]}
-        transactions={transactions as Parameters<typeof CharacterSheet>[0]["transactions"]}
-      />
+    <main className="min-h-dvh bg-[radial-gradient(circle_at_top,#f5c86a_0,#f6ead0_35%,#efe1bd_100%)]">
+      <PageContainer className="pb-20">
+        <PageHeader title="Ficha" backHref="/characters" backLabel="Heróis" />
+        <CharacterSheet
+          character={character}
+          levelUpHistory={levelUpHistory}
+          justLeveledUpTo={levelup ? Number(levelup) : undefined}
+          inventory={inventory as Parameters<typeof CharacterSheet>[0]["inventory"]}
+          transactions={transactions as Parameters<typeof CharacterSheet>[0]["transactions"]}
+        />
+      </PageContainer>
     </main>
   );
 }
-

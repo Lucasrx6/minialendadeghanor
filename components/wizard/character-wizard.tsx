@@ -164,7 +164,7 @@ export function CharacterWizard() {
   }
 
   return (
-    <div className="grid gap-5 pb-28 md:pb-6 lg:grid-cols-[minmax(0,1fr)_330px]">
+    <div className="flex flex-col gap-5 pb-28 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:pb-6">
       <section className="space-y-4">
         <div className="rounded-b-3xl border border-amber-900/15 bg-stone-950 px-4 py-5 text-amber-50 shadow-xl md:rounded-3xl md:px-6">
           <div className="flex items-center justify-between gap-3">
@@ -565,8 +565,11 @@ export function CharacterWizard() {
         </Card>
       </aside>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-amber-900/20 bg-amber-50/95 p-3 backdrop-blur md:hidden">
-        <div className="mx-auto grid max-w-xl grid-cols-2 gap-2">
+      <div
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-amber-900/20 bg-amber-50/95 p-3 backdrop-blur md:hidden"
+        style={{ paddingBottom: "max(0.75rem, var(--safe-bottom))" }}
+      >
+        <div className="mx-auto grid max-w-lg grid-cols-2 gap-2">
           <Button variant="secondary" disabled={state.step === 1} onClick={() => state.setStep(state.step - 1)}>
             Voltar
           </Button>

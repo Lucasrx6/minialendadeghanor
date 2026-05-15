@@ -3,20 +3,75 @@
 :root {
   --background: #f3e2bd;
   --foreground: #1c1917;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --bottom-nav-height: 4.25rem;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "Cascadia Code", "Consolas", monospace;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  min-height: 100dvh;
+  overflow-x: hidden;
 }
 
+/* Touch-friendly defaults */
+button,
+a,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"],
+select {
+  touch-action: manipulation;
+}
+
+/* Utility classes for mobile shell */
+.pt-safe {
+  padding-top: max(0.75rem, var(--safe-top));
+}
+
+.pb-safe {
+  padding-bottom: max(0.75rem, var(--safe-bottom));
+}
+
+.pb-nav {
+  padding-bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 0.75rem);
+}
+
+.px-safe {
+  padding-left: max(1rem, var(--safe-left));
+  padding-right: max(1rem, var(--safe-right));
+}
+
+/* Horizontal scroll chips without visible scrollbar clutter */
+.scroll-chips {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 0.25rem;
+}
+
+.scroll-chips::-webkit-scrollbar {
+  display: none;
+}
+
+/* Prevent iOS zoom on focus — inputs use text-base (16px) in components */
 @media print {
   body {
     background: white;

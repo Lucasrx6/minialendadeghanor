@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Edit, FileText, Sparkles, Trash2, User, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package } from "lucide-react";
+import { Edit, FileText, Sparkles, Trash2, User, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package, ScrollText, Store } from "lucide-react";
 import { deleteCharacter } from "@/app/characters/actions";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
@@ -220,15 +220,15 @@ export function CharacterSheet({
       <div className="flex gap-1 bg-stone-100 rounded-xl p-1 print:hidden">
         <button
           onClick={() => setActiveTab("sheet")}
-          className={`flex-1 text-sm font-bold py-2.5 rounded-lg transition ${activeTab === "sheet" ? "bg-amber-800 text-amber-50 shadow" : "text-stone-600 hover:bg-stone-200"}`}
+          className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-bold transition ${activeTab === "sheet" ? "bg-amber-800 text-amber-50 shadow" : "text-stone-600 active:bg-stone-200"}`}
         >
-          📜 Ficha
+          <ScrollText size={18} /> Ficha
         </button>
         <button
           onClick={() => setActiveTab("inventory")}
-          className={`flex-1 text-sm font-bold py-2.5 rounded-lg transition flex items-center justify-center gap-2 ${activeTab === "inventory" ? "bg-amber-800 text-amber-50 shadow" : "text-stone-600 hover:bg-stone-200"}`}
+          className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-bold transition ${activeTab === "inventory" ? "bg-amber-800 text-amber-50 shadow" : "text-stone-600 active:bg-stone-200"}`}
         >
-          <Package size={16} /> Inventário
+          <Package size={18} /> Inventário
         </button>
       </div>
 
@@ -248,9 +248,8 @@ export function CharacterSheet({
       {/* Sheet tab */}
       {activeTab === "sheet" && <>
       {/* Hero card */}
-      <Card className="grid gap-5 md:grid-cols-[220px_1fr]">
-        {/* Retrato */}
-        <div className="aspect-square overflow-hidden rounded-lg border border-amber-900/20 bg-stone-900">
+      <Card className="flex flex-col gap-4 p-4">
+        <div className="mx-auto aspect-square w-full max-w-[200px] overflow-hidden rounded-2xl border border-amber-900/20 bg-stone-900">
           {portraitUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={portraitUrl} alt={`Retrato de ${character.name}`} className="h-full w-full object-cover" />
@@ -262,10 +261,10 @@ export function CharacterSheet({
         </div>
 
         {/* Info principal */}
-        <div className="space-y-4">
+        <div className="space-y-4 text-center sm:text-left">
           <div>
-            <h1 className="text-4xl font-black text-stone-950">{character.name}</h1>
-            <p className="text-stone-600 font-semibold mt-1">
+            <h1 className="text-2xl font-black leading-tight text-stone-950 sm:text-3xl">{character.name}</h1>
+            <p className="mt-1 text-sm font-semibold text-stone-600 sm:text-base">
               {raceById[character.race as keyof typeof raceById]?.name}
               {" · "}
               {classDisplay}
@@ -277,26 +276,31 @@ export function CharacterSheet({
             {character.concept && <p className="mt-2 italic text-amber-900">{character.concept}</p>}
           </div>
 
-          <div className="flex flex-wrap gap-2 print:hidden">
-            <Button variant="secondary" onClick={() => router.push(`/characters/${character.id}/edit`)}>
+          <div className="scroll-chips -mx-1 px-1 print:hidden">
+            <Button variant="secondary" className="shrink-0" onClick={() => router.push(`/characters/${character.id}/edit`)}>
               <Edit size={16} /> Editar
             </Button>
-            <Button variant="secondary" onClick={() => window.print()}>
-              <FileText size={16} /> Exportar PDF
+            <Button variant="secondary" className="shrink-0" onClick={() => window.print()}>
+              <FileText size={16} /> PDF
             </Button>
-            <Button variant="secondary" disabled={isPending} onClick={generatePortrait}>
-              <Sparkles size={16} /> Gerar retrato
+            <Button variant="secondary" className="shrink-0" disabled={isPending} onClick={generatePortrait}>
+              <Sparkles size={16} /> Retrato
+            </Button>
+            <Button variant="secondary" className="shrink-0" onClick={() => router.push(`/characters/${character.id}/shop`)}>
+              <Store size={16} /> Loja
             </Button>
             <Button
               variant="secondary"
+              className="shrink-0"
               onClick={() => router.push(`/characters/${character.id}/levelup`)}
               disabled={level >= 20}
               title={level >= 20 ? "Nível máximo atingido" : ""}
             >
-              <TrendingUp size={16} /> Subir de Nível
+              <TrendingUp size={16} /> Nível
             </Button>
             <Button
               variant="danger"
+              className="shrink-0"
               disabled={isPending}
               onClick={() => startTransition(async () => {
                 await deleteCharacter(character.id);
@@ -330,7 +334,7 @@ export function CharacterSheet({
       </div>
 
       {/* Stats de combate */}
-      <div className="grid gap-4 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
         <Fact label="PV" value={character.hp_max} icon={<Heart size={20} />} colorClass="bg-red-950/20 text-red-700 border-red-900/20" valueClass="text-red-700" />
         <Fact label="PM" value={character.mp_max} icon={<Sparkles size={20} />} colorClass="bg-blue-950/20 text-blue-700 border-blue-900/20" valueClass="text-blue-700" />
         <div title={defBreakdown}>
@@ -350,7 +354,7 @@ export function CharacterSheet({
       </div>
 
       {/* Perícias e Habilidades */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="flex flex-col gap-4">
         <Card>
           <SectionTitle>Perícias</SectionTitle>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -429,8 +433,11 @@ export function CharacterSheet({
       {/* FAB de dados */}
       <button
         onClick={() => setRollConfig({ label: "", preModifier: 0 })}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-xl print:hidden transition hover:scale-110"
-        style={{ background: "linear-gradient(135deg, #78350f, #b45309)" }}
+        className="fixed bottom-5 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-xl print:hidden transition active:scale-95 sm:bottom-6 sm:right-6"
+        style={{
+          marginBottom: "var(--safe-bottom)",
+          background: "linear-gradient(135deg, #78350f, #b45309)",
+        }}
         title="Rolar dado"
         aria-label="Abrir rolagem de dado"
       >
