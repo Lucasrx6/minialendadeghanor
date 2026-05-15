@@ -50,7 +50,10 @@ create table public.characters (
 
   portrait_url text,
   portrait_prompt text,
-  portrait_generated_at timestamptz
+  portrait_generated_at timestamptz,
+
+  creation_mode text default 'manual',
+  quiz_answers jsonb
 );
 
 create index on public.characters (user_id);
