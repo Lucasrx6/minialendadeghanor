@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Edit, FileText, Sparkles, Trash2, User, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X } from "lucide-react";
+import { Edit, FileText, Sparkles, Trash2, User, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package } from "lucide-react";
 import { deleteCharacter } from "@/app/characters/actions";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
@@ -14,6 +14,9 @@ import { skillById } from "@/lib/ghanor/skills";
 import { formatClassLevels, tierForLevel, TIER_LABELS, TIER_FLAVOR, computeSkillRollModifier, type Tier } from "@/lib/ghanor/leveling";
 import { RollDialog } from "@/components/dice/RollDialog";
 import { JourneySection } from "@/components/character-sheet/journey-section";
+import { InventoryTab } from "@/components/character-sheet/inventory-tab";
+import { AttacksSection } from "@/components/character-sheet/attacks-section";
+import { computeDefenseWithEquipment, getArmorPenaltyForSkill } from "@/lib/ghanor/inventory";
 import type { CharacterBuild, Attribute } from "@/lib/ghanor/types";
 
 type CharacterRow = {
@@ -82,11 +85,16 @@ export function CharacterSheet({
   character,
   levelUpHistory = [],
   justLeveledUpTo,
+  inventory = [],
+  transactions = [],
 }: {
   character: CharacterRow;
   levelUpHistory?: LevelUpEntry[];
   justLeveledUpTo?: number;
+  inventory?: unknown[];
+  transactions?: unknown[];
 }) {
+  const [activeTab, setActiveTab] = useState<"sheet" | "inventory">("sheet");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [portraitUrl, setPortraitUrl] = useState(character.portrait_url);
@@ -114,6 +122,36 @@ export function CharacterSheet({
     int: character.attr_int, wis: character.attr_wis, cha: character.attr_cha,
   };
 
+  // ── Itens equipados extraídos do inventário ──────────────────
+  type InvRow = {
+    id: string;
+    location: string;
+    improvements: number;
+    is_arcanium: boolean;
+    custom_label: string | null;
+    items: {
+      slug: string; name: string; category: string;
+      armor_defense_bonus: number | null; armor_penalty: number | null;
+      weapon_damage_dice: string | null; weapon_critical: string | null;
+      weapon_range: string | null; weapon_damage_type: string | null;
+      weapon_proficiency: "simples" | "marcial" | "exotica" | null;
+      weapon_grip: string | null; weapon_abilities: string[];
+    } | null;
+  };
+  const typedInventory = (inventory as InvRow[]);
+  const equippedItems = typedInventory.filter(i => i.location === "equipped" || i.location === "worn");
+  const equippedArmor = equippedItems.find(i => i.items?.category === "armadura");
+  const equippedShield = equippedItems.find(i => i.items?.category === "escudo");
+  const equippedWeapons = equippedItems.filter(i => i.items?.category === "arma");
+
+  const { total: dynamicDefense, armorPenalty, breakdown: defBreakdown } = computeDefenseWithEquipment(
+    attrs.dex,
+    equippedArmor?.items ? { armor_defense_bonus: equippedArmor.items.armor_defense_bonus ?? 0, armor_penalty: equippedArmor.items.armor_penalty ?? 0 } : undefined,
+    equippedShield?.items ? { armor_defense_bonus: equippedShield.items.armor_defense_bonus ?? 0, armor_penalty: equippedShield.items.armor_penalty ?? 0 } : undefined,
+  );
+
+  // Bônus de Luta e Pontaria são calculados após a declaração de `build` abaixo
+
   const build: CharacterBuild = {
     race: character.race as CharacterBuild["race"],
     class: character.class as CharacterBuild["class"],
@@ -128,6 +166,10 @@ export function CharacterSheet({
     trainedSkills: character.trained_skills,
     level,
   };
+
+  // Bônus de Luta e Pontaria (agora que `build` está disponível)
+  const fightBonus = character.trained_skills.includes("luta") ? calculateSkillBonus(build, "luta") : 0;
+  const aimBonus   = character.trained_skills.includes("pontaria") ? calculateSkillBonus(build, "pontaria") : 0;
 
   function openAttrRoll(attr: string) {
     const attrMod = attrs[attr];
@@ -174,6 +216,37 @@ export function CharacterSheet({
 
   return (
     <div className="space-y-6 print:bg-white">
+      {/* Tab nav */}
+      <div className="flex gap-1 bg-stone-100 rounded-xl p-1 print:hidden">
+        <button
+          onClick={() => setActiveTab("sheet")}
+          className={`flex-1 text-sm font-bold py-2.5 rounded-lg transition ${activeTab === "sheet" ? "bg-amber-800 text-amber-50 shadow" : "text-stone-600 hover:bg-stone-200"}`}
+        >
+          📜 Ficha
+        </button>
+        <button
+          onClick={() => setActiveTab("inventory")}
+          className={`flex-1 text-sm font-bold py-2.5 rounded-lg transition flex items-center justify-center gap-2 ${activeTab === "inventory" ? "bg-amber-800 text-amber-50 shadow" : "text-stone-600 hover:bg-stone-200"}`}
+        >
+          <Package size={16} /> Inventário
+        </button>
+      </div>
+
+      {/* Inventory tab */}
+      {activeTab === "inventory" && (
+        <InventoryTab
+          characterId={character.id}
+          strMod={character.attr_str}
+          level={level}
+          moneyPc={(character as Record<string, unknown>).money_pc as number ?? 0}
+          inventory={inventory as Parameters<typeof InventoryTab>[0]["inventory"]}
+          transactions={transactions as Parameters<typeof InventoryTab>[0]["transactions"]}
+          characterClass={character.class}
+        />
+      )}
+
+      {/* Sheet tab */}
+      {activeTab === "sheet" && <>
       {/* Hero card */}
       <Card className="grid gap-5 md:grid-cols-[220px_1fr]">
         {/* Retrato */}
@@ -260,7 +333,18 @@ export function CharacterSheet({
       <div className="grid gap-4 md:grid-cols-5">
         <Fact label="PV" value={character.hp_max} icon={<Heart size={20} />} colorClass="bg-red-950/20 text-red-700 border-red-900/20" valueClass="text-red-700" />
         <Fact label="PM" value={character.mp_max} icon={<Sparkles size={20} />} colorClass="bg-blue-950/20 text-blue-700 border-blue-900/20" valueClass="text-blue-700" />
-        <Fact label="Defesa" value={character.defense} icon={<Shield size={20} />} colorClass="bg-slate-900 text-slate-200 border-slate-700" valueClass="text-white" />
+        <div title={defBreakdown}>
+          <Fact
+            label={equippedArmor || equippedShield ? "Defesa ⚙" : "Defesa"}
+            value={equippedArmor || equippedShield ? dynamicDefense : character.defense}
+            icon={<Shield size={20} />}
+            colorClass="bg-slate-900 text-slate-200 border-slate-700"
+            valueClass="text-white"
+          />
+          {armorPenalty < 0 && (
+            <p className="text-xs text-center text-red-500 mt-1 font-bold">Pen. {armorPenalty}</p>
+          )}
+        </div>
         <Fact label="Deslocamento" value={`${character.movement_m}m`} icon={<Wind size={20} />} colorClass="bg-emerald-950/20 text-emerald-700 border-emerald-900/20" valueClass="text-emerald-700" />
         <Fact label="Tamanho" value={character.size} icon={<Ruler size={20} />} colorClass="bg-amber-950/20 text-amber-900 border-amber-900/20" valueClass="text-amber-900" />
       </div>
@@ -273,16 +357,19 @@ export function CharacterSheet({
             {character.trained_skills.map((skillId) => {
               const skill = skillById[skillId];
               const bonus = calculateSkillBonus(build, skillId);
+              const penalty = getArmorPenaltyForSkill(skillId, armorPenalty);
+              const total = bonus + penalty;
               return (
                 <button
                   key={skillId}
                   onClick={() => openSkillRoll(skillId)}
                   className="group flex items-center justify-between rounded-md bg-white/70 px-3 py-2 text-sm text-left transition hover:bg-amber-50 hover:shadow-sm"
-                  title={`Rolar teste de ${skill?.name ?? skillId}`}
+                  title={`Rolar teste de ${skill?.name ?? skillId}${penalty < 0 ? ` (penalidade armadura ${penalty})` : ""}`}
                 >
                   <span className="font-medium">{skill?.name ?? skillId}</span>
-                  <span className="flex items-center gap-1 font-bold text-amber-900">
-                    +{bonus}
+                  <span className={`flex items-center gap-1 font-bold ${penalty < 0 ? "text-red-600" : "text-amber-900"}`}>
+                    {total >= 0 ? "+" : ""}{total}
+                    {penalty < 0 && <span className="text-[10px] text-red-400">(pen.)</span>}
                     <Dices size={12} className="text-amber-400 opacity-0 group-hover:opacity-100 transition" />
                   </span>
                 </button>
@@ -306,11 +393,26 @@ export function CharacterSheet({
         </Card>
       </div>
 
-      {/* Equipamento */}
+      {/* Ataques */}
       <Card>
-        <SectionTitle>Equipamento</SectionTitle>
-        <p className="mt-3 text-sm">{character.equipment?.map((item) => `${item.qty}x ${item.name}`).join(", ") || "Starter kit pendente."}</p>
-        <p className="mt-2 text-sm font-semibold">{character.silver_pieces} PP</p>
+        <SectionTitle>Ataques</SectionTitle>
+        <div className="mt-3">
+          <AttacksSection
+            weapons={equippedWeapons.map(w => ({
+              inventoryId: w.id,
+              item: w.items as Parameters<typeof AttacksSection>[0]["weapons"][0]["item"],
+              improvements: w.improvements,
+              is_arcanium: w.is_arcanium,
+              custom_label: w.custom_label,
+            }))}
+            strMod={attrs.str}
+            dexMod={attrs.dex}
+            level={level}
+            characterClass={character.class}
+            fightBonus={fightBonus}
+            aimBonus={aimBonus}
+          />
+        </div>
       </Card>
 
       {/* Descrição */}
@@ -376,6 +478,7 @@ export function CharacterSheet({
           </button>
         </div>
       )}
+      </>}
     </div>
   );
 }
