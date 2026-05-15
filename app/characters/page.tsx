@@ -38,7 +38,7 @@ export default async function CharactersPage() {
           <h1 className="text-4xl font-black">Personagens</h1>
           <p className="text-stone-700">Escolha um herói salvo ou comece uma nova lenda.</p>
         </div>
-        <Link href="/characters/new">
+        <Link href="/">
           <Button><Plus size={16} /> Novo personagem</Button>
         </Link>
       </div>
