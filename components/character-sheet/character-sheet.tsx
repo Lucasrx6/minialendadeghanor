@@ -16,7 +16,9 @@ import { RollDialog } from "@/components/dice/RollDialog";
 import { JourneySection } from "@/components/character-sheet/journey-section";
 import { InventoryTab } from "@/components/character-sheet/inventory-tab";
 import { AttacksSection } from "@/components/character-sheet/attacks-section";
-import { computeDefenseWithEquipment, getArmorPenaltyForSkill } from "@/lib/ghanor/inventory";
+import { computeDefenseWithEquipment, getArmorPenaltyForSkill, WORN_LIMIT } from "@/lib/ghanor/inventory";
+import { useDmMode } from "@/lib/hooks/use-dm-mode";
+import { DmModeBanner } from "@/components/inventory/dm-mode-banner";
 import type { CharacterBuild, Attribute } from "@/lib/ghanor/types";
 
 type CharacterRow = {
@@ -87,12 +89,14 @@ export function CharacterSheet({
   justLeveledUpTo,
   inventory = [],
   transactions = [],
+  catalog = [],
 }: {
   character: CharacterRow;
   levelUpHistory?: LevelUpEntry[];
   justLeveledUpTo?: number;
   inventory?: unknown[];
   transactions?: unknown[];
+  catalog?: Array<{ slug: string; name: string; category: string; price_pc: number }>;
 }) {
   const [activeTab, setActiveTab] = useState<"sheet" | "inventory">("sheet");
   const router = useRouter();
@@ -101,6 +105,7 @@ export function CharacterSheet({
   const [portraitMessage, setPortraitMessage] = useState<string>();
   const [rollConfig, setRollConfig] = useState<RollConfig | null>(null);
   const [showToast, setShowToast] = useState(!!justLeveledUpTo);
+  const { isActive: isDmMode, toggle: toggleDm, hydrated: dmHydrated } = useDmMode(character.id);
 
   // Auto-dismiss toast after 6s
   useEffect(() => {
@@ -131,7 +136,7 @@ export function CharacterSheet({
     custom_label: string | null;
     items: {
       slug: string; name: string; category: string;
-      armor_defense_bonus: number | null; armor_penalty: number | null;
+      armor_defense_bonus: number | null; armor_penalty: number | null; armor_category: string | null;
       weapon_damage_dice: string | null; weapon_critical: string | null;
       weapon_range: string | null; weapon_damage_type: string | null;
       weapon_proficiency: "simples" | "marcial" | "exotica" | null;
@@ -216,6 +221,7 @@ export function CharacterSheet({
 
   return (
     <div className="space-y-6 print:bg-white">
+      {dmHydrated && <DmModeBanner active={isDmMode} onToggle={toggleDm} />}
       {/* Tab nav */}
       <div className="flex gap-1 bg-stone-100 rounded-xl p-1 print:hidden">
         <button
@@ -242,6 +248,8 @@ export function CharacterSheet({
           inventory={inventory as Parameters<typeof InventoryTab>[0]["inventory"]}
           transactions={transactions as Parameters<typeof InventoryTab>[0]["transactions"]}
           characterClass={character.class}
+          catalog={catalog}
+          isDmMode={isDmMode}
         />
       )}
 
@@ -361,7 +369,18 @@ export function CharacterSheet({
             {character.trained_skills.map((skillId) => {
               const skill = skillById[skillId];
               const bonus = calculateSkillBonus(build, skillId);
-              const penalty = getArmorPenaltyForSkill(skillId, armorPenalty);
+              const penalty = getArmorPenaltyForSkill(skillId, armorPenalty, {
+                characterClass: character.class,
+                equippedArmor: equippedArmor?.items ? {
+                  armor_defense_bonus: equippedArmor.items.armor_defense_bonus ?? 0,
+                  armor_penalty: equippedArmor.items.armor_penalty ?? 0,
+                  armor_category: equippedArmor.items.armor_category,
+                } : undefined,
+                equippedShield: equippedShield?.items ? {
+                  armor_defense_bonus: equippedShield.items.armor_defense_bonus ?? 0,
+                  armor_penalty: equippedShield.items.armor_penalty ?? 0,
+                } : undefined,
+              });
               const total = bonus + penalty;
               return (
                 <button

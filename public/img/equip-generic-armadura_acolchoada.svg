@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="12" y="12" width="104" height="104" rx="16" fill="#F5E6C8" stroke="#000" stroke-width="6"/>
+  <!-- Peitoral acolchoado -->
+  <path d="M44 32h40l6 18-6 56H44L38 50l6-18Z" fill="#EAB308" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M48 48h32" fill="none" stroke="#111827" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M46 62h36" fill="none" stroke="#111827" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+  <path d="M50 76h28" fill="none" stroke="#111827" stroke-width="5" stroke-linecap="round" opacity="0.3"/>
+  <!-- Alças -->
+  <path d="M52 32v-10" fill="none" stroke="#111827" stroke-width="6" stroke-linecap="round"/>
+  <path d="M76 32v-10" fill="none" stroke="#111827" stroke-width="6" stroke-linecap="round"/>
+</svg>

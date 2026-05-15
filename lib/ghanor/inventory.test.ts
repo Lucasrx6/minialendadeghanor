@@ -47,9 +47,9 @@ describe("carryCapacity", () => {
   it("For +0 = 10 espaços",  () => expect(carryCapacity(0)).toBe(10));
   it("For +2 = 14 espaços",  () => expect(carryCapacity(2)).toBe(14));
   it("For +5 = 20 espaços",  () => expect(carryCapacity(5)).toBe(20));
-  it("For -1 = 9 espaços (multiplicador 1)", () => expect(carryCapacity(-1)).toBe(9));
-  it("For -3 = 7 espaços",   () => expect(carryCapacity(-3)).toBe(7));
-  it("For -10 nunca vai abaixo de 1", () => expect(carryCapacity(-10)).toBeGreaterThanOrEqual(1));
+  it("For -1 = 9 espaços", () => expect(carryCapacity(-1)).toBe(9));
+  it("For -3 = 7 espaços", () => expect(carryCapacity(-3)).toBe(7));
+  it("For negativa subtrai 1 por ponto", () => expect(carryCapacity(-10)).toBe(0));
 });
 
 describe("totalSpaces", () => {

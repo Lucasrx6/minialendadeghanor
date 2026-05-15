@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="12" y="12" width="104" height="104" rx="16" fill="#F5E6C8" stroke="#000" stroke-width="6"/>
+  <!-- Escudo grande -->
+  <path d="M64 28c18 6 28 6 28 6v28c0 38-16 46-28 54-12-8-28-16-28-54V34s10 0 28-6Z" fill="#EAB308" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <!-- Marca -->
+  <path d="M64 40v44" fill="none" stroke="#111827" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="64" cy="64" r="14" fill="#22C55E" stroke="#000" stroke-width="6"/>
+</svg>

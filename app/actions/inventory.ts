@@ -42,7 +42,10 @@ const AddSchema = z.object({
   isArcanium: z.boolean().default(false),
   arcaniumSpellCircle: z.number().int().min(1).max(5).optional(),
   customLabel: z.string().max(100).optional(),
-  acquiredFrom: z.enum(["starter", "origin", "shop", "loot", "craft", "gift"]).default("loot"),
+  acquiredFrom: z.enum(["starter", "origin", "shop", "loot", "craft", "gift", "manual", "dm_manual"]).default("loot"),
+  locationDetails: z.string().max(200).optional(),
+  chargePc: z.boolean().optional(),
+  isDmMode: z.boolean().optional(),
   location: z.enum(["equipped", "worn", "carried", "mount", "storage"]).default("carried"),
 });
 
@@ -98,12 +101,31 @@ export async function addToInventory(raw: z.infer<typeof AddSchema>) {
       is_arcanium: input.isArcanium,
       arcanium_spell_circle: input.arcaniumSpellCircle ?? null,
       custom_label: input.customLabel ?? null,
-      acquired_from: input.acquiredFrom,
+      acquired_from: input.isDmMode ? "dm_manual" : input.acquiredFrom,
     })
     .select("id")
     .single();
 
   if (error) throw new Error(error.message);
+
+  if (input.chargePc) {
+    const { data: catalogItem } = await admin.from("items").select("name, price_pc").eq("id", item.id).single();
+    if (catalogItem) {
+      const character = await assertOwnership(input.characterId, user.id);
+      const cost = catalogItem.price_pc * input.quantity;
+      if (character.money_pc < cost) throw new Error("Saldo insuficiente.");
+      const newBalance = character.money_pc - cost;
+      await admin.from("characters").update({ money_pc: newBalance }).eq("id", input.characterId);
+      await admin.from("money_transactions").insert({
+        character_id: input.characterId,
+        user_id: user.id,
+        amount_pc: -cost,
+        reason: `Compra manual: ${catalogItem.name}`,
+        related_inventory_id: inv.id,
+        balance_after_pc: newBalance,
+      });
+    }
+  }
 
   revalidatePath(`/characters/${input.characterId}`);
   return { inventoryId: inv.id };
@@ -379,7 +401,7 @@ export async function getInventory(characterId: string) {
   const { data, error } = await supabase
     .from("character_inventory")
     .select(`
-      id, quantity, location, improvements, is_arcanium, arcanium_spell_circle,
+      id, quantity, location, location_details, improvements, is_arcanium, arcanium_spell_circle,
       mortifice_improvements, notes, custom_label, acquired_from, acquired_at,
       custom_name, custom_data,
       items (
@@ -396,6 +418,174 @@ export async function getInventory(characterId: string) {
 
   if (error) throw new Error(error.message);
   return data ?? [];
+}
+
+// ─── addQuickItem ─────────────────────────────────────────────────────────────
+
+export async function addQuickItem(input: {
+  characterId: string;
+  name: string;
+  spaces?: number;
+  notes?: string;
+  location?: InventoryLocation;
+  quantity?: number;
+  isDmMode?: boolean;
+}) {
+  const user = await getAuthenticatedUser();
+  await assertOwnership(input.characterId, user.id);
+  const admin = createAdminClient();
+
+  const { data: inv, error } = await admin.from("character_inventory").insert({
+    character_id: input.characterId,
+    user_id: user.id,
+    custom_name: input.name,
+    custom_data: {
+      category: "bens_comuns",
+      spaces: input.spaces ?? 1,
+      description: input.notes ?? null,
+    },
+    quantity: input.quantity ?? 1,
+    location: input.location ?? "carried",
+    acquired_from: input.isDmMode ? "dm_manual" : "manual",
+    notes: input.notes ?? null,
+  }).select("id").single();
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/characters/${input.characterId}`);
+  return { inventoryId: inv.id };
+}
+
+// ─── editInventoryItem ────────────────────────────────────────────────────────
+
+const EditSchema = z.object({
+  inventoryId: z.string().uuid(),
+  updates: z.object({
+    quantity: z.number().int().positive().optional(),
+    location: z.enum(["equipped", "worn", "carried", "mount", "storage"]).optional(),
+    locationDetails: z.string().max(200).optional(),
+    customLabel: z.string().max(100).optional(),
+    notes: z.string().max(2000).optional(),
+    improvements: z.number().int().min(0).max(4).optional(),
+    isArcanium: z.boolean().optional(),
+    arcaniumSpellCircle: z.number().int().min(1).max(5).optional(),
+    customData: z.record(z.string(), z.unknown()).optional(),
+    customName: z.string().min(1).max(120).optional(),
+  }),
+  isDmMode: z.boolean().optional(),
+});
+
+export async function editInventoryItem(raw: z.infer<typeof EditSchema>) {
+  const input = EditSchema.parse(raw);
+  const user = await getAuthenticatedUser();
+  const admin = createAdminClient();
+
+  const { data: inv } = await admin
+    .from("character_inventory")
+    .select("character_id, user_id, item_id, custom_name")
+    .eq("id", input.inventoryId)
+    .single();
+
+  if (!inv || inv.user_id !== user.id) throw new Error("Item não encontrado.");
+
+  const patch: Record<string, unknown> = {};
+  const u = input.updates;
+  if (u.quantity != null) patch.quantity = u.quantity;
+  if (u.location) patch.location = u.location;
+  if (u.locationDetails !== undefined) patch.location_details = u.locationDetails;
+  if (u.customLabel !== undefined) patch.custom_label = u.customLabel;
+  if (u.notes !== undefined) patch.notes = u.notes;
+  if (input.isDmMode && u.improvements != null) patch.improvements = u.improvements;
+  if (input.isDmMode && u.isArcanium != null) {
+    patch.is_arcanium = u.isArcanium;
+    patch.arcanium_spell_circle = u.isArcanium ? (u.arcaniumSpellCircle ?? 1) : null;
+  }
+  if (inv.custom_name && u.customName) patch.custom_name = u.customName;
+  if (inv.custom_name && u.customData) patch.custom_data = u.customData;
+
+  await admin.from("character_inventory").update(patch).eq("id", input.inventoryId);
+  revalidatePath(`/characters/${inv.character_id}`);
+}
+
+// ─── deleteInventoryItem ──────────────────────────────────────────────────────
+
+export async function deleteInventoryItem(inventoryId: string) {
+  const user = await getAuthenticatedUser();
+  const admin = createAdminClient();
+  const { data: inv } = await admin
+    .from("character_inventory")
+    .select("character_id, user_id")
+    .eq("id", inventoryId)
+    .single();
+  if (!inv || inv.user_id !== user.id) throw new Error("Item não encontrado.");
+  await admin.from("character_inventory").delete().eq("id", inventoryId);
+  revalidatePath(`/characters/${inv.character_id}`);
+}
+
+// ─── splitStack ───────────────────────────────────────────────────────────────
+
+export async function splitStack(inventoryId: string, splitQuantity: number) {
+  if (splitQuantity < 1) throw new Error("Quantidade inválida.");
+  const user = await getAuthenticatedUser();
+  const admin = createAdminClient();
+  const { data: inv } = await admin
+    .from("character_inventory")
+    .select("*")
+    .eq("id", inventoryId)
+    .single();
+  if (!inv || inv.user_id !== user.id) throw new Error("Item não encontrado.");
+  if (splitQuantity >= inv.quantity) throw new Error("Quantidade maior que a pilha.");
+
+  await admin.from("character_inventory").update({ quantity: inv.quantity - splitQuantity }).eq("id", inventoryId);
+
+  const { item_id, custom_name, custom_data, location, improvements, is_arcanium, arcanium_spell_circle, custom_label, notes, acquired_from, character_id, user_id } = inv;
+  const { data: created, error } = await admin.from("character_inventory").insert({
+    character_id,
+    user_id,
+    item_id,
+    custom_name,
+    custom_data,
+    quantity: splitQuantity,
+    location,
+    improvements,
+    is_arcanium,
+    arcanium_spell_circle,
+    custom_label,
+    notes,
+    acquired_from,
+  }).select("id").single();
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/characters/${character_id}`);
+  return { newInventoryId: created.id };
+}
+
+// ─── adjustMoney ──────────────────────────────────────────────────────────────
+
+export async function adjustMoney(input: {
+  characterId: string;
+  amountPc: number;
+  reason: string;
+  isDmMode?: boolean;
+}) {
+  if (!input.reason.trim()) throw new Error("Informe o motivo do ajuste.");
+  const user = await getAuthenticatedUser();
+  const character = await assertOwnership(input.characterId, user.id);
+  const admin = createAdminClient();
+
+  const newBalance = character.money_pc + input.amountPc;
+  if (newBalance < 0) throw new Error("Saldo não pode ficar negativo.");
+
+  await admin.from("characters").update({ money_pc: newBalance }).eq("id", input.characterId);
+  await admin.from("money_transactions").insert({
+    character_id: input.characterId,
+    user_id: user.id,
+    amount_pc: input.amountPc,
+    reason: input.isDmMode ? `[DM] ${input.reason}` : input.reason,
+    balance_after_pc: newBalance,
+  });
+
+  revalidatePath(`/characters/${input.characterId}`);
+  return { newBalance };
 }
 
 export async function getMoneyTransactions(characterId: string) {

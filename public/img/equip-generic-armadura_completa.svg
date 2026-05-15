@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="12" y="12" width="104" height="104" rx="16" fill="#F5E6C8" stroke="#000" stroke-width="6"/>
+  <!-- Corpo da armadura -->
+  <path d="M44 34c10-10 30-10 40 0l4 20c2 26-4 40-24 50-20-10-26-24-24-50l4-20Z" fill="#EAB308" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <!-- Placas/linhas -->
+  <path d="M50 48h28" fill="none" stroke="#111827" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M48 60h32" fill="none" stroke="#111827" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+  <path d="M54 72h20" fill="none" stroke="#111827" stroke-width="5" stroke-linecap="round" opacity="0.3"/>
+  <!-- Ombros -->
+  <path d="M40 44c6-6 10-10 16-10" fill="none" stroke="#111827" stroke-width="6" stroke-linecap="round"/>
+  <path d="M88 44c-6-6-10-10-16-10" fill="none" stroke="#111827" stroke-width="6" stroke-linecap="round"/>
+</svg>

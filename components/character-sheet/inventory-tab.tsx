@@ -8,12 +8,14 @@ import {
 } from "lucide-react";
 import {
   formatMoney, formatMoneyPP, carryCapacity, maxCarryCapacity, totalSpaces,
-  isOverloaded, maxWornItems, priceWithArcanium,
+  carryZone, WORN_LIMIT, priceWithArcanium,
 } from "@/lib/ghanor/inventory";
 import {
-  moveItem, sellItem, adjustQuantity, type InventoryLocation
+  moveItem, sellItem, adjustQuantity, adjustMoney, type InventoryLocation,
 } from "@/app/actions/inventory";
+import { AddItemModal } from "@/components/inventory/add-item-modal";
 import { Button } from "@/components/ui/button";
+import { Input, Textarea } from "@/components/ui/input";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -70,6 +72,8 @@ type Props = {
   inventory: InvEntry[];
   transactions: MoneyTx[];
   characterClass: string;
+  catalog: Array<{ slug: string; name: string; category: string; price_pc: number }>;
+  isDmMode: boolean;
 };
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
@@ -104,12 +108,16 @@ function itemSpaces(entry: InvEntry): number {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
-export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, transactions, characterClass }: Props) {
+export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, transactions, characterClass, catalog, isDmMode }: Props) {
   const [tab, setTab] = useState<"equipped" | "carried" | "storage" | "history">("carried");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const [sellConfirm, setSellConfirm] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [showMoney, setShowMoney] = useState(false);
+  const [moneyReason, setMoneyReason] = useState("");
+  const [moneyPcAdj, setMoneyPcAdj] = useState(0);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -126,10 +134,9 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
   const usedSpaces = active.reduce((s, i) => s + itemSpaces(i), 0);
   const capacity = carryCapacity(strMod);
   const maxCarry = maxCarryCapacity(strMod);
-  const overloaded = isOverloaded(usedSpaces, strMod);
+  const zone = carryZone(usedSpaces, strMod);
   const wornCount = [...equipped, ...worn].length;
-  const maxWorn = maxWornItems(level);
-  const isMaxCarry = usedSpaces > maxCarry;
+  const maxWorn = WORN_LIMIT;
 
   const pct = Math.min(100, (usedSpaces / capacity) * 100);
 
@@ -169,22 +176,22 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
           <span className="font-bold text-amber-200 flex items-center gap-2">
             <Package size={16} /> Carga
           </span>
-          <span className={isMaxCarry ? "text-red-400 font-bold" : overloaded ? "text-amber-300 font-semibold" : "text-stone-400"}>
+          <span className={zone === "blocked" ? "text-red-400 font-bold" : zone === "overloaded" ? "text-amber-300 font-semibold" : "text-emerald-300"}>
             {usedSpaces.toFixed(1)} / {capacity} espaços
-            {isMaxCarry ? ` (máx. ${maxCarry})` : overloaded ? " (sobrecarregado)" : ""}
+            {zone === "blocked" ? ` (máx. ${maxCarry})` : zone === "overloaded" ? " (sobrecarregado)" : ""}
           </span>
         </div>
         <div className="h-2 rounded-full bg-stone-800 overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${overloaded ? "bg-red-500" : "bg-amber-500"}`}
+            className={`h-full rounded-full transition-all ${zone === "blocked" ? "bg-red-600" : zone === "overloaded" ? "bg-amber-500" : "bg-emerald-500"}`}
             style={{ width: `${pct}%` }}
           />
         </div>
-        {isMaxCarry ? (
+        {zone === "blocked" ? (
           <p className="mt-2 text-red-400 text-xs font-semibold">
             ⚠ CARGA MÁXIMA — reduz o personagem a zero progresso e exige descarte imediato.
           </p>
-        ) : overloaded ? (
+        ) : zone === "overloaded" ? (
           <p className="mt-2 text-red-400 text-xs font-semibold">
             ⚠ SOBRECARGA — −5 em penalidade de armadura, deslocamento −3m
           </p>
@@ -195,13 +202,65 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
         </div>
       </div>
 
-      {/* Botão loja */}
+      <div className="grid grid-cols-2 gap-2">
+        <Button fullWidth variant="primary" onClick={() => setShowAdd(true)}>
+          <Plus size={16} /> Adicionar item
+        </Button>
+        <Button fullWidth variant="secondary" onClick={() => setShowMoney(true)}>
+          Ajustar dinheiro
+        </Button>
+      </div>
+
       <button
         onClick={() => router.push(`/characters/${characterId}/shop`)}
         className="w-full flex items-center justify-center gap-2 rounded-xl py-3 font-bold text-sm border-2 border-dashed border-amber-700 text-amber-800 hover:bg-amber-50 transition"
       >
         <ShoppingBag size={16} /> Visitar Mercador
       </button>
+
+      <AddItemModal
+        open={showAdd}
+        onClose={() => setShowAdd(false)}
+        characterId={characterId}
+        catalog={catalog}
+        isDmMode={isDmMode}
+        onSuccess={showToast}
+      />
+
+      {showMoney && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4">
+          <div className="w-full max-w-md rounded-t-2xl bg-amber-50 p-4 sm:rounded-2xl space-y-3">
+            <h3 className="text-lg font-black">Ajustar dinheiro</h3>
+            <p className="text-sm text-stone-600">Saldo atual: {formatMoney(moneyPc)}</p>
+            <label className="block text-sm font-semibold">
+              Valor em PC (+ ou −)
+              <Input type="number" value={moneyPcAdj} onChange={(e) => setMoneyPcAdj(Number(e.target.value))} />
+            </label>
+            <label className="block text-sm font-semibold">
+              Motivo{!isDmMode && " (obrigatório)"}
+              <Textarea value={moneyReason} onChange={(e) => setMoneyReason(e.target.value)} />
+            </label>
+            <div className="flex gap-2">
+              <Button variant="secondary" fullWidth onClick={() => setShowMoney(false)}>Cancelar</Button>
+              <Button
+                fullWidth
+                disabled={!isDmMode && !moneyReason.trim()}
+                onClick={() => startTransition(async () => {
+                  try {
+                    await adjustMoney({ characterId, amountPc: moneyPcAdj, reason: moneyReason || "Ajuste DM", isDmMode });
+                    setShowMoney(false);
+                    showToast("Dinheiro atualizado.");
+                  } catch (e) {
+                    showToast(e instanceof Error ? e.message : "Erro.");
+                  }
+                })}
+              >
+                Aplicar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Tabs ───────────────────────────────────────────── */}
       <div className="flex gap-1 bg-stone-100 rounded-xl p-1">

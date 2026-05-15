@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="12" y="12" width="104" height="104" rx="16" fill="#F5E6C8" stroke="#000" stroke-width="6"/>
+  <!-- Frasco -->
+  <path d="M58 26h12l6 10v10c0 6-4 10-10 10H62c-6 0-10-4-10-10V36l6-10Z" fill="#3B82F6" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M48 52h32l-6 46c-1 8-6 14-16 14s-15-6-16-14l-6-46Z" fill="#22C55E" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <!-- Bolhas -->
+  <circle cx="58" cy="76" r="6" fill="#EAB308" stroke="#000" stroke-width="4"/>
+  <circle cx="73" cy="86" r="4" fill="#EAB308" stroke="#000" stroke-width="4"/>
+  <!-- Sem texto (ícone “sem nomenclatura”) -->
+</svg>

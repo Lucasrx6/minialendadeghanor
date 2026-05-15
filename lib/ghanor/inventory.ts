@@ -38,9 +38,9 @@ export function formatMoneyPP(pc: number): string {
  * Força positiva: 10 + 2 × For
  * Força negativa: 10 + 1 × For (pág. 96)
  */
+/** Capacidade de carga em espaços (livro pág. 97). */
 export function carryCapacity(strMod: number): number {
-  if (strMod >= 0) return 10 + 2 * strMod;
-  return Math.max(1, 10 + strMod); // Força negativa usa multiplicador 1
+  return 10 + (strMod >= 0 ? 2 * strMod : strMod);
 }
 
 /** Capacidade máxima de carga antes de atingir o limite físico extremo. */
@@ -61,9 +61,11 @@ export function isOverloaded(usedSpaces: number, strMod: number): boolean {
 
 // ─── Limite de itens vestidos ──────────────────────────────────────────────────
 
-/** Máximo de itens vestidos. Agora fixo em 4 itens independentemente do nível. */
+/** Limite fixo de itens vestidos (livro pág. 97). */
+export const WORN_LIMIT = 4;
+
 export function maxWornItems(_level: number): number {
-  return 4;
+  return WORN_LIMIT;
 }
 
 
@@ -191,8 +193,25 @@ export function computeDefenseWithEquipment(
   };
 }
 
-export function computeMovementWithEquipment(baseMovementM: number, equippedArmorCategory?: string | null): number {
-  return equippedArmorCategory === "pesada" ? Math.max(0, baseMovementM - 3) : baseMovementM;
+export function computeMovementWithEquipment(
+  baseMovementM: number,
+  equippedArmorCategory?: string | null,
+  overloaded = false,
+): number {
+  let movement = baseMovementM;
+  if (equippedArmorCategory === "pesada") movement -= 3;
+  if (overloaded) movement -= 3;
+  return Math.max(0, movement);
+}
+
+export type CarryZone = "ok" | "overloaded" | "blocked";
+
+export function carryZone(usedSpaces: number, strMod: number): CarryZone {
+  const cap = carryCapacity(strMod);
+  const max = maxCarryCapacity(strMod);
+  if (usedSpaces > max) return "blocked";
+  if (usedSpaces > cap) return "overloaded";
+  return "ok";
 }
 
 
@@ -201,13 +220,89 @@ export function computeMovementWithEquipment(baseMovementM: number, equippedArmo
 /** Perícias afetadas por penalidade de armadura (pág. 97) */
 export const ARMOR_PENALTY_SKILLS = ["acrobacia", "furtividade", "ladinagem"] as const;
 
+const SKILL_TO_ATTR: Record<string, "str" | "dex" | "con" | "int" | "wis" | "cha"> = {
+  acrobacia: "dex", adestramento: "cha", atletismo: "str", atuacao: "cha",
+  cavalgar: "dex", conhecimento: "int", cura: "wis", diplomacia: "cha",
+  enganacao: "cha", fortitude: "con", furtividade: "dex", guerra: "int",
+  iniciativa: "dex", intimidacao: "cha", intuicao: "wis", investigacao: "int",
+  ladinagem: "dex", luta: "str", misticismo: "int", nobreza: "int",
+  oficio: "int", percepcao: "wis", pontaria: "dex", reflexos: "dex",
+  religiao: "wis", sobrevivencia: "wis", vontade: "wis",
+};
+
+export function isCharacterProficientInArmor(
+  classId: string,
+  armor?: { armor_category?: string | null } | null,
+): boolean {
+  if (!armor?.armor_category) return true;
+  const cat = armor.armor_category;
+  if (cat === "pesada") return hasHeavyArmorProficiency(classId);
+  if (cat === "leve" || cat.startsWith("escudo")) return hasLightArmorProficiency(classId) || hasShieldProficiency(classId);
+  return true;
+}
+
+export function appliesArmorPenaltyToSkill(
+  skillId: string,
+  armorPenalty: number,
+  options: {
+    characterClass: string;
+    equippedArmor?: EquippedArmor | null;
+    equippedShield?: EquippedShield | null;
+  },
+): boolean {
+  if (armorPenalty >= 0) return false;
+  if (ARMOR_PENALTY_SKILLS.includes(skillId as typeof ARMOR_PENALTY_SKILLS[number])) return true;
+
+  const attr = SKILL_TO_ATTR[skillId];
+  if (attr !== "str" && attr !== "dex") return false;
+
+  const proficientArmor = isCharacterProficientInArmor(options.characterClass, options.equippedArmor);
+  const proficientShield = options.equippedShield
+    ? hasShieldProficiency(options.characterClass)
+    : true;
+
+  if (!proficientArmor && options.equippedArmor) return true;
+  if (!proficientShield && options.equippedShield) return true;
+  return false;
+}
+
 export function getArmorPenaltyForSkill(
   skillId: string,
-  armorPenalty: number
+  armorPenalty: number,
+  options?: {
+    characterClass?: string;
+    equippedArmor?: EquippedArmor | null;
+    equippedShield?: EquippedShield | null;
+  },
 ): number {
-  return ARMOR_PENALTY_SKILLS.includes(skillId as typeof ARMOR_PENALTY_SKILLS[number])
+  if (!options?.characterClass) {
+    return ARMOR_PENALTY_SKILLS.includes(skillId as typeof ARMOR_PENALTY_SKILLS[number])
+      ? armorPenalty
+      : 0;
+  }
+  return appliesArmorPenaltyToSkill(skillId, armorPenalty, {
+    characterClass: options.characterClass,
+    equippedArmor: options.equippedArmor,
+    equippedShield: options.equippedShield,
+  })
     ? armorPenalty
     : 0;
+}
+
+/** Escudo como ataque (proficiência marcial, pág. 107). */
+export function shieldAttackProfile(shieldCategory?: string | null): {
+  damage: string;
+  critical: string;
+  damageType: string;
+} | null {
+  if (!shieldCategory) return null;
+  if (shieldCategory === "escudo_leve") {
+    return { damage: "1d4", critical: "x2", damageType: "impacto" };
+  }
+  if (shieldCategory === "escudo_pesado" || shieldCategory === "escudo_torre") {
+    return { damage: "1d6", critical: "x2", damageType: "impacto" };
+  }
+  return null;
 }
 
 

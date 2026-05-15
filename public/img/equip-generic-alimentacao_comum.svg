@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="12" y="12" width="104" height="104" rx="16" fill="#F5E6C8" stroke="#000" stroke-width="6"/>
+  <!-- Prato -->
+  <circle cx="64" cy="64" r="26" fill="#EAB308" stroke="#000" stroke-width="6"/>
+  <!-- Comida (duas “montanhas”) -->
+  <path d="M50 66c5-12 11-12 16 0-5 6-11 6-16 0Z" fill="#22C55E" stroke="#000" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M64 70c6-10 14-8 18 2-7 8-14 9-18-2Z" fill="#F97316" stroke="#000" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Garfo -->
+  <path d="M82 34v24" fill="none" stroke="#111827" stroke-width="6" stroke-linecap="round"/>
+  <path d="M78 36h8" fill="none" stroke="#111827" stroke-width="6" stroke-linecap="round"/>
+</svg>
