@@ -65,7 +65,7 @@ export function QuizRaceSelect({ initialRace, initialChoices, onNext }: Props) {
         <p className="text-stone-800">
           Quem é você? Selecione sua linhagem.
         </p>
-        <Button variant="outline" onClick={handleRandom} className="mt-2 text-amber-900 border-amber-900/20 hover:bg-amber-100">
+        <Button variant="secondary" onClick={handleRandom} className="mt-2 text-amber-900 border-amber-900/20 hover:bg-amber-100">
           Escolher Aleatório
         </Button>
       </div>
@@ -94,8 +94,8 @@ export function QuizRaceSelect({ initialRace, initialChoices, onNext }: Props) {
             {attributes.map(attr => (
               <Button
                 key={attr}
-                variant={humanoAttrs.includes(attr) ? "default" : "outline"}
-                size="sm"
+                variant={humanoAttrs.includes(attr) ? "primary" : "secondary"}
+                className="px-3 py-1 h-8 text-xs"
                 onClick={() => {
                   if (humanoAttrs.includes(attr)) setHumanoAttrs(humanoAttrs.filter(a => a !== attr));
                   else if (humanoAttrs.length < 3) setHumanoAttrs([...humanoAttrs, attr]);
@@ -115,8 +115,8 @@ export function QuizRaceSelect({ initialRace, initialChoices, onNext }: Props) {
             {attributes.filter(a => a !== "cha").map(attr => (
               <Button
                 key={attr}
-                variant={meioElfoAttr === attr ? "default" : "outline"}
-                size="sm"
+                variant={meioElfoAttr === attr ? "primary" : "secondary"}
+                className="px-3 py-1 h-8 text-xs"
                 onClick={() => setMeioElfoAttr(attr)}
               >
                 {attributeLabels[attr]}
@@ -133,8 +133,8 @@ export function QuizRaceSelect({ initialRace, initialChoices, onNext }: Props) {
             {aberrantMutations.map(mut => (
               <Button
                 key={mut.id}
-                variant={aberranteMutations.includes(mut.id) ? "default" : "outline"}
-                size="sm"
+                variant={aberranteMutations.includes(mut.id) ? "primary" : "secondary"}
+                className="px-3 py-1 h-8 text-xs"
                 onClick={() => {
                   if (aberranteMutations.includes(mut.id)) setAberranteMutations(aberranteMutations.filter(m => m !== mut.id));
                   else if (aberranteMutations.length < 4) setAberranteMutations([...aberranteMutations, mut.id]);
@@ -148,7 +148,7 @@ export function QuizRaceSelect({ initialRace, initialChoices, onNext }: Props) {
       )}
 
       <div className="flex justify-end border-t border-stone-200 pt-6">
-        <Button size="lg" disabled={!isValid()} onClick={handleSubmit}>
+        <Button className="px-6 py-3" disabled={!isValid()} onClick={handleSubmit}>
           Confirmar e Começar o Questionário &rarr;
         </Button>
       </div>

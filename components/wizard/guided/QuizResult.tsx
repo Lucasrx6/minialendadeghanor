@@ -28,8 +28,8 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
 
   const selectedClass = computed.suggestedClasses[selectedClassIndex];
   const selectedOrigin = computed.suggestedOrigins[selectedOriginIndex];
-  const classData = classById[selectedClass as any];
-  const originData = originById[selectedOrigin];
+  const classData = classById[selectedClass as keyof typeof classById];
+  const originData = originById[selectedOrigin as keyof typeof originById];
 
   const handleSave = () => {
     startTransition(async () => {
@@ -78,13 +78,13 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
           <div className="flex justify-between items-start mb-2">
             <h2 className="text-2xl font-black text-stone-950 capitalize">{classData?.name || selectedClass}</h2>
             {computed.suggestedClasses.length > 1 && (
-              <Button variant="outline" size="sm" onClick={() => setSelectedClassIndex((p) => (p + 1) % computed.suggestedClasses.length)}>
+              <Button variant="secondary" className="px-2 py-1 h-8 text-xs" onClick={() => setSelectedClassIndex((p) => (p + 1) % computed.suggestedClasses.length)}>
                 Trocar (Top {computed.suggestedClasses.length})
               </Button>
             )}
           </div>
           <p className="text-stone-700 leading-relaxed text-sm h-16 overflow-hidden text-ellipsis">
-            {classData?.summary || "Um aventureiro habilidoso."}
+            {classData?.proficiency || "Um aventureiro habilidoso."}
           </p>
         </Card>
 
@@ -93,13 +93,13 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
           <div className="flex justify-between items-start mb-2">
             <h2 className="text-2xl font-black text-stone-950 capitalize">{originData?.name || selectedOrigin}</h2>
             {computed.suggestedOrigins.length > 1 && (
-              <Button variant="outline" size="sm" onClick={() => setSelectedOriginIndex((p) => (p + 1) % Math.min(5, computed.suggestedOrigins.length))}>
+              <Button variant="secondary" className="px-2 py-1 h-8 text-xs" onClick={() => setSelectedOriginIndex((p) => (p + 1) % Math.min(5, computed.suggestedOrigins.length))}>
                 Trocar (Top {computed.suggestedOrigins.length})
               </Button>
             )}
           </div>
           <p className="text-stone-700 leading-relaxed text-sm">
-            {originData?.summary || "De onde você veio."}
+            {originData?.benefit || "De onde você veio."}
           </p>
         </Card>
       </div>
@@ -114,7 +114,7 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
         <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8 relative z-10">
           {Object.entries(computed.baseAttributes).map(([attr, val]) => (
             <div key={attr} className="bg-stone-900 rounded-lg p-3 text-center border border-stone-800">
-              <span className="block text-xs font-bold text-stone-500 uppercase">{attributeLabels[attr as any]}</span>
+              <span className="block text-xs font-bold text-stone-500 uppercase">{attributeLabels[attr as keyof typeof attributeLabels]}</span>
               <span className="block text-xl font-black text-amber-400">{val >= 0 ? `+${val}` : val}</span>
             </div>
           ))}
@@ -153,10 +153,10 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
           Você pode editar qualquer detalhe a qualquer momento depois de salvar (e gerar seu retrato na ficha).
         </p>
         <div className="flex flex-wrap justify-center gap-4 w-full">
-          <Button variant="outline" size="lg" onClick={onRestart} disabled={isPending}>
+          <Button variant="secondary" className="px-6 py-3" onClick={onRestart} disabled={isPending}>
             Refazer Questionário
           </Button>
-          <Button size="lg" onClick={handleSave} disabled={isPending} className="px-12">
+          <Button onClick={handleSave} disabled={isPending} className="px-12 py-3">
             {isPending ? "Salvando..." : "Salvar Personagem"}
           </Button>
         </div>

@@ -40,11 +40,11 @@ export function computeCharacter(answers: Answer[], race: RaceId, raceChoices: R
     const opt = q.options.find(o => o.id === ans.optionId);
     if (!opt) continue;
 
-    const p = opt.payload;
-    if (p.attrs) Object.entries(p.attrs).forEach(([k, v]) => attrPoints[k as AttrKey] += v);
-    if (p.classes) Object.entries(p.classes).forEach(([k, v]) => classScores[k as ClassKey] += v);
-    if (p.skills) Object.entries(p.skills).forEach(([k, v]) => skillPoints[k] = (skillPoints[k] || 0) + v);
-    if (p.tags) p.tags.forEach(t => tagCounts[t]++);
+    const payload = opt.payload;
+    if (payload.attrs) Object.entries(payload.attrs).forEach(([k, v]) => attrPoints[k as AttrKey] += (v || 0));
+    if (payload.classes) Object.entries(payload.classes).forEach(([k, v]) => classScores[k as ClassKey] += (v || 0));
+    if (payload.skills) Object.entries(payload.skills).forEach(([k, v]) => skillPoints[k] = (skillPoints[k] || 0) + (v || 0));
+    if (payload.tags) payload.tags.forEach(t => tagCounts[t]++);
   }
 
   // Passo 2 — Distribuir atributos
@@ -129,8 +129,9 @@ export function computeCharacter(answers: Answer[], race: RaceId, raceChoices: R
 
   const validClasses = sortedClasses.filter(c => {
     const data = classById[c];
-    if (!data.primaryAttribute) return true;
-    return finalAttrs[data.primaryAttribute] >= 0;
+    if (!data.keyAttribute) return true;
+    const keys = Array.isArray(data.keyAttribute) ? data.keyAttribute : [data.keyAttribute];
+    return keys.some(k => finalAttrs[k] >= 0);
   });
   const suggestedClasses = validClasses.slice(0, 3);
   const bestClassId = suggestedClasses[0] || "soldado";
@@ -140,10 +141,9 @@ export function computeCharacter(answers: Answer[], race: RaceId, raceChoices: R
   const trainedSkills = new Set<string>();
   bestClassData.fixedSkills.forEach(s => trainedSkills.add(s));
   
-  if (bestClassData.skillChoices && bestClassData.skillChoices.length > 0) {
-    const choice = bestClassData.skillChoices[0];
-    const available = choice.options.filter(s => !trainedSkills.has(s)).sort((a, b) => (skillPoints[b] || 0) - (skillPoints[a] || 0));
-    available.slice(0, choice.amount).forEach(s => trainedSkills.add(s));
+  if (bestClassData.chooseSkills > 0 && bestClassData.skillOptions) {
+    const available = bestClassData.skillOptions.filter(s => !trainedSkills.has(s)).sort((a, b) => (skillPoints[b as any] || 0) - (skillPoints[a as any] || 0));
+    available.slice(0, bestClassData.chooseSkills).forEach(s => trainedSkills.add(s));
   }
 
   // Intellgence bonus skills
@@ -196,8 +196,8 @@ export function computeCharacter(answers: Answer[], race: RaceId, raceChoices: R
 
   const originScores = Object.entries(originsMap).map(([id, reqs]) => {
     let score = 0;
-    Object.entries(reqs.tags).forEach(([t, weight]) => { if (tagCounts[t as Tag] > 0) score += weight; });
-    Object.entries(reqs.skills).forEach(([s, weight]) => { if (skillPoints[s] > 0) score += weight; });
+    Object.entries(reqs.tags).forEach(([t, weight]) => { if (tagCounts[t as Tag] > 0) score += (weight || 0); });
+    Object.entries(reqs.skills).forEach(([s, weight]) => { if (skillPoints[s] > 0) score += (weight || 0); });
     return { id, score };
   }).sort((a, b) => b.score - a.score);
 

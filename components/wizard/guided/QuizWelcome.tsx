@@ -13,7 +13,7 @@ export function QuizWelcome({ onStart }: Props) {
       <p className="max-w-2xl text-xl leading-relaxed text-stone-800">
         Antes da aventura começar, precisamos saber quem você é. Suas respostas vão moldar seus atributos, sua classe e suas perícias. Não há resposta certa — só seja honesto com o tipo de herói que você quer ser.
       </p>
-      <Button size="lg" className="mt-8 text-lg px-8 py-6" onClick={onStart}>
+      <Button className="mt-8 text-lg px-8 py-6" onClick={onStart}>
         Começar a história
       </Button>
     </div>

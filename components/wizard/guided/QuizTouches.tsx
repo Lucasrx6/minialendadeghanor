@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { getRandomName } from "@/lib/ghanor/names";
+import { randomCharacterName } from "@/lib/ghanor/names";
 import type { RaceId } from "@/lib/ghanor/types";
 
 interface Props {
@@ -29,7 +27,7 @@ export function QuizTouches({ race, initialTouches, onSubmit, onBack }: Props) {
   });
 
   const handleRandomName = () => {
-    setData(prev => ({ ...prev, name: getRandomName(race, prev.gender as any) || "Herói Anônimo" }));
+    setData(prev => ({ ...prev, name: randomCharacterName(race) || "Herói Anônimo" }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -49,29 +47,25 @@ export function QuizTouches({ race, initialTouches, onSubmit, onBack }: Props) {
       <form onSubmit={handleSubmit} className="space-y-6 bg-amber-50/50 p-8 rounded-xl border border-amber-900/10 shadow-sm">
         
         <div className="space-y-3">
-          <Label>Gênero</Label>
-          <RadioGroup 
-            value={data.gender} 
-            onValueChange={(v) => setData(p => ({ ...p, gender: v as any }))}
-            className="flex gap-6"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="masc" id="g-masc" />
-              <Label htmlFor="g-masc">Masculino</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="fem" id="g-fem" />
-              <Label htmlFor="g-fem">Feminino</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="neutro" id="g-neu" />
-              <Label htmlFor="g-neu">Neutro</Label>
-            </div>
-          </RadioGroup>
+          <label className="text-sm font-medium leading-none">Gênero</label>
+          <div className="flex gap-6">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input type="radio" name="gender" value="masc" checked={data.gender === "masc"} onChange={(e) => setData(p => ({ ...p, gender: e.target.value as any }))} className="text-amber-600 focus:ring-amber-500 w-4 h-4" />
+              <span className="text-sm">Masculino</span>
+            </label>
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input type="radio" name="gender" value="fem" checked={data.gender === "fem"} onChange={(e) => setData(p => ({ ...p, gender: e.target.value as any }))} className="text-amber-600 focus:ring-amber-500 w-4 h-4" />
+              <span className="text-sm">Feminino</span>
+            </label>
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input type="radio" name="gender" value="neutro" checked={data.gender === "neutro"} onChange={(e) => setData(p => ({ ...p, gender: e.target.value as any }))} className="text-amber-600 focus:ring-amber-500 w-4 h-4" />
+              <span className="text-sm">Neutro</span>
+            </label>
+          </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="name">Nome</Label>
+          <label htmlFor="name" className="text-sm font-medium leading-none">Nome</label>
           <div className="flex gap-2">
             <Input 
               id="name" 
@@ -87,7 +81,7 @@ export function QuizTouches({ race, initialTouches, onSubmit, onBack }: Props) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="age">Idade</Label>
+          <label htmlFor="age" className="text-sm font-medium leading-none">Idade</label>
           <Input 
             id="age" 
             type="number" 
@@ -97,7 +91,7 @@ export function QuizTouches({ race, initialTouches, onSubmit, onBack }: Props) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="appearance">Aparência marcante (Uma frase)</Label>
+          <label htmlFor="appearance" className="text-sm font-medium leading-none">Aparência marcante (Uma frase)</label>
           <Input 
             id="appearance" 
             value={data.appearance} 
@@ -107,7 +101,7 @@ export function QuizTouches({ race, initialTouches, onSubmit, onBack }: Props) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="objective">Objetivo principal (Uma frase)</Label>
+          <label htmlFor="objective" className="text-sm font-medium leading-none">Objetivo principal (Uma frase)</label>
           <Input 
             id="objective" 
             value={data.objective} 
@@ -117,10 +111,11 @@ export function QuizTouches({ race, initialTouches, onSubmit, onBack }: Props) {
         </div>
 
         <div className="mt-12 flex justify-between pt-6 border-t border-stone-200">
+
           <Button type="button" variant="ghost" onClick={onBack}>
             &larr; Voltar
           </Button>
-          <Button type="submit" size="lg">
+          <Button type="submit">
             Ver Resultado &rarr;
           </Button>
         </div>
