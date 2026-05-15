@@ -5,37 +5,48 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { usernameToAuthEmail } from "@/lib/auth/username";
 import { createClient } from "@/lib/supabase/client";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [recoveryEmail, setRecoveryEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string>();
   const [isPending, startTransition] = useTransition();
 
-  function submit(kind: "password" | "magic") {
+  function submit() {
     setMessage(undefined);
     startTransition(async () => {
       const supabase = createClient();
-      const redirectTo = `${window.location.origin}/auth/callback`;
-      const { error } =
-        kind === "magic"
-          ? await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } })
-          : mode === "signup"
-            ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo } })
-            : await supabase.auth.signInWithPassword({ email, password });
+      const authEmail = usernameToAuthEmail(username);
+
+      if (mode === "signup") {
+        const response = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password, recoveryEmail }),
+        });
+        const json = await response.json();
+
+        if (!response.ok) {
+          setMessage(json.error ?? "Nao foi possivel criar a conta.");
+          return;
+        }
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password,
+      });
 
       if (error) {
-        setMessage(error.message);
+        setMessage(mode === "signup" ? "Conta criada, mas nao consegui entrar automaticamente." : "Usuario ou senha invalidos.");
         return;
       }
 
-      if (kind === "magic" || mode === "signup") {
-        setMessage("Confira seu email para continuar.");
-      } else {
-        router.push("/characters");
-      }
+      router.push("/characters");
     });
   }
 
@@ -43,19 +54,41 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     <Card className="mx-auto max-w-md space-y-4">
       <SectionTitle>{mode === "signup" ? "Criar conta" : "Entrar"}</SectionTitle>
       <label className="block text-sm font-semibold">
-        Email
-        <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        Nome de usuario
+        <Input
+          autoComplete="username"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          placeholder="lucasrx6"
+        />
       </label>
       <label className="block text-sm font-semibold">
         Senha
-        <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+        <Input
+          type="password"
+          autoComplete={mode === "signup" ? "new-password" : "current-password"}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
       </label>
+      {mode === "signup" && (
+        <label className="block text-sm font-semibold">
+          Email de recuperacao
+          <Input
+            type="email"
+            autoComplete="email"
+            value={recoveryEmail}
+            onChange={(event) => setRecoveryEmail(event.target.value)}
+            placeholder="voce@email.com"
+          />
+          <span className="mt-1 block text-xs font-normal text-stone-600">
+            Guardado para uma futura recuperacao de senha quando o SMTP estiver configurado.
+          </span>
+        </label>
+      )}
       <div className="flex flex-wrap gap-2">
-        <Button disabled={isPending} onClick={() => submit("password")}>
+        <Button disabled={isPending || !username || !password || (mode === "signup" && !recoveryEmail)} onClick={submit}>
           {mode === "signup" ? "Cadastrar" : "Entrar"}
-        </Button>
-        <Button type="button" variant="secondary" disabled={isPending || !email} onClick={() => submit("magic")}>
-          Magic link
         </Button>
       </div>
       {message && <p className="text-sm font-semibold text-amber-900">{message}</p>}

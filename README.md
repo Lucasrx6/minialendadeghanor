@@ -70,6 +70,10 @@ No Supabase Auth, adicione as URLs de callback:
 - `http://localhost:3000/auth/callback`
 - `https://SEU-PROJETO.vercel.app/auth/callback`
 
+O cadastro usa nome de usuario + senha. Internamente o app cria um email tecnico
+`usuario@users.ghanor.local` ja confirmado via `SUPABASE_SERVICE_ROLE_KEY`, e salva
+o email real informado em `user_metadata.recovery_email` para recuperacao futura.
+
 ## Aviso
 
 Ferramenta criada por fãs. A Lenda de Ghanor é marca registrada da Jambô Editora. Este projeto não é afiliado nem endossado por Jovem Nerd ou Jambô.
