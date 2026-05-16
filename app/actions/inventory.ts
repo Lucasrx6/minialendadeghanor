@@ -344,19 +344,18 @@ export async function sellItem(inventoryId: string, quantity: number = 1) {
 
   const { data: inv } = await admin
     .from("character_inventory")
-    .select("character_id, user_id, quantity, improvements, is_arcanium, arcanium_spell_circle, items(name, price_pc)")
+    .select("character_id, user_id, quantity, improvements, is_arcanium, arcanium_spell_circle, items(name, price_pc, is_purchasable)")
     .eq("id", inventoryId)
     .single();
 
   if (!inv || inv.user_id !== user.id) throw new Error("Item não encontrado.");
   if (quantity > inv.quantity) throw new Error("Quantidade maior que o disponível.");
 
-  const item = inv.items as unknown as { name: string; price_pc: number };
-  const unitPrice = priceWithArcanium(
-    item.price_pc,
-    inv.improvements,
-    inv.arcanium_spell_circle ?? undefined
-  );
+  const item = inv.items as unknown as { name: string; price_pc: number; is_purchasable: boolean } | null;
+  const isPurchasable = item?.is_purchasable !== false;
+  const unitPrice = isPurchasable
+    ? priceWithArcanium(item?.price_pc ?? 0, inv.improvements, inv.arcanium_spell_circle ?? undefined)
+    : 0;
   const refund = Math.floor(unitPrice * 0.5) * quantity; // 50% do preço
 
   const character = await assertOwnership(inv.character_id, user.id);
@@ -377,7 +376,7 @@ export async function sellItem(inventoryId: string, quantity: number = 1) {
     character_id: inv.character_id,
     user_id: user.id,
     amount_pc: refund,
-    reason: `Venda: ${item.name}${quantity > 1 ? ` ×${quantity}` : ""} (50%)`,
+    reason: `Venda: ${item?.name ?? "Item"}${quantity > 1 ? ` ×${quantity}` : ""} (50%)`,
     related_inventory_id: inventoryId,
     balance_after_pc: newBalance,
   });
@@ -514,7 +513,7 @@ export async function getInventory(characterId: string) {
         weapon_proficiency, weapon_grip,
         weapon_damage_dice, weapon_critical, weapon_range, weapon_damage_type,
         weapon_abilities, armor_category, armor_defense_bonus, armor_penalty,
-        is_stackable, can_be_held, can_be_worn, is_two_handed, is_cosmetic
+        is_stackable, can_be_held, can_be_worn, is_two_handed, is_cosmetic, is_purchasable
       )
     `)
     .eq("character_id", characterId)

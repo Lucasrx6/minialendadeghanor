@@ -44,6 +44,7 @@ type ItemRow = {
   can_be_worn: boolean;
   is_two_handed: boolean;
   is_cosmetic: boolean;
+  is_purchasable: boolean;
 };
 
 type InvEntry = {
@@ -99,8 +100,9 @@ const CATEGORY_LABEL: Record<string, string> = {
   vestuario: "Vestuário", equipamento_aventura: "Aventura",
   ferramenta: "Ferramenta", esoterico: "Esotérico",
   alquimico_preparado: "Alquímico", alquimico_veneno: "Veneno",
-  alquimico_catalisador: "Catalisador", municao: "Munição",
-  animal: "Animal", servico: "Serviço", bens_comuns: "Bens",
+  alquimico_catalisador: "Catalisador", alquimia_mistica: "Alq. Mística",
+  municao: "Munição", animal: "Animal", veiculo: "Veículo",
+  servico: "Serviço", bens_comuns: "Bens", item_magico: "Item Mágico",
 };
 
 function itemName(entry: InvEntry): string {
@@ -396,15 +398,22 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
       {sellConfirm && (() => {
         const entry = inventory.find(i => i.id === sellConfirm);
         if (!entry) return null;
-        const price = priceWithArcanium(entry.items?.price_pc ?? 0, entry.improvements, entry.arcanium_spell_circle ?? undefined);
+        const isNonPurchasable = entry.items?.is_purchasable === false;
+        const price = isNonPurchasable ? 0 : priceWithArcanium(entry.items?.price_pc ?? 0, entry.improvements, entry.arcanium_spell_circle ?? undefined);
         const refund = Math.floor(price * 0.5);
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
             <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
               <h3 className="font-black text-lg text-stone-950">Vender {itemName(entry)}?</h3>
-              <p className="text-stone-600 text-sm">
-                Preço de venda: <strong className="text-amber-800">{formatMoneyPP(refund)}</strong> (50% do preço cheio)
-              </p>
+              {isNonPurchasable ? (
+                <p className="text-amber-700 text-sm border border-amber-200 bg-amber-50 rounded-lg px-3 py-2">
+                  Este item não tem valor comercial — nenhum mercador pagará por ele (0 PC).
+                </p>
+              ) : (
+                <p className="text-stone-600 text-sm">
+                  Preço de venda: <strong className="text-amber-800">{formatMoneyPP(refund)}</strong> (50% do preço cheio)
+                </p>
+              )}
               <p className="text-xs text-stone-400">Esta ação não pode ser desfeita.</p>
               <div className="flex gap-3">
                 <Button variant="secondary" className="flex-1" onClick={() => setSellConfirm(null)}>Cancelar</Button>
@@ -493,6 +502,9 @@ function InventoryCard({
         {item?.is_cosmetic && (
           <span className="text-xs font-medium text-stone-400 bg-stone-100 rounded-full px-2 py-0.5">cosmético</span>
         )}
+        {item && item.is_purchasable === false && (
+          <span className="text-xs font-medium text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">não-comercial</span>
+        )}
         {badge && (
           <span className="text-xs font-bold text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5">{badge}</span>
         )}
@@ -505,6 +517,11 @@ function InventoryCard({
           {item?.is_cosmetic && (
             <p className="text-xs text-stone-400 italic border-l-2 border-stone-200 pl-2">
               Cosmético — não conta no limite de espaços nem no de itens vestidos (livro pág. 97).
+            </p>
+          )}
+          {item && item.is_purchasable === false && (
+            <p className="text-xs text-amber-700 italic border-l-2 border-amber-300 pl-2">
+              Não-comercial — este item não tem valor de mercado e não pode ser vendido por PC.
             </p>
           )}
           {item?.description && <p className="text-xs text-stone-600 italic">{item.description}</p>}

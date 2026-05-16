@@ -4,6 +4,7 @@ const path = require("path");
 const SEED_PATHS = [
   path.join(__dirname, "..", "lib", "supabase", "seed_items_weapons.sql"),
   path.join(__dirname, "..", "lib", "supabase", "seed_items_general.sql"),
+  path.join(__dirname, "..", "lib", "supabase", "seed_items_catalog.sql"),
 ];
 
 /** 50 armas de combate da Tabela 3-4 (sem munição) */
@@ -270,10 +271,25 @@ function main() {
     }
   }
 
+  const EXPECTED_CATEGORY_COUNTS = {
+    arma: 53, armadura: 10, escudo: 3,
+    equipamento_aventura: 24, ferramenta: 14, vestuario: 25, esoterico: 15,
+    alquimico_preparado: 8, alquimico_catalisador: 15, alquimico_veneno: 13,
+    alquimia_mistica: 11, animal: 6, veiculo: 3, servico: 16,
+    bens_comuns: 24, item_magico: 15,
+  };
+
   console.log(`Validação do seed: ${stats.totalRows} itens`);
   Object.entries(stats.categories)
     .sort((a, b) => b[1] - a[1])
-    .forEach(([cat, count]) => console.log(`  • ${cat}: ${count}`));
+    .forEach(([cat, count]) => {
+      const expected = EXPECTED_CATEGORY_COUNTS[cat];
+      const note = expected !== undefined && count !== expected ? ` ← esperado ${expected}` : "";
+      console.log(`  • ${cat}: ${count}${note}`);
+      if (expected !== undefined && count !== expected) {
+        errors.push(`Categoria '${cat}': encontrada ${count}, esperada ${expected}`);
+      }
+    });
   console.log(`  • armas de combate: ${weaponSlugs.size} (esperadas: ${EXPECTED_WEAPON_SLUGS.length})`);
 
   if (errors.length > 0) {

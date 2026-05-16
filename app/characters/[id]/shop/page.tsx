@@ -16,11 +16,12 @@ export default async function ShopRoute({ params }: { params: Promise<{ id: stri
 
   if (!character) notFound();
 
-  // Busca catálogo completo (itens à venda, exceto bens_comuns e servicos)
+  // Busca catálogo completo (itens à venda, exceto categorias não-comerciais)
   const { data: items } = await admin
     .from("items")
     .select("*")
     .not("category", "in", "(bens_comuns,servico,animal,veiculo,municao)")
+    .eq("is_purchasable", true)
     .order("category")
     .order("price_pc");
 

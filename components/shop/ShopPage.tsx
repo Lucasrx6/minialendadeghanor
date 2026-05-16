@@ -57,9 +57,13 @@ const CATEGORIES = [
   { key: "escudo", label: "Escudos", icon: <Shield size={14} /> },
   { key: "equipamento_aventura", label: "Aventura", icon: <Package size={14} /> },
   { key: "vestuario", label: "Vestuário", icon: <Shirt size={14} /> },
+  { key: "ferramenta", label: "Ferramentas", icon: <Package size={14} /> },
   { key: "esoterico", label: "Esotérico", icon: <Star size={14} /> },
   { key: "alquimico_preparado", label: "Alquímicos", icon: <Beaker size={14} /> },
+  { key: "alquimico_catalisador", label: "Catalisadores", icon: <Beaker size={14} /> },
+  { key: "alquimia_mistica", label: "Alq. Mística", icon: <Beaker size={14} /> },
   { key: "alquimico_veneno", label: "Venenos", icon: <Beaker size={14} /> },
+  { key: "item_magico", label: "Bazar Arcano", icon: <Star size={14} /> },
 ] as const;
 
 const PROF_LABELS: Record<string, string> = {
