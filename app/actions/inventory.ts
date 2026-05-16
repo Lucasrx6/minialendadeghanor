@@ -158,7 +158,7 @@ export async function moveItem(
 
     const isDmMode = options?.isDmMode ?? false;
     const isCustom = !inv.item_id;
-    const item = inv.items as ItemFlags | null;
+    const item = inv.items as unknown as ItemFlags | null;
 
     if (!isDmMode && !isCustom && item) {
       if (newLocation === "equipped") {
@@ -172,7 +172,7 @@ export async function moveItem(
           .neq("id", inventoryId);
 
         const equipped = (equippedRows ?? [])
-          .map(r => r.items as ItemFlags | null)
+          .map(r => r.items as unknown as ItemFlags | null)
           .filter(Boolean) as ItemFlags[];
 
         if (item.category === "escudo" && equipped.some(e => e.category === "escudo")) {
@@ -212,7 +212,7 @@ export async function moveItem(
             .eq("location", "worn")
             .neq("id", inventoryId);
 
-          const hasArmor = (wornRows ?? []).some(r => (r.items as ItemFlags | null)?.category === "armadura");
+          const hasArmor = (wornRows ?? []).some(r => (r.items as unknown as ItemFlags | null)?.category === "armadura");
           if (hasArmor) return { error: "Já há uma armadura vestida. Desvista a armadura atual primeiro." };
         }
       }
