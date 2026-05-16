@@ -189,6 +189,18 @@ export async function buyItem(raw: z.infer<typeof BuySchema>) {
   const newBalance = character.money_pc - totalCost;
 
   // 1. Adiciona ao inventário
+  const newEntry = {
+    character_id: input.characterId,
+    user_id: user.id,
+    item_id: item.id,
+    quantity: input.quantity,
+    location: "carried" as const,
+    improvements: input.improvements,
+    is_arcanium: input.isArcanium,
+    arcanium_spell_circle: input.arcaniumSpellCircle ?? null,
+    acquired_from: "shop" as const,
+  };
+
   let inventoryId: string;
   if (item.is_stackable && input.improvements === 0 && !input.isArcanium) {
     const { data: existing } = await admin
@@ -208,20 +220,22 @@ export async function buyItem(raw: z.infer<typeof BuySchema>) {
         .eq("id", existing.id);
       inventoryId = existing.id;
     } else {
-      const { data: inv } = await admin
+      const { data: inv, error: invErr } = await admin
         .from("character_inventory")
-        .insert({ character_id: input.characterId, user_id: user.id, item_id: item.id, quantity: input.quantity, location: "carried", improvements: input.improvements, is_arcanium: input.isArcanium, arcanium_spell_circle: input.arcaniumSpellCircle ?? null, acquired_from: "shop" })
+        .insert(newEntry)
         .select("id")
         .single();
-      inventoryId = inv!.id;
+      if (invErr || !inv) throw new Error(invErr?.message ?? "Erro ao inserir item no inventário.");
+      inventoryId = inv.id;
     }
   } else {
-    const { data: inv } = await admin
+    const { data: inv, error: invErr } = await admin
       .from("character_inventory")
-      .insert({ character_id: input.characterId, user_id: user.id, item_id: item.id, quantity: input.quantity, location: "carried", improvements: input.improvements, is_arcanium: input.isArcanium, arcanium_spell_circle: input.arcaniumSpellCircle ?? null, acquired_from: "shop" })
+      .insert(newEntry)
       .select("id")
       .single();
-    inventoryId = inv!.id;
+    if (invErr || !inv) throw new Error(invErr?.message ?? "Erro ao inserir item no inventário.");
+    inventoryId = inv.id;
   }
 
   // 2. Debita dinheiro
@@ -401,12 +415,12 @@ export async function getInventory(characterId: string) {
   const { data, error } = await supabase
     .from("character_inventory")
     .select(`
-      id, quantity, location, location_details, improvements, is_arcanium, arcanium_spell_circle,
-      mortifice_improvements, notes, custom_label, acquired_from, acquired_at,
+      id, quantity, location, improvements, is_arcanium, arcanium_spell_circle,
+      notes, custom_label, acquired_from, acquired_at,
       custom_name, custom_data,
       items (
         id, slug, name, category, price_pc, spaces, description,
-        weapon_proficiency, weapon_grip, weapon_purpose,
+        weapon_proficiency, weapon_grip,
         weapon_damage_dice, weapon_critical, weapon_range, weapon_damage_type,
         weapon_abilities, armor_category, armor_defense_bonus, armor_penalty,
         is_stackable

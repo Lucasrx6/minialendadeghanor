@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Package, Sword, Shield, Shirt, Beaker, Star, Clock,
-  Plus, Minus, ShoppingBag, ArrowUpDown, Trash2, Pencil, ChevronDown
+  Plus, Minus, ShoppingBag, ArrowUpDown, Trash2, Pencil, ChevronDown, Wand2,
 } from "lucide-react";
 import {
   formatMoney, formatMoneyPP, carryCapacity, maxCarryCapacity, totalSpaces,
@@ -17,6 +17,7 @@ import { AddItemModal } from "@/components/inventory/add-item-modal";
 import { Button } from "@/components/ui/button";
 import { ItemIcon } from "@/components/ui/item-icon";
 import { Input, Textarea } from "@/components/ui/input";
+import { dmEditInventoryItem, dmDeleteInventoryItem } from "@/app/actions/dm";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -296,6 +297,8 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
                 key={entry.id}
                 entry={entry}
                 isPending={isPending}
+                isDmMode={isDmMode}
+                characterId={characterId}
                 onEquip={() => {
                   const loc: InventoryLocation =
                     entry.items?.category === "armadura" || entry.items?.category === "vestuario"
@@ -323,6 +326,8 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
                 entry={entry}
                 badge="Equipado"
                 isPending={isPending}
+                isDmMode={isDmMode}
+                characterId={characterId}
                 onUnequip={() => handleMove(entry.id, "carried")}
                 onSell={() => setSellConfirm(entry.id)}
                 onQty={undefined}
@@ -344,6 +349,8 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
                 entry={entry}
                 badge="Guardado"
                 isPending={isPending}
+                isDmMode={isDmMode}
+                characterId={characterId}
                 onEquip={() => handleMove(entry.id, "carried")}
                 onSell={() => setSellConfirm(entry.id)}
                 onQty={(d) => handleQty(entry.id, d, entry.quantity)}
@@ -420,12 +427,14 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
 // ─── Card de item ─────────────────────────────────────────────────────────────
 
 function InventoryCard({
-  entry, badge, isPending,
+  entry, badge, isPending, isDmMode, characterId,
   onEquip, onUnequip, onStore, onSell, onQty,
 }: {
   entry: InvEntry;
   badge?: string;
   isPending: boolean;
+  isDmMode?: boolean;
+  characterId: string;
   onEquip?: () => void;
   onUnequip?: () => void;
   onStore?: () => void;
@@ -433,6 +442,15 @@ function InventoryCard({
   onQty?: (delta: number) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [dmLabel, setDmLabel] = useState(entry.custom_label ?? "");
+  const [dmNotes, setDmNotes] = useState(entry.notes ?? "");
+  const [dmImprovements, setDmImprovements] = useState(entry.improvements ?? 0);
+  const [dmIsArcanium, setDmIsArcanium] = useState(entry.is_arcanium ?? false);
+  const [dmArcaniumCircle, setDmArcaniumCircle] = useState(entry.arcanium_spell_circle ?? 1);
+  const [dmSaving, startDmSave] = useTransition();
+  const [dmSaved, setDmSaved] = useState(false);
+  const [dmConfirmDelete, setDmConfirmDelete] = useState(false);
+
   const item = entry.items;
   const name = itemName(entry);
   const cat = item?.category ?? (entry.custom_data?.category as string) ?? "outro";
@@ -469,7 +487,7 @@ function InventoryCard({
       </button>
 
       {/* Expanded */}
-      {expanded && (
+      {expanded && (<>
         <div className="border-t border-stone-100 px-4 py-3 space-y-3 bg-stone-50">
           {item?.description && <p className="text-xs text-stone-600 italic">{item.description}</p>}
 
@@ -511,7 +529,7 @@ function InventoryCard({
             {onEquip && <button onClick={onEquip} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-800 text-amber-50 hover:bg-amber-700 transition disabled:opacity-50">Equipar</button>}
             {onUnequip && <button onClick={onUnequip} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-stone-700 text-white hover:bg-stone-600 transition disabled:opacity-50">Desequipar</button>}
             {onStore && <button onClick={onStore} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-stone-200 text-stone-700 hover:bg-stone-300 transition disabled:opacity-50">Guardar</button>}
-            {onSell && <button onClick={onSell} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition disabled:opacity-50">Vender</button>}
+            {onSell && !isDmMode && <button onClick={onSell} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition disabled:opacity-50">Vender</button>}
             {onQty && entry.items?.is_stackable && (
               <div className="flex items-center gap-1 ml-auto">
                 <button onClick={() => onQty(-1)} disabled={isPending || entry.quantity <= 1} className="w-7 h-7 rounded-lg bg-stone-200 text-stone-700 font-bold hover:bg-stone-300 disabled:opacity-30 transition"><Minus size={12} /></button>
@@ -521,7 +539,148 @@ function InventoryCard({
             )}
           </div>
         </div>
-      )}
+
+        {/* ── Seção Narrador (fora do bg-stone-50, dentro do Fragment) */}
+        {isDmMode && (
+          <div className="border-t-2 border-indigo-100 bg-indigo-50/60 px-4 py-4 space-y-3">
+            <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-600">
+              <Wand2 size={11} /> Narrador
+            </p>
+
+            {/* Rótulo personalizado */}
+            <label className="block">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Rótulo</span>
+              <input
+                type="text"
+                value={dmLabel}
+                onChange={(e) => setDmLabel(e.target.value)}
+                placeholder={item?.name ?? "Nome personalizado…"}
+                className="mt-1 block w-full rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+              />
+            </label>
+
+            {/* Notas */}
+            <label className="block">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Notas homebrew</span>
+              <textarea
+                value={dmNotes}
+                onChange={(e) => setDmNotes(e.target.value)}
+                placeholder="Bônus especiais, descrição da narrativa…"
+                rows={2}
+                className="mt-1 block w-full resize-none rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+              />
+            </label>
+
+            {/* Melhorias (só para itens do catálogo) */}
+            {item && (
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Melhorias</span>
+                <div className="mt-1 flex gap-1.5">
+                  {[0, 1, 2, 3, 4].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setDmImprovements(n)}
+                      className={`h-8 w-8 rounded-lg text-xs font-black transition cursor-pointer ${
+                        dmImprovements === n
+                          ? "bg-indigo-700 text-white shadow"
+                          : "bg-white border border-indigo-200 text-stone-600 hover:bg-indigo-100"
+                      }`}
+                    >
+                      {n === 0 ? "—" : `+${n}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Arcanium (só para itens do catálogo) */}
+            {item && (
+              <div>
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={dmIsArcanium}
+                    onChange={(e) => setDmIsArcanium(e.target.checked)}
+                    className="accent-indigo-600"
+                  />
+                  <span className="text-xs font-bold text-stone-700">Arcanium</span>
+                </label>
+                {dmIsArcanium && (
+                  <div className="mt-1.5 flex gap-1.5">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => setDmArcaniumCircle(n)}
+                        className={`h-7 w-7 rounded-lg text-xs font-black transition cursor-pointer ${
+                          dmArcaniumCircle === n
+                            ? "bg-purple-700 text-white shadow"
+                            : "bg-white border border-purple-200 text-stone-600 hover:bg-purple-100"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                    <span className="ml-1 self-center text-xs text-purple-600">º círculo</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Botões Salvar / Excluir */}
+            <div className="flex gap-2 pt-1">
+              <button
+                disabled={dmSaving}
+                onClick={() =>
+                  startDmSave(async () => {
+                    await dmEditInventoryItem({
+                      inventoryId: entry.id,
+                      characterId,
+                      customLabel: dmLabel || undefined,
+                      notes: dmNotes || undefined,
+                      improvements: dmImprovements,
+                      isArcanium: item ? dmIsArcanium : undefined,
+                      arcaniumSpellCircle: item && dmIsArcanium ? dmArcaniumCircle : undefined,
+                    });
+                    setDmSaved(true);
+                    setTimeout(() => setDmSaved(false), 2500);
+                  })
+                }
+                className="flex-1 rounded-lg bg-indigo-700 py-2 text-xs font-bold text-white transition hover:bg-indigo-600 disabled:opacity-50 cursor-pointer"
+              >
+                {dmSaving ? "Salvando…" : dmSaved ? "✓ Salvo!" : "Salvar alterações"}
+              </button>
+
+              {!dmConfirmDelete ? (
+                <button
+                  onClick={() => setDmConfirmDelete(true)}
+                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 cursor-pointer"
+                >
+                  Excluir
+                </button>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-red-700 font-semibold">Confirmar?</span>
+                  <button
+                    disabled={dmSaving}
+                    onClick={() => startDmSave(async () => {
+                      await dmDeleteInventoryItem(entry.id, characterId);
+                    })}
+                    className="rounded-lg bg-red-700 px-2 py-1 text-xs font-bold text-white hover:bg-red-600 transition cursor-pointer disabled:opacity-50"
+                  >
+                    Sim
+                  </button>
+                  <button
+                    onClick={() => setDmConfirmDelete(false)}
+                    className="rounded-lg bg-stone-200 px-2 py-1 text-xs font-bold text-stone-700 hover:bg-stone-300 transition cursor-pointer"
+                  >
+                    Não
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </>)}
     </div>
   );
 }

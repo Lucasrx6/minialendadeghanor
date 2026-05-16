@@ -27,13 +27,13 @@ export default async function CharacterPage({
   if (error || !character) notFound();
 
   const admin = createAdminClient();
-  const [levelUpHistory, inventory, transactions, catalogResult] = await Promise.all([
-    getLevelUpHistory(id),
+  const [levelUpHistory, inventory, transactions, catalogData] = await Promise.all([
+    getLevelUpHistory(id).catch(() => []),
     getInventory(id).catch(() => []),
     getMoneyTransactions(id).catch(() => []),
-    admin.from("items").select("slug, name, category, price_pc").order("name"),
+    Promise.resolve(admin.from("items").select("slug, name, category, price_pc").order("name")).then(r => r.data ?? []).catch(() => [] as { slug: string; name: string; category: string; price_pc: number }[]),
   ]);
-  const catalog = catalogResult.data ?? [];
+  const catalog = catalogData;
 
   return (
     <main className="min-h-dvh bg-[radial-gradient(circle_at_top,#f5c86a_0,#f6ead0_35%,#efe1bd_100%)]">

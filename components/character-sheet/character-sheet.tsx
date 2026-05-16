@@ -2,8 +2,9 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Edit, FileText, Sparkles, Trash2, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package, ScrollText, Store } from "lucide-react";
+import { Edit, FileText, Sparkles, Trash2, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package, ScrollText, Store, Wand2, Check } from "lucide-react";
 import { deleteCharacter } from "@/app/characters/actions";
+import { dmEditCharacterStats } from "@/app/actions/dm";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
 import { classById } from "@/lib/ghanor/classes";
@@ -84,6 +85,12 @@ const ATTR_LABELS: Record<string, string> = {
   int: "Inteligência", wis: "Sabedoria", cha: "Carisma",
 };
 
+type DmPatch = {
+  attr_str?: number; attr_dex?: number; attr_con?: number;
+  attr_int?: number; attr_wis?: number; attr_cha?: number;
+  hp_max?: number; mp_max?: number; defense?: number; movement_m?: number;
+};
+
 export function CharacterSheet({
   character,
   levelUpHistory = [],
@@ -102,11 +109,14 @@ export function CharacterSheet({
   const [activeTab, setActiveTab] = useState<"sheet" | "inventory">("sheet");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isDmSaving, startDmSave] = useTransition();
   const [portraitUrl, setPortraitUrl] = useState(character.portrait_url);
   const [portraitMessage, setPortraitMessage] = useState<string>();
   const [rollConfig, setRollConfig] = useState<RollConfig | null>(null);
   const [showToast, setShowToast] = useState(!!justLeveledUpTo);
   const { isActive: isDmMode, toggle: toggleDm, hydrated: dmHydrated } = useDmMode(character.id);
+  const [dmPatch, setDmPatch] = useState<DmPatch>({});
+  const [dmSaved, setDmSaved] = useState(false);
 
   // Auto-dismiss toast after 6s
   useEffect(() => {
@@ -223,6 +233,89 @@ export function CharacterSheet({
   return (
     <div className="space-y-6 print:bg-white">
       {dmHydrated && <DmModeBanner active={isDmMode} onToggle={toggleDm} />}
+
+      {/* ── Painel de edição do Narrador ── */}
+      {isDmMode && (
+        <Card className="border-2 border-indigo-200 bg-indigo-50/40 space-y-5 print:hidden">
+          <div className="flex items-center gap-2">
+            <Wand2 size={15} className="text-indigo-600" />
+            <h3 className="text-sm font-black text-indigo-900">Edição do Narrador</h3>
+            {dmSaved && (
+              <span className="ml-auto flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                <Check size={13} /> Salvo
+              </span>
+            )}
+          </div>
+
+          {/* Atributos */}
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-indigo-600">Atributos</p>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+              {(["str", "dex", "con", "int", "wis", "cha"] as const).map((attr) => (
+                <label key={attr} className="flex flex-col items-center gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                    {ATTR_LABELS[attr].slice(0, 3)}
+                  </span>
+                  <input
+                    type="number"
+                    value={dmPatch[`attr_${attr}`] ?? attrs[attr]}
+                    onChange={(e) =>
+                      setDmPatch((p) => ({ ...p, [`attr_${attr}`]: Number(e.target.value) }))
+                    }
+                    className="w-full rounded-lg border border-indigo-300 bg-white py-1.5 text-center text-lg font-black text-stone-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    min={-5}
+                    max={10}
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Stats de combate */}
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-indigo-600">Combate</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {([
+                { key: "hp_max",     label: "PV Máx",         min: 1,  max: 9999 },
+                { key: "mp_max",     label: "PM Máx",         min: 0,  max: 9999 },
+                { key: "defense",    label: "Defesa base",    min: 1,  max: 99 },
+                { key: "movement_m", label: "Desl. (m)",      min: 0,  max: 99 },
+              ] as const).map(({ key, label, min, max }) => (
+                <label key={key} className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">{label}</span>
+                  <input
+                    type="number"
+                    value={dmPatch[key] ?? character[key]}
+                    onChange={(e) =>
+                      setDmPatch((p) => ({ ...p, [key]: Number(e.target.value) }))
+                    }
+                    className="rounded-lg border border-indigo-300 bg-white py-1.5 text-center text-lg font-black text-stone-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    min={min}
+                    max={max}
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <Button
+            fullWidth
+            disabled={isDmSaving || Object.keys(dmPatch).length === 0}
+            className="bg-indigo-700 hover:bg-indigo-600 active:bg-indigo-800"
+            onClick={() =>
+              startDmSave(async () => {
+                await dmEditCharacterStats({ characterId: character.id, ...dmPatch });
+                setDmPatch({});
+                setDmSaved(true);
+                setTimeout(() => setDmSaved(false), 3000);
+              })
+            }
+          >
+            {isDmSaving ? "Salvando…" : "Salvar alterações"}
+          </Button>
+        </Card>
+      )}
+
       {/* Tab nav */}
       <div className="flex gap-1 bg-stone-100 rounded-xl p-1 print:hidden">
         <button
@@ -367,7 +460,7 @@ export function CharacterSheet({
         <Card>
           <SectionTitle>Perícias</SectionTitle>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {character.trained_skills.map((skillId) => {
+            {(character.trained_skills ?? []).map((skillId) => {
               const skill = skillById[skillId];
               const bonus = calculateSkillBonus(build, skillId);
               const penalty = getArmorPenaltyForSkill(skillId, armorPenalty, {
@@ -406,14 +499,14 @@ export function CharacterSheet({
           <SectionTitle>Habilidades e magias</SectionTitle>
           <p className="mt-3 text-sm">{classById[character.class as keyof typeof classById]?.firstLevelAbility}</p>
           <p className="mt-2 text-sm">{raceById[character.race as keyof typeof raceById]?.abilities.join("; ")}</p>
-          {character.powers?.length > 0 && (
+          {(character.powers?.length ?? 0) > 0 && (
             <div className="mt-2 space-y-1">
               {character.powers.map((p, i) => (
                 <p key={i} className="text-sm text-stone-700">• {p}</p>
               ))}
             </div>
           )}
-          {character.spells.length > 0 && <p className="mt-2 text-sm">Magias: {character.spells.join(", ")}</p>}
+          {(character.spells?.length ?? 0) > 0 && <p className="mt-2 text-sm">Magias: {character.spells.join(", ")}</p>}
         </Card>
       </div>
 
