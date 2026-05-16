@@ -49,86 +49,90 @@ const AddSchema = z.object({
   location: z.enum(["equipped", "worn", "carried", "mount", "storage"]).default("carried"),
 });
 
-export async function addToInventory(raw: z.infer<typeof AddSchema>) {
-  const input = AddSchema.parse(raw);
-  const user = await getAuthenticatedUser();
-  await assertOwnership(input.characterId, user.id);
+export async function addToInventory(raw: z.infer<typeof AddSchema>): Promise<{ inventoryId: string; error?: never } | { error: string; inventoryId?: never }> {
+  try {
+    const input = AddSchema.parse(raw);
+    const user = await getAuthenticatedUser();
+    await assertOwnership(input.characterId, user.id);
 
-  const admin = createAdminClient();
+    const admin = createAdminClient();
 
-  // Busca o item no catálogo
-  const { data: item } = await admin
-    .from("items")
-    .select("id, is_stackable")
-    .eq("slug", input.itemSlug)
-    .single();
+    // Busca o item no catálogo
+    const { data: item } = await admin
+      .from("items")
+      .select("id, is_stackable")
+      .eq("slug", input.itemSlug)
+      .single();
 
-  if (!item) throw new Error(`Item "${input.itemSlug}" não encontrado no catálogo.`);
+    if (!item) return { error: `Item "${input.itemSlug}" não encontrado no catálogo.` };
 
-  // Se empilhável, tenta agrupar com item existente idêntico
-  if (item.is_stackable && input.improvements === 0 && !input.isArcanium) {
-    const { data: existing } = await admin
-      .from("character_inventory")
-      .select("id, quantity")
-      .eq("character_id", input.characterId)
-      .eq("item_id", item.id)
-      .eq("location", input.location)
-      .eq("improvements", 0)
-      .eq("is_arcanium", false)
-      .maybeSingle();
-
-    if (existing) {
-      await admin
+    // Se empilhável, tenta agrupar com item existente idêntico
+    if (item.is_stackable && input.improvements === 0 && !input.isArcanium) {
+      const { data: existing } = await admin
         .from("character_inventory")
-        .update({ quantity: existing.quantity + input.quantity })
-        .eq("id", existing.id);
+        .select("id, quantity")
+        .eq("character_id", input.characterId)
+        .eq("item_id", item.id)
+        .eq("location", input.location)
+        .eq("improvements", 0)
+        .eq("is_arcanium", false)
+        .maybeSingle();
 
-      revalidatePath(`/characters/${input.characterId}`);
-      return { inventoryId: existing.id };
+      if (existing) {
+        await admin
+          .from("character_inventory")
+          .update({ quantity: existing.quantity + input.quantity })
+          .eq("id", existing.id);
+
+        revalidatePath(`/characters/${input.characterId}`);
+        return { inventoryId: existing.id };
+      }
     }
-  }
 
-  // Cria novo registro
-  const { data: inv, error } = await admin
-    .from("character_inventory")
-    .insert({
-      character_id: input.characterId,
-      user_id: user.id,
-      item_id: item.id,
-      quantity: input.quantity,
-      location: input.location,
-      improvements: input.improvements,
-      is_arcanium: input.isArcanium,
-      arcanium_spell_circle: input.arcaniumSpellCircle ?? null,
-      custom_label: input.customLabel ?? null,
-      acquired_from: input.isDmMode ? "dm_manual" : input.acquiredFrom,
-    })
-    .select("id")
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  if (input.chargePc) {
-    const { data: catalogItem } = await admin.from("items").select("name, price_pc").eq("id", item.id).single();
-    if (catalogItem) {
-      const character = await assertOwnership(input.characterId, user.id);
-      const cost = catalogItem.price_pc * input.quantity;
-      if (character.money_pc < cost) throw new Error("Saldo insuficiente.");
-      const newBalance = character.money_pc - cost;
-      await admin.from("characters").update({ money_pc: newBalance }).eq("id", input.characterId);
-      await admin.from("money_transactions").insert({
+    // Cria novo registro
+    const { data: inv, error } = await admin
+      .from("character_inventory")
+      .insert({
         character_id: input.characterId,
         user_id: user.id,
-        amount_pc: -cost,
-        reason: `Compra manual: ${catalogItem.name}`,
-        related_inventory_id: inv.id,
-        balance_after_pc: newBalance,
-      });
-    }
-  }
+        item_id: item.id,
+        quantity: input.quantity,
+        location: input.location,
+        improvements: input.improvements,
+        is_arcanium: input.isArcanium,
+        arcanium_spell_circle: input.arcaniumSpellCircle ?? null,
+        custom_label: input.customLabel ?? null,
+        acquired_from: input.isDmMode ? "dm_manual" : "loot",
+      })
+      .select("id")
+      .single();
 
-  revalidatePath(`/characters/${input.characterId}`);
-  return { inventoryId: inv.id };
+    if (error) return { error: error.message };
+
+    if (input.chargePc) {
+      const { data: catalogItem } = await admin.from("items").select("name, price_pc").eq("id", item.id).single();
+      if (catalogItem) {
+        const character = await assertOwnership(input.characterId, user.id);
+        const cost = catalogItem.price_pc * input.quantity;
+        if (character.money_pc < cost) return { error: "Saldo insuficiente." };
+        const newBalance = character.money_pc - cost;
+        await admin.from("characters").update({ money_pc: newBalance }).eq("id", input.characterId);
+        await admin.from("money_transactions").insert({
+          character_id: input.characterId,
+          user_id: user.id,
+          amount_pc: -cost,
+          reason: `Compra manual: ${catalogItem.name}`,
+          related_inventory_id: inv.id,
+          balance_after_pc: newBalance,
+        });
+      }
+    }
+
+    revalidatePath(`/characters/${input.characterId}`);
+    return { inventoryId: inv.id };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro ao adicionar item." };
+  }
 }
 
 // ─── moveItem ─────────────────────────────────────────────────────────────────
@@ -358,28 +362,32 @@ export async function addCustomItem(input: {
   category: string;
   spaces: number;
   description?: string;
-}) {
-  const user = await getAuthenticatedUser();
-  await assertOwnership(input.characterId, user.id);
-  const admin = createAdminClient();
+}): Promise<{ inventoryId: string; error?: never } | { error: string; inventoryId?: never }> {
+  try {
+    const user = await getAuthenticatedUser();
+    await assertOwnership(input.characterId, user.id);
+    const admin = createAdminClient();
 
-  const { data: inv, error } = await admin
-    .from("character_inventory")
-    .insert({
-      character_id: input.characterId,
-      user_id: user.id,
-      custom_name: input.name,
-      custom_data: { category: input.category, spaces: input.spaces, description: input.description },
-      quantity: 1,
-      location: "carried",
-      acquired_from: "loot",
-    })
-    .select("id")
-    .single();
+    const { data: inv, error } = await admin
+      .from("character_inventory")
+      .insert({
+        character_id: input.characterId,
+        user_id: user.id,
+        custom_name: input.name,
+        custom_data: { category: input.category, spaces: input.spaces, description: input.description },
+        quantity: 1,
+        location: "carried",
+        acquired_from: "loot",
+      })
+      .select("id")
+      .single();
 
-  if (error) throw new Error(error.message);
-  revalidatePath(`/characters/${input.characterId}`);
-  return { inventoryId: inv.id };
+    if (error) return { error: error.message };
+    revalidatePath(`/characters/${input.characterId}`);
+    return { inventoryId: inv.id };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro ao adicionar item." };
+  }
 }
 
 // ─── rollStartingMoney ────────────────────────────────────────────────────────
@@ -444,29 +452,33 @@ export async function addQuickItem(input: {
   location?: InventoryLocation;
   quantity?: number;
   isDmMode?: boolean;
-}) {
-  const user = await getAuthenticatedUser();
-  await assertOwnership(input.characterId, user.id);
-  const admin = createAdminClient();
+}): Promise<{ inventoryId: string; error?: never } | { error: string; inventoryId?: never }> {
+  try {
+    const user = await getAuthenticatedUser();
+    await assertOwnership(input.characterId, user.id);
+    const admin = createAdminClient();
 
-  const { data: inv, error } = await admin.from("character_inventory").insert({
-    character_id: input.characterId,
-    user_id: user.id,
-    custom_name: input.name,
-    custom_data: {
-      category: "bens_comuns",
-      spaces: input.spaces ?? 1,
-      description: input.notes ?? null,
-    },
-    quantity: input.quantity ?? 1,
-    location: input.location ?? "carried",
-    acquired_from: input.isDmMode ? "dm_manual" : "manual",
-    notes: input.notes ?? null,
-  }).select("id").single();
+    const { data: inv, error } = await admin.from("character_inventory").insert({
+      character_id: input.characterId,
+      user_id: user.id,
+      custom_name: input.name,
+      custom_data: {
+        category: "bens_comuns",
+        spaces: input.spaces ?? 1,
+        description: input.notes ?? null,
+      },
+      quantity: input.quantity ?? 1,
+      location: input.location ?? "carried",
+      acquired_from: input.isDmMode ? "dm_manual" : "loot",
+      notes: input.notes ?? null,
+    }).select("id").single();
 
-  if (error) throw new Error(error.message);
-  revalidatePath(`/characters/${input.characterId}`);
-  return { inventoryId: inv.id };
+    if (error) return { error: error.message };
+    revalidatePath(`/characters/${input.characterId}`);
+    return { inventoryId: inv.id };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro ao adicionar item." };
+  }
 }
 
 // ─── editInventoryItem ────────────────────────────────────────────────────────

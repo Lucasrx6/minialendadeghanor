@@ -49,58 +49,58 @@ export function AddItemModal({ open, onClose, characterId, catalog, isDmMode, on
   function submitCatalog() {
     if (!slug) return;
     startTransition(async () => {
-      try {
-        await addToInventory({
-          characterId,
-          itemSlug: slug,
-          quantity: qty,
-          location,
-          improvements: 0,
-          isArcanium: false,
-          acquiredFrom: "manual",
-          chargePc: isDmMode && chargePc,
-          isDmMode,
-        });
+      const result = await addToInventory({
+        characterId,
+        itemSlug: slug,
+        quantity: qty,
+        location,
+        improvements: 0,
+        isArcanium: false,
+        acquiredFrom: "loot",
+        chargePc: isDmMode && chargePc,
+        isDmMode,
+      });
+      if (result.error) {
+        onSuccess(result.error);
+      } else {
         onSuccess("Item adicionado ao inventário.");
         onClose();
-      } catch (e) {
-        onSuccess(e instanceof Error ? e.message : "Erro ao adicionar.");
       }
     });
   }
 
   function submitCustom() {
     startTransition(async () => {
-      try {
-        await addCustomItem({
-          characterId,
-          name: customName,
-          category: "bens_comuns",
-          spaces: customSpaces,
-          description: customDesc,
-        });
+      const result = await addCustomItem({
+        characterId,
+        name: customName,
+        category: "bens_comuns",
+        spaces: customSpaces,
+        description: customDesc,
+      });
+      if (result.error) {
+        onSuccess(result.error);
+      } else {
         onSuccess(`${customName} adicionado.`);
         onClose();
-      } catch (e) {
-        onSuccess(e instanceof Error ? e.message : "Erro.");
       }
     });
   }
 
   function submitQuick() {
     startTransition(async () => {
-      try {
-        await addQuickItem({
-          characterId,
-          name: quickName,
-          notes: quickNotes,
-          location,
-          isDmMode,
-        });
+      const result = await addQuickItem({
+        characterId,
+        name: quickName,
+        notes: quickNotes,
+        location,
+        isDmMode,
+      });
+      if (result.error) {
+        onSuccess(result.error);
+      } else {
         onSuccess(`${quickName} anotado.`);
         onClose();
-      } catch (e) {
-        onSuccess(e instanceof Error ? e.message : "Erro.");
       }
     });
   }
