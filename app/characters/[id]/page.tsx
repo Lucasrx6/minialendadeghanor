@@ -3,6 +3,7 @@ import { CharacterSheet } from "@/components/character-sheet/character-sheet";
 import { createClient } from "@/lib/supabase/server";
 import { getLevelUpHistory } from "@/app/actions/levelup";
 import { getInventory, getMoneyTransactions } from "@/app/actions/inventory";
+import { getCompanions } from "@/app/actions/companions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
@@ -27,13 +28,15 @@ export default async function CharacterPage({
   if (error || !character) notFound();
 
   const admin = createAdminClient();
-  const [levelUpHistory, inventory, transactions, catalogData] = await Promise.all([
+  const [levelUpHistory, inventory, transactions, catalogData, companions] = await Promise.all([
     getLevelUpHistory(id).catch(() => []),
     getInventory(id).catch(() => []),
     getMoneyTransactions(id).catch(() => []),
     Promise.resolve(admin.from("items").select("slug, name, category, price_pc").order("name")).then(r => r.data ?? []).catch(() => [] as { slug: string; name: string; category: string; price_pc: number }[]),
+    getCompanions(id).catch(() => []),
   ]);
-  const catalog = catalogData;
+  // Animals and vehicles are managed via the Parceiros tab, not the inventory modal
+  const catalog = catalogData.filter(i => i.category !== "animal" && i.category !== "veiculo");
 
   return (
     <main className="min-h-dvh bg-[radial-gradient(circle_at_top,#f5c86a_0,#f6ead0_35%,#efe1bd_100%)]">
@@ -46,6 +49,7 @@ export default async function CharacterPage({
           inventory={inventory as Parameters<typeof CharacterSheet>[0]["inventory"]}
           transactions={transactions as Parameters<typeof CharacterSheet>[0]["transactions"]}
           catalog={catalog}
+          companions={companions as Parameters<typeof CharacterSheet>[0]["companions"]}
         />
       </PageContainer>
     </main>

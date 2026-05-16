@@ -17,11 +17,13 @@ import { RollDialog } from "@/components/dice/RollDialog";
 import { ClassIcon } from "@/components/ui/item-icon";
 import { JourneySection } from "@/components/character-sheet/journey-section";
 import { InventoryTab } from "@/components/character-sheet/inventory-tab";
+import { CompanionsTab } from "@/components/character-sheet/companions-tab";
 import { AttacksSection } from "@/components/character-sheet/attacks-section";
 import { computeDefenseWithEquipment, getArmorPenaltyForSkill, WORN_LIMIT } from "@/lib/ghanor/inventory";
 import { useDmMode } from "@/lib/hooks/use-dm-mode";
 import { DmModeBanner } from "@/components/inventory/dm-mode-banner";
 import type { CharacterBuild, Attribute } from "@/lib/ghanor/types";
+import type { Companion } from "@/lib/ghanor/animals";
 
 type CharacterRow = {
   id: string;
@@ -98,6 +100,7 @@ export function CharacterSheet({
   inventory = [],
   transactions = [],
   catalog = [],
+  companions = [],
 }: {
   character: CharacterRow;
   levelUpHistory?: LevelUpEntry[];
@@ -105,8 +108,9 @@ export function CharacterSheet({
   inventory?: unknown[];
   transactions?: unknown[];
   catalog?: Array<{ slug: string; name: string; category: string; price_pc: number }>;
+  companions?: Companion[];
 }) {
-  const [activeTab, setActiveTab] = useState<"sheet" | "inventory">("sheet");
+  const [activeTab, setActiveTab] = useState<"sheet" | "inventory" | "companions">("sheet");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isDmSaving, startDmSave] = useTransition();
@@ -368,6 +372,17 @@ export function CharacterSheet({
         >
           <Package size={18} /> Inventário
         </button>
+        <button
+          onClick={() => setActiveTab("companions")}
+          className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-bold transition cursor-pointer ${activeTab === "companions" ? "bg-amber-800 text-amber-50 shadow" : "text-stone-600 hover:bg-stone-200/70 active:bg-stone-200"}`}
+        >
+          🐾 Parceiros
+          {companions.filter(c => c.is_alive).length > 0 && (
+            <span className={`rounded-full px-1.5 text-[10px] ${activeTab === "companions" ? "bg-amber-600" : "bg-stone-300 text-stone-600"}`}>
+              {companions.filter(c => c.is_alive).length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Inventory tab */}
@@ -381,6 +396,16 @@ export function CharacterSheet({
           transactions={transactions as Parameters<typeof InventoryTab>[0]["transactions"]}
           characterClass={character.class}
           catalog={catalog}
+          isDmMode={isDmMode}
+        />
+      )}
+
+      {/* Companions tab */}
+      {activeTab === "companions" && (
+        <CompanionsTab
+          characterId={character.id}
+          companions={companions}
+          moneyPc={(character as Record<string, unknown>).money_pc as number ?? 0}
           isDmMode={isDmMode}
         />
       )}
