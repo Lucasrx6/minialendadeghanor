@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { priceWithArcanium } from "@/lib/ghanor/inventory";
+import { priceWithArcanium, WORN_LIMIT } from "@/lib/ghanor/inventory";
 import crypto from "crypto";
 
 // ─── Helpers internos ──────────────────────────────────────────────────────────
@@ -137,24 +137,97 @@ export async function addToInventory(raw: z.infer<typeof AddSchema>): Promise<{ 
 
 // ─── moveItem ─────────────────────────────────────────────────────────────────
 
-export async function moveItem(inventoryId: string, newLocation: InventoryLocation) {
-  const user = await getAuthenticatedUser();
-  const admin = createAdminClient();
+type ItemFlags = { category: string; can_be_held: boolean; can_be_worn: boolean; is_two_handed: boolean };
 
-  const { data: inv } = await admin
-    .from("character_inventory")
-    .select("character_id, user_id")
-    .eq("id", inventoryId)
-    .single();
+export async function moveItem(
+  inventoryId: string,
+  newLocation: InventoryLocation,
+  options?: { isDmMode?: boolean },
+): Promise<{ success: true } | { error: string }> {
+  try {
+    const user = await getAuthenticatedUser();
+    const admin = createAdminClient();
 
-  if (!inv || inv.user_id !== user.id) throw new Error("Item não encontrado.");
+    const { data: inv } = await admin
+      .from("character_inventory")
+      .select("character_id, user_id, item_id, custom_name, items(category, can_be_held, can_be_worn, is_two_handed)")
+      .eq("id", inventoryId)
+      .single();
 
-  await admin
-    .from("character_inventory")
-    .update({ location: newLocation })
-    .eq("id", inventoryId);
+    if (!inv || inv.user_id !== user.id) return { error: "Item não encontrado." };
 
-  revalidatePath(`/characters/${inv.character_id}`);
+    const isDmMode = options?.isDmMode ?? false;
+    const isCustom = !inv.item_id;
+    const item = inv.items as ItemFlags | null;
+
+    if (!isDmMode && !isCustom && item) {
+      if (newLocation === "equipped") {
+        if (!item.can_be_held) return { error: "Este item não pode ser empunhado." };
+
+        const { data: equippedRows } = await admin
+          .from("character_inventory")
+          .select("items(category, is_two_handed)")
+          .eq("character_id", inv.character_id)
+          .eq("location", "equipped")
+          .neq("id", inventoryId);
+
+        const equipped = (equippedRows ?? [])
+          .map(r => r.items as ItemFlags | null)
+          .filter(Boolean) as ItemFlags[];
+
+        if (item.category === "escudo" && equipped.some(e => e.category === "escudo")) {
+          return { error: "Já há um escudo empunhado. Desequipe o escudo atual primeiro." };
+        }
+
+        const slotsUsed = equipped.reduce((n, e) => n + (e.is_two_handed ? 2 : 1), 0);
+        const slotsNeeded = item.is_two_handed ? 2 : 1;
+        if (slotsUsed + slotsNeeded > 2) {
+          return {
+            error: item.is_two_handed
+              ? "Esta arma exige ambas as mãos. Desequipe todos os itens primeiro."
+              : "Mãos insuficientes. Desequipe um item para liberar espaço.",
+          };
+        }
+      }
+
+      if (newLocation === "worn") {
+        if (!item.can_be_worn) return { error: "Este item não pode ser vestido." };
+
+        const { count: wornCount } = await admin
+          .from("character_inventory")
+          .select("id", { count: "exact", head: true })
+          .eq("character_id", inv.character_id)
+          .eq("location", "worn")
+          .neq("id", inventoryId);
+
+        if ((wornCount ?? 0) >= WORN_LIMIT) {
+          return { error: `Limite de ${WORN_LIMIT} itens vestidos atingido.` };
+        }
+
+        if (item.category === "armadura") {
+          const { data: wornRows } = await admin
+            .from("character_inventory")
+            .select("items(category)")
+            .eq("character_id", inv.character_id)
+            .eq("location", "worn")
+            .neq("id", inventoryId);
+
+          const hasArmor = (wornRows ?? []).some(r => (r.items as ItemFlags | null)?.category === "armadura");
+          if (hasArmor) return { error: "Já há uma armadura vestida. Desvista a armadura atual primeiro." };
+        }
+      }
+    }
+
+    await admin
+      .from("character_inventory")
+      .update({ location: newLocation })
+      .eq("id", inventoryId);
+
+    revalidatePath(`/characters/${inv.character_id}`);
+    return { success: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro ao mover item." };
+  }
 }
 
 // ─── buyItem ──────────────────────────────────────────────────────────────────
@@ -437,7 +510,7 @@ export async function getInventory(characterId: string) {
         weapon_proficiency, weapon_grip,
         weapon_damage_dice, weapon_critical, weapon_range, weapon_damage_type,
         weapon_abilities, armor_category, armor_defense_bonus, armor_penalty,
-        is_stackable
+        is_stackable, can_be_held, can_be_worn, is_two_handed
       )
     `)
     .eq("character_id", characterId)

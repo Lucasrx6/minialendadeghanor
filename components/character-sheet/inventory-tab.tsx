@@ -40,6 +40,9 @@ type ItemRow = {
   armor_defense_bonus: number | null;
   armor_penalty: number | null;
   is_stackable: boolean;
+  can_be_held: boolean;
+  can_be_worn: boolean;
+  is_two_handed: boolean;
 };
 
 type InvEntry = {
@@ -144,8 +147,9 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
 
   function handleMove(id: string, loc: InventoryLocation) {
     startTransition(async () => {
-      await moveItem(id, loc);
-      showToast("Item movido.");
+      const result = await moveItem(id, loc, { isDmMode });
+      if ("error" in result) showToast(result.error);
+      else showToast("Item movido.");
     });
   }
 
@@ -292,24 +296,25 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
           {carried.length === 0 ? (
             <EmptyState icon={<Package size={32} />} label="Nada na mochila" />
           ) : (
-            carried.map(entry => (
-              <InventoryCard
-                key={entry.id}
-                entry={entry}
-                isPending={isPending}
-                isDmMode={isDmMode}
-                characterId={characterId}
-                onEquip={() => {
-                  const loc: InventoryLocation =
-                    entry.items?.category === "armadura" || entry.items?.category === "vestuario"
-                      ? "worn" : "equipped";
-                  handleMove(entry.id, loc);
-                }}
-                onStore={() => handleMove(entry.id, "storage")}
-                onSell={() => setSellConfirm(entry.id)}
-                onQty={(d) => handleQty(entry.id, d, entry.quantity)}
-              />
-            ))
+            carried.map(entry => {
+              const isCustom = !entry.items;
+              const canHold = isCustom || isDmMode || (entry.items?.can_be_held ?? false);
+              const canWear = isCustom || isDmMode || (entry.items?.can_be_worn ?? false);
+              return (
+                <InventoryCard
+                  key={entry.id}
+                  entry={entry}
+                  isPending={isPending}
+                  isDmMode={isDmMode}
+                  characterId={characterId}
+                  onHold={canHold ? () => handleMove(entry.id, "equipped") : undefined}
+                  onWear={canWear ? () => handleMove(entry.id, "worn") : undefined}
+                  onStore={() => handleMove(entry.id, "storage")}
+                  onSell={() => setSellConfirm(entry.id)}
+                  onQty={(d) => handleQty(entry.id, d, entry.quantity)}
+                />
+              );
+            })
           )}
         </div>
       )}
@@ -351,7 +356,7 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
                 isPending={isPending}
                 isDmMode={isDmMode}
                 characterId={characterId}
-                onEquip={() => handleMove(entry.id, "carried")}
+                onRetrieve={() => handleMove(entry.id, "carried")}
                 onSell={() => setSellConfirm(entry.id)}
                 onQty={(d) => handleQty(entry.id, d, entry.quantity)}
               />
@@ -428,14 +433,16 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
 
 function InventoryCard({
   entry, badge, isPending, isDmMode, characterId,
-  onEquip, onUnequip, onStore, onSell, onQty,
+  onHold, onWear, onRetrieve, onUnequip, onStore, onSell, onQty,
 }: {
   entry: InvEntry;
   badge?: string;
   isPending: boolean;
   isDmMode?: boolean;
   characterId: string;
-  onEquip?: () => void;
+  onHold?: () => void;
+  onWear?: () => void;
+  onRetrieve?: () => void;
   onUnequip?: () => void;
   onStore?: () => void;
   onSell?: () => void;
@@ -526,7 +533,9 @@ function InventoryCard({
 
           {/* Ações */}
           <div className="flex flex-wrap gap-2">
-            {onEquip && <button onClick={onEquip} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-800 text-amber-50 hover:bg-amber-700 transition disabled:opacity-50">Equipar</button>}
+            {onHold && <button onClick={onHold} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-800 text-amber-50 hover:bg-amber-700 transition disabled:opacity-50">Empunhar</button>}
+            {onWear && <button onClick={onWear} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-700 text-amber-50 hover:bg-amber-600 transition disabled:opacity-50">Vestir</button>}
+            {onRetrieve && <button onClick={onRetrieve} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-800 text-amber-50 hover:bg-amber-700 transition disabled:opacity-50">Recuperar</button>}
             {onUnequip && <button onClick={onUnequip} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-stone-700 text-white hover:bg-stone-600 transition disabled:opacity-50">Desequipar</button>}
             {onStore && <button onClick={onStore} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-stone-200 text-stone-700 hover:bg-stone-300 transition disabled:opacity-50">Guardar</button>}
             {onSell && !isDmMode && <button onClick={onSell} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition disabled:opacity-50">Vender</button>}
