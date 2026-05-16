@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Plus, User, Heart, Shield, Sparkles } from "lucide-react";
+import { Plus, Heart, Shield, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ClassIcon } from "@/components/ui/item-icon";
 import { createClient } from "@/lib/supabase/server";
 import { classById } from "@/lib/ghanor/classes";
 import { originById } from "@/lib/ghanor/origins";
@@ -54,15 +55,15 @@ export default async function CharactersPage() {
 
         <div className="flex flex-col gap-3">
           {characters?.map((character) => (
-            <Link key={character.id} href={`/characters/${character.id}`} className="block active:scale-[0.99]">
-              <Card className="flex gap-3 p-3 transition-shadow active:shadow-md">
+            <Link key={character.id} href={`/characters/${character.id}`} className="block transition-transform hover:-translate-y-0.5 active:scale-[0.99] active:translate-y-0">
+              <Card className="flex gap-3 p-3 transition-all hover:shadow-md hover:border-amber-800/25 active:shadow-sm">
                 <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-stone-900">
                   {character.portrait_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={character.portrait_url} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-stone-600">
-                      <User size={36} className="opacity-50" />
+                    <div className="flex h-full items-center justify-center bg-stone-800">
+                      <ClassIcon classId={character.class} size={44} className="opacity-80" />
                     </div>
                   )}
                 </div>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="12" y="12" width="104" height="104" rx="16" fill="#F5E6C8" stroke="#000" stroke-width="6"/>
+  <!-- Cabo -->
+  <path d="M68 24l6 6-34 34-6-6 34-34Z" fill="#111827" stroke="#000" stroke-width="5" stroke-linejoin="round"/>
+  <!-- Cabeça grande -->
+  <path d="M34 58 62 30l20 20-28 28-20-20Z" fill="#EAB308" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <!-- Fenda -->
+  <path d="M54 50l10 10" fill="none" stroke="#22C55E" stroke-width="6" stroke-linecap="round"/>
+  <!-- Molho -->
+  <path d="M48 72c10 2 20-2 26-10" fill="none" stroke="#F97316" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+</svg>

@@ -32,7 +32,7 @@ export function BottomNav() {
       style={{ paddingBottom: "var(--safe-bottom)" }}
       aria-label="Navegação principal"
     >
-      <div className="mx-auto flex h-[var(--bottom-nav-height)] max-w-lg items-stretch justify-around px-2">
+      <div className="mx-auto flex h-[var(--bottom-nav-height)] max-w-2xl items-stretch justify-around px-2">
         {NAV_ITEMS.map(({ href, label, icon: Icon, match }) => {
           const active = match(pathname);
           return (
@@ -40,14 +40,14 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1 text-xs font-bold transition active:scale-95",
-                active ? "text-amber-900" : "text-stone-500",
+                "group flex min-w-[4.5rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1 text-xs font-bold transition active:scale-95 cursor-pointer",
+                active ? "text-amber-900" : "text-stone-500 hover:text-stone-700",
               )}
             >
               <span
                 className={cn(
                   "flex h-9 w-9 items-center justify-center rounded-xl transition",
-                  active ? "bg-amber-800 text-amber-50 shadow-md" : "bg-transparent",
+                  active ? "bg-amber-800 text-amber-50 shadow-md" : "bg-transparent group-hover:bg-stone-100",
                 )}
               >
                 <Icon size={20} strokeWidth={active ? 2.5 : 2} />

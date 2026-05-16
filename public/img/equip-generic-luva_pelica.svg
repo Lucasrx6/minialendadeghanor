@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="12" y="12" width="104" height="104" rx="16" fill="#F5E6C8" stroke="#000" stroke-width="6"/>
+  <!-- Luva -->
+  <path d="M44 36c6-6 18-6 24 0 10 10 10 18 8 34-2 18-6 26-14 28-10 2-18-6-22-16-4-10-4-28 4-46Z" fill="#B45309" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <!-- Dedos -->
+  <path d="M52 58h10" fill="none" stroke="#111827" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+  <path d="M50 70h14" fill="none" stroke="#111827" stroke-width="5" stroke-linecap="round" opacity="0.5"/>
+  <path d="M52 82h12" fill="none" stroke="#111827" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+  <!-- Costura -->
+  <path d="M58 38v60" fill="none" stroke="#111827" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+</svg>

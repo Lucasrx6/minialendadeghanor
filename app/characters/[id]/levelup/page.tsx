@@ -16,7 +16,7 @@ export default async function LevelUpPage({ params }: { params: Promise<{ id: st
   if (error || !character) notFound();
   if ((character.current_level ?? 1) >= 20) {
     return (
-      <main className="mx-auto max-w-lg px-6 py-20 text-center">
+      <main className="mx-auto max-w-2xl px-6 py-20 text-center">
         <p className="text-4xl mb-4">🏆</p>
         <h1 className="text-2xl font-black text-stone-950">Nível máximo atingido!</h1>
         <p className="text-stone-600 mt-2">

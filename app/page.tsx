@@ -81,7 +81,7 @@ export default async function Home() {
 
         <div className="flex flex-col gap-4">
           <Link href="/characters/new/guided" className="block">
-            <Card className="relative min-h-[140px] overflow-hidden border-2 border-amber-900/10 bg-amber-50/90 p-5 active:scale-[0.99] transition-transform">
+            <Card className="relative min-h-[140px] overflow-hidden border-2 border-amber-900/10 bg-amber-50/90 p-5 transition-all hover:shadow-md hover:border-amber-800/25 hover:-translate-y-0.5 active:scale-[0.99] active:translate-y-0">
               <div className="flex items-start gap-4">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-900 ring-1 ring-amber-900/15">
                   <Wand2 size={26} />
@@ -98,7 +98,7 @@ export default async function Home() {
           </Link>
 
           <Link href="/characters/new" className="block">
-            <Card className="relative min-h-[140px] overflow-hidden border-2 border-stone-800 bg-stone-950 p-5 text-amber-50 active:scale-[0.99] transition-transform">
+            <Card className="relative min-h-[140px] overflow-hidden border-2 border-stone-800 bg-stone-950 p-5 text-amber-50 transition-all hover:shadow-xl hover:border-stone-700 hover:-translate-y-0.5 active:scale-[0.99] active:translate-y-0">
               <div className="flex items-start gap-4">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-stone-900 text-amber-200 ring-1 ring-amber-200/20">
                   <Swords size={26} />
@@ -117,7 +117,7 @@ export default async function Home() {
 
         <Link
           href="/characters"
-          className="text-center text-sm font-bold text-amber-900/70 active:text-amber-900"
+          className="text-center text-sm font-bold text-amber-900/70 hover:text-amber-900 active:text-amber-900 transition-colors"
         >
           Ver meus personagens →
         </Link>

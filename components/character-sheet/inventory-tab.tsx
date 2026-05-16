@@ -15,6 +15,7 @@ import {
 } from "@/app/actions/inventory";
 import { AddItemModal } from "@/components/inventory/add-item-modal";
 import { Button } from "@/components/ui/button";
+import { ItemIcon } from "@/components/ui/item-icon";
 import { Input, Textarea } from "@/components/ui/input";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -444,7 +445,12 @@ function InventoryCard({
         onClick={() => setExpanded(e => !e)}
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-stone-50 transition"
       >
-        <span className="text-stone-400">{CATEGORY_ICON[cat] ?? <Package size={14} />}</span>
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-400">
+          {item?.slug
+            ? <ItemIcon slug={item.slug} size={18} />
+            : (CATEGORY_ICON[cat] ?? <Package size={18} />)
+          }
+        </span>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-stone-900 truncate">{name}</p>
           <p className="text-xs text-stone-500">

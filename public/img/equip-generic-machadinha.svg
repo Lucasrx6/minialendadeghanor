@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="12" y="12" width="104" height="104" rx="16" fill="#F5E6C8" stroke="#000" stroke-width="6"/>
+  <!-- Cabo/empunhadura -->
+  <path d="M66 24l6 6-30 30-6-6 30-30Z" fill="#111827" stroke="#000" stroke-width="5" stroke-linejoin="round"/>
+  <!-- Cabeça de machado -->
+  <path d="M36 54l26-26 16 16-26 26-16-16Z" fill="#22C55E" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <!-- Detalhe -->
+  <path d="M52 54l8 8" fill="none" stroke="#EAB308" stroke-width="6" stroke-linecap="round"/>
+</svg>

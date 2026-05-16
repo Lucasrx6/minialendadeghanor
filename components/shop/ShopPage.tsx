@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { formatMoneyPP, formatMoney, priceWithArcanium } from "@/lib/ghanor/inventory";
 import { buyItem } from "@/app/actions/inventory";
+import { ItemIcon } from "@/components/ui/item-icon";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -230,6 +231,9 @@ export function ShopPage({ characterId, moneyPc, items, characterClass }: Props)
           {filtered.map(item => (
             <div key={item.slug} className="bg-white/80 border border-amber-100 rounded-xl overflow-hidden shadow-sm">
               <div className="flex items-center gap-3 px-4 py-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 border border-amber-100">
+                  <ItemIcon slug={item.slug} size={22} />
+                </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-stone-900">{item.name}</p>
                   <p className="text-xs text-stone-500 truncate">
