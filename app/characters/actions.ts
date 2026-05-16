@@ -141,6 +141,55 @@ export async function saveCharacter(input: WizardState) {
   return data.id as string;
 }
 
+// ─── Editar campos narrativos de um personagem existente ─────────────────────
+
+export async function updateCharacter(
+  id: string,
+  fields: {
+    name?: string;
+    concept?: string;
+    age?: number | null;
+    appearance?: string;
+    personality?: string;
+    history?: string;
+    objective?: string;
+  },
+) {
+  const supabase = await createClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) throw new Error("Não autenticado.");
+
+  const admin = createAdminClient();
+
+  const { data: owned } = await admin
+    .from("characters")
+    .select("id")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!owned) throw new Error("Personagem não encontrado.");
+
+  const patch: Record<string, unknown> = {};
+  if (fields.name !== undefined) patch.name = fields.name.trim() || "Aventureiro sem nome";
+  if (fields.concept !== undefined) patch.concept = fields.concept || null;
+  if (fields.age !== undefined) patch.age = fields.age ?? null;
+  if (fields.appearance !== undefined) patch.appearance = fields.appearance || null;
+  if (fields.personality !== undefined) patch.personality = fields.personality || null;
+  if (fields.history !== undefined) patch.history = fields.history || null;
+  if (fields.objective !== undefined) patch.objective = fields.objective || null;
+
+  const { error: updateError } = await admin
+    .from("characters")
+    .update(patch)
+    .eq("id", id);
+
+  if (updateError) throw new Error(updateError.message);
+
+  revalidatePath(`/characters/${id}`);
+  revalidatePath("/characters");
+}
+
 export async function deleteCharacter(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("characters").delete().eq("id", id);
