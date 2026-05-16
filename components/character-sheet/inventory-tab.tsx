@@ -43,6 +43,7 @@ type ItemRow = {
   can_be_held: boolean;
   can_be_worn: boolean;
   is_two_handed: boolean;
+  is_cosmetic: boolean;
 };
 
 type InvEntry = {
@@ -107,6 +108,7 @@ function itemName(entry: InvEntry): string {
 }
 
 function itemSpaces(entry: InvEntry): number {
+  if (entry.items?.is_cosmetic) return 0;
   const baseSpaces = entry.items?.spaces ?? (entry.custom_data?.spaces as number ?? 1);
   return baseSpaces * entry.quantity;
 }
@@ -140,7 +142,7 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
   const capacity = carryCapacity(strMod);
   const maxCarry = maxCarryCapacity(strMod);
   const zone = carryZone(usedSpaces, strMod);
-  const wornCount = [...equipped, ...worn].length;
+  const wornCount = [...equipped, ...worn].filter(i => !i.items?.is_cosmetic).length;
   const maxWorn = WORN_LIMIT;
 
   const pct = Math.min(100, (usedSpaces / capacity) * 100);
@@ -298,8 +300,9 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
           ) : (
             carried.map(entry => {
               const isCustom = !entry.items;
-              const canHold = isCustom || isDmMode || (entry.items?.can_be_held ?? false);
-              const canWear = isCustom || isDmMode || (entry.items?.can_be_worn ?? false);
+              const isCosmetic = !isCustom && (entry.items?.is_cosmetic ?? false);
+              const canHold = !isCosmetic && (isCustom || isDmMode || (entry.items?.can_be_held ?? false));
+              const canWear = !isCosmetic && (isCustom || isDmMode || (entry.items?.can_be_worn ?? false));
               return (
                 <InventoryCard
                   key={entry.id}
@@ -487,6 +490,9 @@ function InventoryCard({
         {entry.quantity > 1 && (
           <span className="text-xs font-bold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">×{entry.quantity}</span>
         )}
+        {item?.is_cosmetic && (
+          <span className="text-xs font-medium text-stone-400 bg-stone-100 rounded-full px-2 py-0.5">cosmético</span>
+        )}
         {badge && (
           <span className="text-xs font-bold text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5">{badge}</span>
         )}
@@ -496,6 +502,11 @@ function InventoryCard({
       {/* Expanded */}
       {expanded && (<>
         <div className="border-t border-stone-100 px-4 py-3 space-y-3 bg-stone-50">
+          {item?.is_cosmetic && (
+            <p className="text-xs text-stone-400 italic border-l-2 border-stone-200 pl-2">
+              Cosmético — não conta no limite de espaços nem no de itens vestidos (livro pág. 97).
+            </p>
+          )}
           {item?.description && <p className="text-xs text-stone-600 italic">{item.description}</p>}
 
           {/* Stats de arma */}

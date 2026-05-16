@@ -137,7 +137,7 @@ export async function addToInventory(raw: z.infer<typeof AddSchema>): Promise<{ 
 
 // ─── moveItem ─────────────────────────────────────────────────────────────────
 
-type ItemFlags = { category: string; can_be_held: boolean; can_be_worn: boolean; is_two_handed: boolean };
+type ItemFlags = { category: string; can_be_held: boolean; can_be_worn: boolean; is_two_handed: boolean; is_cosmetic: boolean };
 
 export async function moveItem(
   inventoryId: string,
@@ -150,7 +150,7 @@ export async function moveItem(
 
     const { data: inv } = await admin
       .from("character_inventory")
-      .select("character_id, user_id, item_id, custom_name, items(category, can_be_held, can_be_worn, is_two_handed)")
+      .select("character_id, user_id, item_id, custom_name, items(category, can_be_held, can_be_worn, is_two_handed, is_cosmetic)")
       .eq("id", inventoryId)
       .single();
 
@@ -161,6 +161,10 @@ export async function moveItem(
     const item = inv.items as unknown as ItemFlags | null;
 
     if (!isDmMode && !isCustom && item) {
+      if ((newLocation === "equipped" || newLocation === "worn") && item.is_cosmetic) {
+        return { error: "Itens cosméticos ficam no inventário sem precisar ser equipados (livro pág. 97)." };
+      }
+
       if (newLocation === "equipped") {
         if (!item.can_be_held) return { error: "Este item não pode ser empunhado." };
 
@@ -510,7 +514,7 @@ export async function getInventory(characterId: string) {
         weapon_proficiency, weapon_grip,
         weapon_damage_dice, weapon_critical, weapon_range, weapon_damage_type,
         weapon_abilities, armor_category, armor_defense_bonus, armor_penalty,
-        is_stackable, can_be_held, can_be_worn, is_two_handed
+        is_stackable, can_be_held, can_be_worn, is_two_handed, is_cosmetic
       )
     `)
     .eq("character_id", characterId)
