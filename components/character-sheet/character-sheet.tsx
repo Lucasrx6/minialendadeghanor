@@ -118,6 +118,44 @@ export function CharacterSheet({
   const [dmPatch, setDmPatch] = useState<DmPatch>({});
   const [dmSaved, setDmSaved] = useState(false);
 
+  // ── Rastreador de PV / PM ──────────────────────────────────────
+  const [hpCurrent, setHpCurrent] = useState(character.hp_max);
+  const [mpCurrent, setMpCurrent] = useState(character.mp_max);
+
+  useEffect(() => {
+    try {
+      const sh = localStorage.getItem(`ghanor:hp:${character.id}`);
+      const sm = localStorage.getItem(`ghanor:mp:${character.id}`);
+      if (sh !== null) setHpCurrent(Math.min(Number(sh), character.hp_max));
+      if (sm !== null) setMpCurrent(Math.min(Number(sm), character.mp_max));
+    } catch { /* localStorage unavailable */ }
+  }, [character.id, character.hp_max, character.mp_max]);
+
+  function adjustHp(delta: number) {
+    setHpCurrent(prev => {
+      const next = Math.max(0, Math.min(character.hp_max, prev + delta));
+      try { localStorage.setItem(`ghanor:hp:${character.id}`, String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
+  function adjustMp(delta: number) {
+    setMpCurrent(prev => {
+      const next = Math.max(0, Math.min(character.mp_max, prev + delta));
+      try { localStorage.setItem(`ghanor:mp:${character.id}`, String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
+  function setHpDirect(val: number) {
+    const next = Math.max(0, Math.min(character.hp_max, val));
+    setHpCurrent(next);
+    try { localStorage.setItem(`ghanor:hp:${character.id}`, String(next)); } catch { /* ignore */ }
+  }
+  function setMpDirect(val: number) {
+    const next = Math.max(0, Math.min(character.mp_max, val));
+    setMpCurrent(next);
+    try { localStorage.setItem(`ghanor:mp:${character.id}`, String(next)); } catch { /* ignore */ }
+  }
+
   // Auto-dismiss toast after 6s
   useEffect(() => {
     if (!showToast) return;
@@ -437,8 +475,20 @@ export function CharacterSheet({
 
       {/* Stats de combate */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Fact label="PV" value={character.hp_max} icon={<Heart size={20} />} colorClass="bg-red-950/20 text-red-700 border-red-900/20" valueClass="text-red-700" />
-        <Fact label="PM" value={character.mp_max} icon={<Sparkles size={20} />} colorClass="bg-blue-950/20 text-blue-700 border-blue-900/20" valueClass="text-blue-700" />
+        <VitalTracker
+          label="PV" icon={<Heart size={16} />}
+          current={hpCurrent} max={character.hp_max}
+          colorClass="bg-red-950 text-red-100 border-red-900"
+          barClass="bg-red-500"
+          onAdjust={adjustHp} onSetDirect={setHpDirect}
+        />
+        <VitalTracker
+          label="PM" icon={<Sparkles size={16} />}
+          current={mpCurrent} max={character.mp_max}
+          colorClass="bg-blue-950 text-blue-100 border-blue-900"
+          barClass="bg-blue-400"
+          onAdjust={adjustMp} onSetDirect={setMpDirect}
+        />
         <div title={defBreakdown}>
           <Fact
             label={equippedArmor || equippedShield ? "Defesa ⚙" : "Defesa"}
@@ -621,6 +671,110 @@ function Fact({
         <p className="text-xs font-bold uppercase tracking-wider">{label}</p>
       </div>
       <p className={`text-3xl font-black capitalize ${valueClass}`}>{value}</p>
+    </Card>
+  );
+}
+
+function VitalTracker({
+  label, icon, current, max, colorClass, barClass, onAdjust, onSetDirect,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  current: number;
+  max: number;
+  colorClass: string;
+  barClass: string;
+  onAdjust: (delta: number) => void;
+  onSetDirect: (val: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [inputVal, setInputVal] = useState("");
+  const pct = max > 0 ? Math.round((current / max) * 100) : 0;
+
+  function commitEdit() {
+    const n = parseInt(inputVal, 10);
+    if (!isNaN(n)) onSetDirect(n);
+    setEditing(false);
+  }
+
+  return (
+    <Card className={`flex flex-col gap-2 p-3 border shadow-sm ${colorClass}`}>
+      {/* Print: static display */}
+      <div className="hidden print:flex flex-col items-center justify-center py-2">
+        <div className="flex items-center gap-1.5 opacity-80 mb-1">
+          {icon}
+          <p className="text-xs font-bold uppercase tracking-wider">{label}</p>
+        </div>
+        <p className="text-3xl font-black">{max}</p>
+      </div>
+
+      {/* Screen: interactive tracker */}
+      <div className="print:hidden flex flex-col gap-2">
+        {/* Label */}
+        <div className="flex items-center gap-1.5 opacity-70">
+          {icon}
+          <p className="text-xs font-bold uppercase tracking-wider">{label}</p>
+          <span className="ml-auto text-xs opacity-50">{pct}%</span>
+        </div>
+
+        {/* Controls */}
+        <div className="flex items-center justify-between gap-1">
+          <button
+            onClick={() => onAdjust(-5)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-black hover:bg-white/20 active:scale-95 transition cursor-pointer"
+            title="-5"
+          >−5</button>
+          <button
+            onClick={() => onAdjust(-1)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-lg font-black hover:bg-white/20 active:scale-95 transition cursor-pointer"
+            title="-1"
+          >−</button>
+
+          {/* Current / Max — tap to edit */}
+          <button
+            onClick={() => { setInputVal(String(current)); setEditing(true); }}
+            className="flex flex-col items-center min-w-0 flex-1 cursor-pointer"
+            title="Toque para editar"
+          >
+            {editing ? (
+              <input
+                autoFocus
+                type="number"
+                value={inputVal}
+                onChange={e => setInputVal(e.target.value)}
+                onBlur={commitEdit}
+                onKeyDown={e => { if (e.key === "Enter") commitEdit(); if (e.key === "Escape") setEditing(false); }}
+                className="w-full rounded-lg bg-white/20 text-center text-xl font-black outline-none focus:ring-2 focus:ring-white/40 py-0.5"
+                onClick={e => e.stopPropagation()}
+              />
+            ) : (
+              <>
+                <span className="text-2xl font-black leading-none">{current}</span>
+                <span className="text-xs opacity-50 leading-none">/{max}</span>
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={() => onAdjust(+1)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-lg font-black hover:bg-white/20 active:scale-95 transition cursor-pointer"
+            title="+1"
+          >+</button>
+          <button
+            onClick={() => onAdjust(+5)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-black hover:bg-white/20 active:scale-95 transition cursor-pointer"
+            title="+5"
+          >+5</button>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all ${barClass}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
     </Card>
   );
 }
