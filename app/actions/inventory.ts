@@ -419,8 +419,14 @@ export async function rollStartingMoney(characterId: string) {
 // ─── getInventory ─────────────────────────────────────────────────────────────
 
 export async function getInventory(characterId: string) {
+  // Use admin client so the items join is not blocked by items-table RLS.
+  // Ownership is enforced explicitly via user_id filter.
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from("character_inventory")
     .select(`
       id, quantity, location, improvements, is_arcanium, arcanium_spell_circle,
@@ -435,6 +441,7 @@ export async function getInventory(characterId: string) {
       )
     `)
     .eq("character_id", characterId)
+    .eq("user_id", user.id)
     .neq("location", "sold")
     .order("acquired_at", { ascending: false });
 
