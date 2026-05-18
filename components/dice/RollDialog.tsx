@@ -34,10 +34,14 @@ type Props = {
   preLabel?: string;
   preModifier?: number;
   preModifierBreakdown?: string;
+  /** Pré-configura contagens específicas de dados (ex: { 6: 2 } para 2d6) */
+  preCounts?: Partial<Record<4 | 6 | 8 | 10 | 12 | 20, number>>;
 };
 
-export function RollDialog({ open, onClose, preLabel, preModifier = 0, preModifierBreakdown }: Props) {
-  const [counts, setCounts] = useState<DiceCount>({ ...INITIAL, 20: preLabel ? 1 : 0 });
+export function RollDialog({ open, onClose, preLabel, preModifier = 0, preModifierBreakdown, preCounts }: Props) {
+  const [counts, setCounts] = useState<DiceCount>(() =>
+    preCounts ? { ...INITIAL, ...preCounts } : { ...INITIAL, 20: preLabel ? 1 : 0 },
+  );
   const [results, setResults] = useState<RollEntry[] | null>(null);
   const [rolling, setRolling] = useState(false);
   const [animNumbers, setAnimNumbers] = useState<Record<string, number>>({});
@@ -49,11 +53,12 @@ export function RollDialog({ open, onClose, preLabel, preModifier = 0, preModifi
   // Reset ao abrir
   useEffect(() => {
     if (open) {
-      setCounts({ ...INITIAL, 20: preLabel ? 1 : 0 });
+      setCounts(preCounts ? { ...INITIAL, ...preCounts } : { ...INITIAL, 20: preLabel ? 1 : 0 });
       setResults(null);
       setRolling(false);
     }
-  }, [open, preLabel]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Atalhos de teclado
   const handleKey = useCallback((e: KeyboardEvent) => {

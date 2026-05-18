@@ -126,3 +126,137 @@ export async function dmDeleteInventoryItem(inventoryId: string, characterId: st
   if (error) throw new Error(error.message);
   revalidatePath(`/characters/${characterId}`);
 }
+
+// ── Gerenciar magias do personagem (DM) ───────────────────────────────────────
+
+export async function addSpellToCharacter(
+  characterId: string,
+  spellId: string,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    const user = await getAuthUser();
+    await assertOwns(characterId, user.id);
+
+    const admin = createAdminClient();
+    const { data: char } = await admin
+      .from("characters")
+      .select("spells")
+      .eq("id", characterId)
+      .single();
+
+    if (!char) return { error: "Personagem não encontrado." };
+
+    const current: string[] = char.spells ?? [];
+    if (current.includes(spellId)) return { ok: true };
+
+    const { error } = await admin
+      .from("characters")
+      .update({ spells: [...current, spellId] })
+      .eq("id", characterId);
+
+    if (error) return { error: error.message };
+    revalidatePath(`/characters/${characterId}`);
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro desconhecido." };
+  }
+}
+
+export async function removeSpellFromCharacter(
+  characterId: string,
+  spellId: string,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    const user = await getAuthUser();
+    await assertOwns(characterId, user.id);
+
+    const admin = createAdminClient();
+    const { data: char } = await admin
+      .from("characters")
+      .select("spells")
+      .eq("id", characterId)
+      .single();
+
+    if (!char) return { error: "Personagem não encontrado." };
+
+    const updated = (char.spells ?? []).filter((s: string) => s !== spellId);
+
+    const { error } = await admin
+      .from("characters")
+      .update({ spells: updated })
+      .eq("id", characterId);
+
+    if (error) return { error: error.message };
+    revalidatePath(`/characters/${characterId}`);
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro desconhecido." };
+  }
+}
+
+// ── Gerenciar poderes do personagem (DM) ──────────────────────────────────────
+
+export async function addPowerToCharacter(
+  characterId: string,
+  powerId: string,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    const user = await getAuthUser();
+    await assertOwns(characterId, user.id);
+
+    const admin = createAdminClient();
+    const { data: char } = await admin
+      .from("characters")
+      .select("powers")
+      .eq("id", characterId)
+      .single();
+
+    if (!char) return { error: "Personagem não encontrado." };
+
+    const current: string[] = char.powers ?? [];
+    if (current.includes(powerId)) return { ok: true };
+
+    const { error } = await admin
+      .from("characters")
+      .update({ powers: [...current, powerId] })
+      .eq("id", characterId);
+
+    if (error) return { error: error.message };
+    revalidatePath(`/characters/${characterId}`);
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro desconhecido." };
+  }
+}
+
+export async function removePowerFromCharacter(
+  characterId: string,
+  powerId: string,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    const user = await getAuthUser();
+    await assertOwns(characterId, user.id);
+
+    const admin = createAdminClient();
+    const { data: char } = await admin
+      .from("characters")
+      .select("powers")
+      .eq("id", characterId)
+      .single();
+
+    if (!char) return { error: "Personagem não encontrado." };
+
+    const updated = (char.powers ?? []).filter((p: string) => p !== powerId);
+
+    const { error } = await admin
+      .from("characters")
+      .update({ powers: updated })
+      .eq("id", characterId);
+
+    if (error) return { error: error.message };
+    revalidatePath(`/characters/${characterId}`);
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro desconhecido." };
+  }
+}

@@ -9,7 +9,7 @@ export default async function LevelUpPage({ params }: { params: Promise<{ id: st
 
   const { data: character, error } = await supabase
     .from("characters")
-    .select("id, name, class, class_levels, current_level, race, origin, attr_str, attr_dex, attr_con, attr_int, attr_wis, attr_cha, hp_max, mp_max")
+    .select("id, name, class, class_levels, current_level, race, origin, attr_str, attr_dex, attr_con, attr_int, attr_wis, attr_cha, hp_max, mp_max, spells, powers")
     .eq("id", id)
     .single();
 
@@ -51,6 +51,8 @@ export default async function LevelUpPage({ params }: { params: Promise<{ id: st
         attr_cha: character.attr_cha,
         hp_max: character.hp_max,
         mp_max: character.mp_max,
+        spells: (character.spells as string[] | null) ?? [],
+        powers: (character.powers as string[] | null) ?? [],
         levelUpHistory: levelUpHistory.map((lu) => ({
           to_level: lu.to_level,
           attr_increased: lu.attr_increased,

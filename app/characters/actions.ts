@@ -16,6 +16,7 @@ import {
   STARTER_KITS,
   hasMartialProficiency,
 } from "@/lib/ghanor/inventory";
+import { CLASS_STARTING_POWER } from "@/lib/ghanor/powers";
 import type { CharacterBuild } from "@/lib/ghanor/types";
 import type { WizardState } from "@/components/wizard/store";
 import crypto from "crypto";
@@ -135,7 +136,10 @@ export async function saveCharacter(input: WizardState) {
       origin: input.origin,
       origin_choices: { extraOrigin: input.extraOrigin },
       trained_skills: build.trainedSkills,
-      powers: input.powers,
+      powers: [
+        ...(CLASS_STARTING_POWER[input.class] ? [CLASS_STARTING_POWER[input.class]!] : []),
+        ...input.powers.filter((p) => p !== CLASS_STARTING_POWER[input.class]),
+      ],
       spells: input.spells,
       equipment: input.equipment,
       silver_pieces: input.silverPieces,
@@ -232,6 +236,7 @@ export async function saveGuidedCharacter(input: {
   computed: any;
   silverPieces: number;
   spells: string[];
+  powers?: string[];
   equipment: any[];
 }) {
   const supabase = await createClient();
@@ -277,7 +282,14 @@ export async function saveGuidedCharacter(input: {
       origin: input.origin,
       origin_choices: { extraOrigin: input.extraOrigin },
       trained_skills: build.trainedSkills,
-      powers: [],
+      powers: [
+        ...(CLASS_STARTING_POWER[input.class as keyof typeof CLASS_STARTING_POWER]
+          ? [CLASS_STARTING_POWER[input.class as keyof typeof CLASS_STARTING_POWER]!]
+          : []),
+        ...(input.powers ?? []).filter(
+          (p) => p !== CLASS_STARTING_POWER[input.class as keyof typeof CLASS_STARTING_POWER],
+        ),
+      ],
       spells: input.spells,
       equipment: input.equipment,
       silver_pieces: input.silverPieces,

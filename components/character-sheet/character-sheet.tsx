@@ -19,6 +19,7 @@ import { JourneySection } from "@/components/character-sheet/journey-section";
 import { InventoryTab } from "@/components/character-sheet/inventory-tab";
 import { CompanionsTab } from "@/components/character-sheet/companions-tab";
 import { AttacksSection } from "@/components/character-sheet/attacks-section";
+import { SpellsSection, type ActiveEffect } from "@/components/character-sheet/spells-section";
 import { computeDefenseWithEquipment, getArmorPenaltyForSkill, WORN_LIMIT } from "@/lib/ghanor/inventory";
 import { useDmMode } from "@/lib/hooks/use-dm-mode";
 import { DmModeBanner } from "@/components/inventory/dm-mode-banner";
@@ -125,13 +126,18 @@ export function CharacterSheet({
   // ── Rastreador de PV / PM ──────────────────────────────────────
   const [hpCurrent, setHpCurrent] = useState(character.hp_max);
   const [mpCurrent, setMpCurrent] = useState(character.mp_max);
+  // Incrementado em descanso longo e nova cena para resetar usos de poderes
+  const [restKey, setRestKey] = useState(0);
+  const [activeEffects, setActiveEffects] = useState<ActiveEffect[]>([]);
 
   useEffect(() => {
     try {
       const sh = localStorage.getItem(`ghanor:hp:${character.id}`);
       const sm = localStorage.getItem(`ghanor:mp:${character.id}`);
+      const se = localStorage.getItem(`ghanor:effects:${character.id}`);
       if (sh !== null) setHpCurrent(Math.min(Number(sh), character.hp_max));
       if (sm !== null) setMpCurrent(Math.min(Number(sm), character.mp_max));
+      if (se) setActiveEffects(JSON.parse(se));
     } catch { /* localStorage unavailable */ }
   }, [character.id, character.hp_max, character.mp_max]);
 
@@ -158,6 +164,35 @@ export function CharacterSheet({
     const next = Math.max(0, Math.min(character.mp_max, val));
     setMpCurrent(next);
     try { localStorage.setItem(`ghanor:mp:${character.id}`, String(next)); } catch { /* ignore */ }
+  }
+
+  function addEffect(effect: ActiveEffect) {
+    setActiveEffects((prev) => {
+      const next = [...prev, effect];
+      try { localStorage.setItem(`ghanor:effects:${character.id}`, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
+  function removeEffect(id: string) {
+    setActiveEffects((prev) => {
+      const next = prev.filter((e) => e.id !== id);
+      try { localStorage.setItem(`ghanor:effects:${character.id}`, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
+
+  function handleRestShort() {
+    adjustMp(level * 2);
+  }
+  function handleRestLong() {
+    setHpDirect(character.hp_max);
+    setMpDirect(character.mp_max);
+    setRestKey((k) => k + 1);
+  }
+  function handleNewScene() {
+    setRestKey((k) => k + 1);
+    setActiveEffects([]);
+    try { localStorage.removeItem(`ghanor:effects:${character.id}`); } catch { /* ignore */ }
   }
 
   // Auto-dismiss toast after 6s
@@ -530,6 +565,35 @@ export function CharacterSheet({
         <Fact label="Tamanho" value={character.size} icon={<Ruler size={20} />} colorClass="bg-amber-950/20 text-amber-900 border-amber-900/20" valueClass="text-amber-900" />
       </div>
 
+      {/* Botões de descanso e nova cena */}
+      <div className="flex gap-2 print:hidden">
+        <button
+          onClick={handleRestShort}
+          className="flex-1 rounded-lg py-1.5 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 active:bg-blue-200 transition"
+          title={`Descanso Curto: recupera ${level * 2} PM`}
+        >
+          Desc. Curto (+{level * 2} PM)
+        </button>
+        <button
+          onClick={handleRestLong}
+          className="flex-1 rounded-lg py-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 active:bg-emerald-200 transition"
+          title="Descanso Longo: recupera todos PV, PM e usos de poderes"
+        >
+          Desc. Longo (total)
+        </button>
+        <button
+          onClick={handleNewScene}
+          className="flex-1 rounded-lg py-1.5 text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 active:bg-amber-200 transition"
+          title="Nova Cena: recupera usos de poderes por cena"
+        >
+          Nova Cena
+        </button>
+      </div>
+
+      {activeEffects.length > 0 && (
+        <ActiveEffectsCard effects={activeEffects} onRemove={removeEffect} />
+      )}
+
       {/* Perícias e Habilidades */}
       <div className="flex flex-col gap-4">
         <Card>
@@ -572,16 +636,36 @@ export function CharacterSheet({
 
         <Card>
           <SectionTitle>Habilidades e magias</SectionTitle>
-          <p className="mt-3 text-sm">{classById[character.class as keyof typeof classById]?.firstLevelAbility}</p>
-          <p className="mt-2 text-sm">{raceById[character.race as keyof typeof raceById]?.abilities.join("; ")}</p>
-          {(character.powers?.length ?? 0) > 0 && (
-            <div className="mt-2 space-y-1">
-              {character.powers.map((p, i) => (
-                <p key={i} className="text-sm text-stone-700">• {p}</p>
-              ))}
+          <div className="mt-3 space-y-1">
+            {classById[character.class as keyof typeof classById]?.firstLevelAbility && (
+              <p className="text-sm">{classById[character.class as keyof typeof classById]?.firstLevelAbility}</p>
+            )}
+            {(raceById[character.race as keyof typeof raceById]?.abilities?.length ?? 0) > 0 && (
+              <p className="text-sm">{raceById[character.race as keyof typeof raceById]?.abilities.join("; ")}</p>
+            )}
+          </div>
+          {((character.powers?.length ?? 0) > 0 || (character.spells?.length ?? 0) > 0 || isDmMode) && (
+            <div className="mt-4">
+              <SpellsSection
+                spells={character.spells ?? []}
+                powers={character.powers ?? []}
+                isDmMode={isDmMode}
+                characterId={character.id}
+                mpCurrent={mpCurrent}
+                onUseMp={(amount) => adjustMp(-amount)}
+                onAddEffect={addEffect}
+                restKey={restKey}
+                attrs={{
+                  str: character.attr_str,
+                  dex: character.attr_dex,
+                  con: character.attr_con,
+                  int: character.attr_int,
+                  wis: character.attr_wis,
+                  cha: character.attr_cha,
+                }}
+              />
             </div>
           )}
-          {(character.spells?.length ?? 0) > 0 && <p className="mt-2 text-sm">Magias: {character.spells.join(", ")}</p>}
         </Card>
       </div>
 
@@ -801,5 +885,34 @@ function VitalTracker({
         </div>
       </div>
     </Card>
+  );
+}
+
+function ActiveEffectsCard({
+  effects,
+  onRemove,
+}: {
+  effects: ActiveEffect[];
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-violet-200 bg-violet-50/60 px-3 py-2.5 print:hidden">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-violet-600 mb-2">Efeitos Ativos</p>
+      <div className="flex flex-wrap gap-1.5">
+        {effects.map((ef) => (
+          <div key={ef.id} className="flex items-center gap-1.5 rounded-lg bg-violet-100 border border-violet-200 px-2.5 py-1 text-xs">
+            <span className="font-semibold text-violet-800">{ef.name}</span>
+            <span className="text-violet-400 text-[10px]">{ef.duration}</span>
+            <button
+              onClick={() => onRemove(ef.id)}
+              className="text-violet-400 hover:text-violet-700 transition ml-0.5"
+              aria-label={`Remover ${ef.name}`}
+            >
+              <X size={11} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

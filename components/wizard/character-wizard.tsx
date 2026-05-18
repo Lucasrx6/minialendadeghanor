@@ -4,12 +4,18 @@ import { useEffect, useMemo, useState, useTransition, type ComponentType } from 
 import { useRouter } from "next/navigation";
 import {
   Axe,
+  Check,
+  ChevronDown,
+  ChevronRight,
   Church,
   Crown,
   Dices,
   Drum,
   Eye,
+  Flame,
+  Heart,
   KeyRound,
+  Lock,
   PawPrint,
   Sailboat,
   Save,
@@ -17,13 +23,17 @@ import {
   Sparkles,
   Swords,
   WandSparkles,
+  Wrench,
+  Zap,
+  Star,
 } from "lucide-react";
 import { saveCharacter } from "@/app/characters/actions";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
 import { classes } from "@/lib/ghanor/classes";
-import { getSpellsForClass, spells } from "@/lib/ghanor/spells";
+import { getSpellsForClass, type Spell, type SpellEffectType } from "@/lib/ghanor/spells";
+import { getGeneralPowers, powerById, CLASS_STARTING_POWER, type Power } from "@/lib/ghanor/powers";
 import { origins } from "@/lib/ghanor/origins";
 import { aberrantMutations, races } from "@/lib/ghanor/races";
 import {
@@ -151,12 +161,18 @@ export function CharacterWizard() {
   const selectedRace = races.find((race) => race.id === state.race)!;
   const selectedOrigin = origins.find((origin) => origin.id === state.origin)!;
   const remainingPoints = 10 - pointBuySpent(state.baseAttributes);
-  const classSpellOptions = getSpellsForClass(state.class);
-  const spellOptions = classSpellOptions.length > 0 ? classSpellOptions : spells;
+  const circle1Spells = getSpellsForClass(state.class).filter((s) => s.circle === 1);
   const canUseMagic =
-    ["bardo", "clerigo", "mago"].includes(state.class) ||
+    ["bardo", "clerigo", "druida", "mago"].includes(state.class) ||
     state.origin === "receptaculo" ||
     state.raceChoices.mutations.includes("magia_bizarra");
+  const spellLimit = state.class === "mago"
+    ? Math.max(2, finalAttrs.int * 2)
+    : 3;
+  const classStartingPower = CLASS_STARTING_POWER[state.class]
+    ? powerById[CLASS_STARTING_POWER[state.class]!]
+    : undefined;
+  const generalPowers = getGeneralPowers();
 
   function setAttr(attr: Attribute, value: number) {
     const min = state.attrMethod === "points" ? -1 : -2;
@@ -506,36 +522,33 @@ export function CharacterWizard() {
         )}
 
         {state.step === 7 && (
-          <Card className="space-y-4">
-            <SectionTitle>Escolha suas primeiras magias</SectionTitle>
-            {!canUseMagic ? (
-              <p className="text-sm leading-6 text-stone-700">
-                Seu personagem ainda não tem uma fonte de magia. Se escolher uma origem ou mutação que conceda magia, esta etapa ganha opções.
-              </p>
-            ) : (
-              <>
-                <p className="text-sm leading-6 text-stone-700">
-                  Estas são magias de 1º círculo disponíveis para o caminho escolhido. Use a busca do navegador se quiser achar uma magia pelo nome.
-                </p>
-                <ChoiceGrid
-                  options={spellOptions.map((spell) => ({ id: spell.name, label: `${spell.name} - ${spell.tags.join("/")}` }))}
-                  selected={state.spells}
-                  limit={8}
-                  onChange={(selected) => state.update({ spells: selected })}
-                />
-                <label className="block text-sm font-semibold">
-                  Magia personalizada, se o mestre permitir
-                  <Input
-                    placeholder="Digite e pressione vírgula para separar"
-                    onChange={(event) => {
-                      const extras = event.target.value.split(",").map((item) => item.trim()).filter(Boolean);
-                      state.update({ spells: [...new Set([...state.spells, ...extras])] });
-                    }}
-                  />
-                </label>
-              </>
+          <div className="space-y-5">
+            {/* Magias — só para conjuradores */}
+            {canUseMagic && circle1Spells.length > 0 && (
+              <SpellPickerSection
+                spells={circle1Spells}
+                selected={state.spells}
+                limit={spellLimit}
+                onChange={(ids) => state.update({ spells: ids })}
+              />
             )}
-          </Card>
+            {!canUseMagic && (
+              <Card className="space-y-3">
+                <SectionTitle>Palavras de poder</SectionTitle>
+                <p className="text-sm text-stone-600">
+                  Seu personagem ainda não tem uma fonte de magia. Se escolher uma origem ou mutação que conceda magia, esta etapa ganha opções.
+                </p>
+              </Card>
+            )}
+
+            {/* Poderes */}
+            <PowerPickerSection
+              classStartingPower={classStartingPower}
+              generalPowers={generalPowers}
+              selected={state.powers}
+              onChange={(ids) => state.update({ powers: ids })}
+            />
+          </div>
         )}
 
         {state.step === 8 && (
@@ -739,5 +752,219 @@ function Stat({ label, value }: { label: string; value: string | number }) {
       <p className="text-xs text-amber-200">{label}</p>
       <p className="font-black capitalize">{value}</p>
     </div>
+  );
+}
+
+const SPELL_EFFECT_LABELS: Partial<Record<SpellEffectType, string>> = {
+  dano: "Dano",
+  cura: "Cura",
+  buff: "Reforço",
+  debuff: "Enfraquecimento",
+  utilidade: "Utilidade",
+  controle: "Controle",
+  "invocação": "Invocação",
+};
+
+function SpellPickerSection({
+  spells,
+  selected,
+  limit,
+  onChange,
+}: {
+  spells: Spell[];
+  selected: string[];
+  limit: number;
+  onChange: (ids: string[]) => void;
+}) {
+  const [filter, setFilter] = useState<SpellEffectType | "all">("all");
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const effectTypes = [...new Set(spells.map((s) => s.effect_type))];
+  const filtered = filter === "all" ? spells : spells.filter((s) => s.effect_type === filter);
+
+  return (
+    <Card className="space-y-4">
+      <div className="flex items-center justify-between">
+        <SectionTitle>Magias conhecidas</SectionTitle>
+        <span className={cn("text-sm font-semibold", selected.length >= limit ? "text-amber-700" : "text-stone-500")}>
+          {selected.length}/{limit}
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button
+          className={cn("rounded-full border px-3 py-1 text-xs font-semibold transition", filter === "all" ? "border-amber-800 bg-amber-800 text-white" : "border-amber-900/20 bg-white/70 text-stone-700")}
+          onClick={() => setFilter("all")}
+        >
+          Todos
+        </button>
+        {effectTypes.map((type) => (
+          <button
+            key={type}
+            className={cn("rounded-full border px-3 py-1 text-xs font-semibold transition", filter === type ? "border-amber-800 bg-amber-800 text-white" : "border-amber-900/20 bg-white/70 text-stone-700")}
+            onClick={() => setFilter(type as SpellEffectType)}
+          >
+            {SPELL_EFFECT_LABELS[type as SpellEffectType] ?? type}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-2">
+        {filtered.map((spell) => {
+          const isSelected = selected.includes(spell.id);
+          const disabled = !isSelected && selected.length >= limit;
+          const isOpen = expanded === spell.id;
+          return (
+            <div
+              key={spell.id}
+              className={cn(
+                "rounded-lg border transition",
+                isSelected ? "border-amber-800 bg-amber-50" : "border-amber-900/10 bg-white/70",
+                disabled && "opacity-40",
+              )}
+            >
+              <div className="flex items-center gap-3 p-3">
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  disabled={disabled}
+                  onChange={() => {
+                    if (isSelected) onChange(selected.filter((id) => id !== spell.id));
+                    else if (!disabled) onChange([...selected, spell.id]);
+                  }}
+                  className="h-4 w-4 shrink-0 accent-amber-700"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="font-black text-stone-950">{spell.name}</p>
+                  <p className="text-xs text-stone-500">
+                    {spell.mp_cost} PM · {spell.casting_time} · {spell.range}
+                  </p>
+                </div>
+                <button
+                  className="shrink-0 text-stone-400"
+                  onClick={() => setExpanded(isOpen ? null : spell.id)}
+                  aria-label={isOpen ? "Recolher" : "Expandir"}
+                >
+                  {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                </button>
+              </div>
+              {isOpen && (
+                <div className="space-y-1 border-t border-amber-900/10 p-3 pt-2 text-sm text-stone-700">
+                  <p><strong>Alvo:</strong> {spell.target} · <strong>Duração:</strong> {spell.duration}</p>
+                  <p>{spell.description}</p>
+                  {spell.amplify && spell.amplify.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs font-semibold uppercase text-stone-400">Amplificações</p>
+                      {spell.amplify.map((amp, i) => (
+                        <p key={i} className="text-xs text-stone-600">+{amp.extra_mp} PM: {amp.effect}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+function PowerPickerSection({
+  classStartingPower,
+  generalPowers,
+  selected,
+  onChange,
+}: {
+  classStartingPower: Power | undefined;
+  generalPowers: Power[];
+  selected: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  function togglePower(id: string) {
+    if (selected.includes(id)) {
+      onChange(selected.filter((s) => s !== id));
+    } else {
+      onChange([id]);
+    }
+  }
+
+  return (
+    <Card className="space-y-4">
+      <SectionTitle>Habilidades</SectionTitle>
+
+      {classStartingPower && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase text-stone-400">Poder de classe (automático)</p>
+          <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
+            <div className="flex items-center gap-2">
+              <Lock size={14} className="shrink-0 text-stone-400" />
+              <span className="flex-1 font-black text-stone-950">{classStartingPower.name}</span>
+              <span className="text-xs capitalize text-stone-500">{classStartingPower.activation}</span>
+              <button
+                className="shrink-0 text-stone-400"
+                onClick={() => setExpanded(expanded === classStartingPower.id ? null : classStartingPower.id)}
+                aria-label={expanded === classStartingPower.id ? "Recolher" : "Expandir"}
+              >
+                {expanded === classStartingPower.id ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              </button>
+            </div>
+            {expanded === classStartingPower.id && (
+              <p className="mt-2 border-t border-stone-200 pt-2 text-sm text-stone-700">
+                {classStartingPower.description}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <p className="mb-2 text-xs font-semibold uppercase text-stone-400">Poder geral (escolha 1)</p>
+        <div className="space-y-2">
+          {generalPowers.map((power) => {
+            const isSelected = selected.includes(power.id);
+            const isOpen = expanded === power.id;
+            return (
+              <div
+                key={power.id}
+                className={cn(
+                  "rounded-lg border transition",
+                  isSelected ? "border-amber-800 bg-amber-50" : "border-amber-900/10 bg-white/70",
+                )}
+              >
+                <div className="flex items-center gap-3 p-3">
+                  <button
+                    className={cn(
+                      "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition",
+                      isSelected ? "border-amber-700 bg-amber-700" : "border-stone-300",
+                    )}
+                    onClick={() => togglePower(power.id)}
+                    aria-pressed={isSelected}
+                  >
+                    {isSelected && <span className="h-2 w-2 rounded-full bg-white" />}
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-black text-stone-950">{power.name}</p>
+                    <p className="text-xs capitalize text-stone-500">{power.activation}</p>
+                  </div>
+                  <button
+                    className="shrink-0 text-stone-400"
+                    onClick={() => setExpanded(isOpen ? null : power.id)}
+                    aria-label={isOpen ? "Recolher" : "Expandir"}
+                  >
+                    {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  </button>
+                </div>
+                {isOpen && (
+                  <p className="border-t border-amber-900/10 p-3 pt-2 text-sm text-stone-700">
+                    {power.description}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Card>
   );
 }
