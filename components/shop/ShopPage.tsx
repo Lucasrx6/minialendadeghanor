@@ -9,8 +9,9 @@ import {
 import { formatMoneyPP, formatMoney, priceWithArcanium } from "@/lib/ghanor/inventory";
 import {
   buyFromSession, createShopSession,
-  type SessionItem, type ShopSession, STAGE_INFO,
+  type SessionItem, type ShopSession,
 } from "@/app/actions/shop-session";
+import { STAGE_INFO } from "@/lib/ghanor/shop-stages";
 import { ItemIcon } from "@/components/ui/item-icon";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
