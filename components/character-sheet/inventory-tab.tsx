@@ -79,7 +79,7 @@ type Props = {
   inventory: InvEntry[];
   transactions: MoneyTx[];
   characterClass: string;
-  catalog: Array<{ slug: string; name: string; category: string; price_pc: number }>;
+  catalog: Array<{ slug: string; name: string; category: string; price_pc: number; spaces: number; description: string | null; weapon_damage_dice: string | null; weapon_critical: string | null; armor_defense_bonus: number | null; is_stackable: boolean }>;
   isDmMode: boolean;
 };
 

@@ -32,7 +32,7 @@ export default async function CharacterPage({
     getLevelUpHistory(id).catch(() => []),
     getInventory(id).catch(() => []),
     getMoneyTransactions(id).catch(() => []),
-    Promise.resolve(admin.from("items").select("slug, name, category, price_pc").order("name")).then(r => r.data ?? []).catch(() => [] as { slug: string; name: string; category: string; price_pc: number }[]),
+    Promise.resolve(admin.from("items").select("slug, name, category, price_pc, spaces, description, weapon_damage_dice, weapon_critical, armor_defense_bonus, is_stackable").order("name")).then(r => r.data ?? []).catch(() => [] as { slug: string; name: string; category: string; price_pc: number; spaces: number; description: string | null; weapon_damage_dice: string | null; weapon_critical: string | null; armor_defense_bonus: number | null; is_stackable: boolean }[]),
     getCompanions(id).catch(() => []),
   ]);
   // Animals and vehicles are managed via the Parceiros tab, not the inventory modal

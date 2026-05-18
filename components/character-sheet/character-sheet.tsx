@@ -107,7 +107,7 @@ export function CharacterSheet({
   justLeveledUpTo?: number;
   inventory?: unknown[];
   transactions?: unknown[];
-  catalog?: Array<{ slug: string; name: string; category: string; price_pc: number }>;
+  catalog?: Array<{ slug: string; name: string; category: string; price_pc: number; spaces: number; description: string | null; weapon_damage_dice: string | null; weapon_critical: string | null; armor_defense_bonus: number | null; is_stackable: boolean }>;
   companions?: Companion[];
 }) {
   const [activeTab, setActiveTab] = useState<"sheet" | "inventory" | "companions">("sheet");
