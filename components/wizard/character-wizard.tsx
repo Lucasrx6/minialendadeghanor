@@ -543,8 +543,14 @@ export function CharacterWizard() {
             <SectionTitle>Antes de abrir a porta</SectionTitle>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-sm font-semibold">
-                Idade
-                <Input type="number" value={state.age ?? ""} onChange={(event) => state.update({ age: Number(event.target.value) })} />
+                Idade (mín. 18)
+                <Input
+                  type="number"
+                  min={18}
+                  placeholder="18"
+                  value={state.age ?? ""}
+                  onChange={(event) => state.update({ age: Math.max(18, Number(event.target.value) || 18) })}
+                />
               </label>
               <div className="flex items-center rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
                 <strong className="mr-1">Dinheiro inicial:</strong> 4d6 PP rolados automaticamente.
