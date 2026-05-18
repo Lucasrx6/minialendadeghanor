@@ -4,10 +4,10 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Package, Sword, Shield, Shirt, Beaker, Star, Clock,
-  Plus, Minus, ShoppingBag, ArrowUpDown, Trash2, Pencil, ChevronDown, Wand2,
+  Plus, Minus, ShoppingBag, ArrowUpDown, Trash2, ChevronDown, ChevronRight, Wand2,
 } from "lucide-react";
 import {
-  formatMoney, formatMoneyPP, carryCapacity, maxCarryCapacity, totalSpaces,
+  formatMoney, formatMoneyPP, carryCapacity, maxCarryCapacity,
   carryZone, WORN_LIMIT, priceWithArcanium,
 } from "@/lib/ghanor/inventory";
 import {
@@ -83,16 +83,35 @@ type Props = {
   isDmMode: boolean;
 };
 
+// ─── Temas por categoria ──────────────────────────────────────────────────────
+
+type CatTheme = { gradFrom: string; gradTo: string; border: string; iconClr: string; accentBg: string };
+
+const CAT_THEME: Record<string, CatTheme> = {
+  arma:                  { gradFrom: "#1c1a17", gradTo: "#3c3330", border: "#d97706", iconClr: "#fcd34d", accentBg: "rgba(217,119,6,0.15)" },
+  armadura:              { gradFrom: "#0f1529", gradTo: "#1a2a4a", border: "#6366f1", iconClr: "#a5b4fc", accentBg: "rgba(99,102,241,0.15)" },
+  escudo:                { gradFrom: "#0f1529", gradTo: "#1a2a4a", border: "#6366f1", iconClr: "#a5b4fc", accentBg: "rgba(99,102,241,0.15)" },
+  vestuario:             { gradFrom: "#1a0f2e", gradTo: "#2d1645", border: "#a855f7", iconClr: "#d8b4fe", accentBg: "rgba(168,85,247,0.15)" },
+  equipamento_aventura:  { gradFrom: "#0f1c12", gradTo: "#143322", border: "#22c55e", iconClr: "#86efac", accentBg: "rgba(34,197,94,0.15)" },
+  ferramenta:            { gradFrom: "#1a1a10", gradTo: "#2a2a16", border: "#84cc16", iconClr: "#bef264", accentBg: "rgba(132,204,22,0.15)" },
+  esoterico:             { gradFrom: "#200f2e", gradTo: "#341640", border: "#ec4899", iconClr: "#f9a8d4", accentBg: "rgba(236,72,153,0.15)" },
+  alquimico_preparado:   { gradFrom: "#0a1a1a", gradTo: "#0e2929", border: "#06b6d4", iconClr: "#67e8f9", accentBg: "rgba(6,182,212,0.15)" },
+  alquimico_veneno:      { gradFrom: "#0a1a0c", gradTo: "#0e2912", border: "#4ade80", iconClr: "#86efac", accentBg: "rgba(74,222,128,0.15)" },
+  alquimico_catalisador: { gradFrom: "#1a140a", gradTo: "#2d200c", border: "#fb923c", iconClr: "#fdba74", accentBg: "rgba(251,146,60,0.15)" },
+  alquimia_mistica:      { gradFrom: "#1a0f2e", gradTo: "#2d1645", border: "#c084fc", iconClr: "#e9d5ff", accentBg: "rgba(192,132,252,0.15)" },
+  municao:               { gradFrom: "#1a1710", gradTo: "#2d2516", border: "#ca8a04", iconClr: "#fde047", accentBg: "rgba(202,138,4,0.15)" },
+  item_magico:           { gradFrom: "#1c0f2e", gradTo: "#2e1050", border: "#e879f9", iconClr: "#f0abfc", accentBg: "rgba(232,121,249,0.15)" },
+};
+const DEFAULT_CAT_THEME: CatTheme = { gradFrom: "#171717", gradTo: "#262626", border: "#78716c", iconClr: "#d6d3d1", accentBg: "rgba(120,113,108,0.15)" };
+
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
-const CATEGORY_ICON: Record<string, React.ReactNode> = {
-  arma:                   <Sword size={14} />,
-  armadura:               <Shield size={14} />,
-  escudo:                 <Shield size={14} />,
-  vestuario:              <Shirt size={14} />,
-  alquimico_preparado:    <Beaker size={14} />,
-  alquimico_veneno:       <Beaker size={14} />,
-  esoterico:              <Star size={14} />,
+type IconComp = React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
+
+const CATEGORY_ICON_COMPONENT: Record<string, IconComp> = {
+  arma: Sword, armadura: Shield, escudo: Shield, vestuario: Shirt,
+  alquimico_preparado: Beaker, alquimico_veneno: Beaker,
+  alquimico_catalisador: Beaker, alquimia_mistica: Beaker, esoterico: Star,
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -103,6 +122,11 @@ const CATEGORY_LABEL: Record<string, string> = {
   alquimico_catalisador: "Catalisador", alquimia_mistica: "Alq. Mística",
   municao: "Munição", animal: "Animal", veiculo: "Veículo",
   servico: "Serviço", bens_comuns: "Bens", item_magico: "Item Mágico",
+};
+
+const CRIT_LABELS: Record<string, string> = {
+  x2: "×2", x3: "×3", x4: "×4",
+  "19": "19-20/×2", "18": "18-20/×2", "19/x3": "19-20/×3",
 };
 
 function itemName(entry: InvEntry): string {
@@ -133,7 +157,6 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
     setTimeout(() => setToast(null), 3500);
   };
 
-  // Separa inventário por localização
   const carried  = inventory.filter(i => i.location === "carried");
   const equipped = inventory.filter(i => i.location === "equipped");
   const worn     = inventory.filter(i => i.location === "worn");
@@ -296,9 +319,9 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
 
       {/* ── Tab: Carregado ─────────────────────────────────── */}
       {tab === "carried" && (
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2 items-start">
           {carried.length === 0 ? (
-            <EmptyState icon={<Package size={32} />} label="Nada na mochila" />
+            <div className="col-span-2"><EmptyState icon={<Package size={32} />} label="Nada na mochila" /></div>
           ) : (
             carried.map(entry => {
               const isCustom = !entry.items;
@@ -326,9 +349,9 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
 
       {/* ── Tab: Equipado ─────────────────────────────────── */}
       {tab === "equipped" && (
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2 items-start">
           {[...equipped, ...worn].length === 0 ? (
-            <EmptyState icon={<Shield size={32} />} label="Nada equipado" />
+            <div className="col-span-2"><EmptyState icon={<Shield size={32} />} label="Nada equipado" /></div>
           ) : (
             [...equipped, ...worn].map(entry => (
               <InventoryCard
@@ -349,9 +372,9 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
 
       {/* ── Tab: Guardado ─────────────────────────────────── */}
       {tab === "storage" && (
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2 items-start">
           {storage.length === 0 ? (
-            <EmptyState icon={<ArrowUpDown size={32} />} label="Nada guardado" />
+            <div className="col-span-2"><EmptyState icon={<ArrowUpDown size={32} />} label="Nada guardado" /></div>
           ) : (
             storage.map(entry => (
               <InventoryCard
@@ -460,7 +483,7 @@ function InventoryCard({
   onSell?: () => void;
   onQty?: (delta: number) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [open, setOpen] = useState(false);
   const [dmLabel, setDmLabel] = useState(entry.custom_label ?? "");
   const [dmNotes, setDmNotes] = useState(entry.notes ?? "");
   const [dmImprovements, setDmImprovements] = useState(entry.improvements ?? 0);
@@ -474,250 +497,374 @@ function InventoryCard({
   const name = itemName(entry);
   const cat = item?.category ?? (entry.custom_data?.category as string) ?? "outro";
   const price = item ? priceWithArcanium(item.price_pc, entry.improvements, entry.arcanium_spell_circle ?? undefined) : 0;
+  const theme = CAT_THEME[cat] ?? DEFAULT_CAT_THEME;
+  const FallbackIcon: IconComp = CATEGORY_ICON_COMPONENT[cat] ?? Package;
+
+  // Primary action for action bar
+  const primaryAction = onHold ? { label: "Empunhar", fn: onHold }
+    : onWear   ? { label: "Vestir",    fn: onWear }
+    : onRetrieve ? { label: "Recuperar", fn: onRetrieve }
+    : onUnequip  ? { label: "Desequipar", fn: onUnequip }
+    : null;
+
+  // Key stat shown on card face
+  const statLine = item?.weapon_damage_dice
+    ? item.weapon_damage_dice
+    : item?.armor_defense_bonus
+    ? `+${item.armor_defense_bonus} Def`
+    : item?.spaces && item.spaces > 0
+    ? `${item.spaces} esp.`
+    : null;
+
+  const critLabel = item?.weapon_critical ? (CRIT_LABELS[item.weapon_critical] ?? item.weapon_critical) : null;
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white overflow-hidden shadow-sm">
-      {/* Header */}
+    <div
+      className="flex flex-col rounded-xl overflow-hidden transition-all duration-150"
+      style={{
+        border: `1.5px solid ${open ? theme.border : theme.border + "40"}`,
+        boxShadow: open ? `0 0 14px ${theme.border}25` : "none",
+      }}
+    >
+      {/* Card face */}
       <button
-        onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-stone-50 transition"
+        className="relative flex flex-col items-center gap-1.5 px-2 pt-5 pb-3 text-center focus:outline-none"
+        style={{ background: `linear-gradient(160deg, ${theme.gradFrom} 0%, ${theme.gradTo} 100%)` }}
+        onClick={() => setOpen(v => !v)}
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-400">
-          {item?.slug
-            ? <ItemIcon slug={item.slug} size={18} />
-            : (CATEGORY_ICON[cat] ?? <Package size={18} />)
-          }
+        {/* Category badge */}
+        <span
+          className="absolute top-2 left-2 rounded-full px-1.5 py-0.5 text-[9px] font-black"
+          style={{ background: `${theme.border}30`, color: theme.iconClr, border: `1px solid ${theme.border}40` }}
+        >
+          {CATEGORY_LABEL[cat] ?? cat}
         </span>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-stone-900 truncate">{name}</p>
-          <p className="text-xs text-stone-500">
-            {CATEGORY_LABEL[cat] ?? cat}
-            {item?.weapon_damage_dice && ` · ${item.weapon_damage_dice}`}
-            {item?.armor_defense_bonus && ` · +${item.armor_defense_bonus} Def`}
-          </p>
-        </div>
-        {entry.quantity > 1 && (
-          <span className="text-xs font-bold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">×{entry.quantity}</span>
-        )}
-        {item?.is_cosmetic && (
-          <span className="text-xs font-medium text-stone-400 bg-stone-100 rounded-full px-2 py-0.5">cosmético</span>
-        )}
-        {item && item.is_purchasable === false && (
-          <span className="text-xs font-medium text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">não-comercial</span>
-        )}
+
+        {/* Equipped / Stored badge */}
         {badge && (
-          <span className="text-xs font-bold text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5">{badge}</span>
+          <span className="absolute top-2 right-2 rounded-full px-1.5 py-0.5 text-[9px] font-black bg-emerald-900/60 text-emerald-300 border border-emerald-700/40">
+            {badge}
+          </span>
         )}
-        <ChevronDown size={14} className={`text-stone-400 transition-transform ${expanded ? "rotate-180" : ""}`} />
+
+        {/* Icon */}
+        <div
+          className="mt-1 flex h-10 w-10 items-center justify-center rounded-full"
+          style={{ background: `${theme.border}20`, border: `1.5px solid ${theme.border}50` }}
+        >
+          {item?.slug
+            ? <ItemIcon slug={item.slug} size={22} />
+            : <FallbackIcon size={20} style={{ color: theme.iconClr }} />
+          }
+        </div>
+
+        {/* Name */}
+        <p className="text-[11px] font-black leading-tight line-clamp-2 px-1 text-stone-100">
+          {name}
+          {entry.improvements > 0 && <span style={{ color: theme.iconClr }}> +{entry.improvements}</span>}
+          {entry.is_arcanium && <span className="ml-1 text-purple-300"> ✦</span>}
+        </p>
+
+        {/* Stat */}
+        {statLine && (
+          <p className="text-base font-black" style={{ color: theme.iconClr }}>{statLine}</p>
+        )}
+
+        {/* Small badges */}
+        <div className="flex flex-wrap gap-1 justify-center min-h-[14px]">
+          {entry.quantity > 1 && (
+            <span className="text-[9px] font-bold rounded-full px-1.5" style={{ background: `${theme.border}25`, color: theme.iconClr }}>
+              ×{entry.quantity}
+            </span>
+          )}
+          {item?.is_cosmetic && (
+            <span className="text-[9px] font-bold rounded-full px-1.5 bg-stone-800/80 text-stone-400">cosmético</span>
+          )}
+          {item && item.is_purchasable === false && (
+            <span className="text-[9px] font-bold rounded-full px-1.5 bg-amber-900/40 text-amber-400">não-comercial</span>
+          )}
+        </div>
       </button>
 
-      {/* Expanded */}
-      {expanded && (<>
-        <div className="border-t border-stone-100 px-4 py-3 space-y-3 bg-stone-50">
+      {/* Action bar */}
+      <div className="flex gap-1 border-t bg-stone-900 p-1.5" style={{ borderColor: `${theme.border}25` }}>
+        {primaryAction ? (
+          <button
+            onClick={primaryAction.fn}
+            disabled={isPending}
+            className="flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-bold transition active:scale-95 disabled:opacity-50"
+            style={{ background: theme.accentBg, color: theme.iconClr, border: `1px solid ${theme.border}35` }}
+          >
+            {primaryAction.label}
+          </button>
+        ) : onStore ? (
+          <button
+            onClick={onStore}
+            disabled={isPending}
+            className="flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-bold bg-stone-800 text-stone-300 transition hover:bg-stone-700 active:scale-95 disabled:opacity-50"
+          >
+            Guardar
+          </button>
+        ) : null}
+
+        {/* Show Guardar as second button when there's a primary action */}
+        {primaryAction && onStore && (
+          <button
+            onClick={onStore}
+            disabled={isPending}
+            className="flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-bold bg-stone-800 text-stone-300 transition hover:bg-stone-700 active:scale-95 disabled:opacity-50"
+          >
+            Guardar
+          </button>
+        )}
+
+        <button
+          onClick={() => setOpen(v => !v)}
+          className="rounded-lg px-2 text-stone-500 hover:text-stone-300 transition bg-stone-800"
+        >
+          {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        </button>
+      </div>
+
+      {/* Expanded details */}
+      <div
+        className="overflow-hidden transition-all duration-200"
+        style={{ maxHeight: open ? "700px" : "0" }}
+      >
+        <div className="space-y-2 border-t bg-stone-900/90 px-3 py-3" style={{ borderColor: `${theme.border}25` }}>
+
+          {/* Notices */}
           {item?.is_cosmetic && (
-            <p className="text-xs text-stone-400 italic border-l-2 border-stone-200 pl-2">
-              Cosmético — não conta no limite de espaços nem no de itens vestidos (livro pág. 97).
+            <p className="text-[10px] text-stone-400 italic border-l-2 border-stone-600 pl-2">
+              Cosmético — não conta no limite de espaços nem no de itens vestidos.
             </p>
           )}
           {item && item.is_purchasable === false && (
-            <p className="text-xs text-amber-700 italic border-l-2 border-amber-300 pl-2">
-              Não-comercial — este item não tem valor de mercado e não pode ser vendido por PC.
+            <p className="text-[10px] text-amber-500 italic border-l-2 border-amber-700 pl-2">
+              Não-comercial — sem valor de mercado.
             </p>
           )}
-          {item?.description && <p className="text-xs text-stone-600 italic">{item.description}</p>}
+          {item?.description && (
+            <p className="text-[10px] text-stone-400 italic">{item.description}</p>
+          )}
 
-          {/* Stats de arma */}
-          {item?.weapon_damage_dice && (
-            <div className="grid grid-cols-2 gap-1 text-xs">
-              <span className="text-stone-500">Dano</span><span className="font-bold">{item.weapon_damage_dice} ({item.weapon_critical})</span>
-              <span className="text-stone-500">Alcance</span><span className="font-bold capitalize">{item.weapon_range ?? "—"}</span>
-              <span className="text-stone-500">Proficiência</span><span className="font-bold capitalize">{item.weapon_proficiency ?? "—"}</span>
-              {item.weapon_abilities?.length > 0 && (
-                <><span className="text-stone-500">Habilidades</span><span className="font-bold">{item.weapon_abilities.join(", ")}</span></>
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
+            {item?.weapon_damage_dice && (<>
+              <span className="text-stone-500">Dano</span>
+              <span className="font-bold text-stone-200">{item.weapon_damage_dice}{critLabel ? ` (${critLabel})` : ""}</span>
+              <span className="text-stone-500">Alcance</span>
+              <span className="font-bold capitalize text-stone-200">{item.weapon_range ?? "—"}</span>
+              <span className="text-stone-500">Proficiência</span>
+              <span className="font-bold capitalize text-stone-200">{item.weapon_proficiency ?? "—"}</span>
+              {item.weapon_abilities?.length > 0 && (<>
+                <span className="text-stone-500">Habilidades</span>
+                <span className="font-bold text-stone-200">{item.weapon_abilities.join(", ")}</span>
+              </>)}
+            </>)}
+            {item?.armor_defense_bonus && (<>
+              <span className="text-stone-500">Bônus Def.</span>
+              <span className="font-bold text-stone-200">+{item.armor_defense_bonus}</span>
+              <span className="text-stone-500">Penalidade</span>
+              <span className="font-bold text-red-400">{item.armor_penalty ?? 0}</span>
+            </>)}
+          </div>
+
+          {/* Improvements / Arcanium badges */}
+          {(entry.improvements > 0 || entry.is_arcanium) && (
+            <div className="flex gap-1.5 flex-wrap">
+              {entry.improvements > 0 && (
+                <span className="text-[10px] rounded-full px-2 py-0.5 font-bold" style={{ background: `${theme.border}20`, color: theme.iconClr }}>
+                  +{entry.improvements} melhoria{entry.improvements > 1 ? "s" : ""}
+                </span>
+              )}
+              {entry.is_arcanium && (
+                <span className="text-[10px] rounded-full px-2 py-0.5 font-bold bg-purple-900/40 text-purple-300">
+                  Arcanium {entry.arcanium_spell_circle}º
+                </span>
               )}
             </div>
           )}
 
-          {/* Stats de armadura */}
-          {item?.armor_defense_bonus && (
-            <div className="grid grid-cols-2 gap-1 text-xs">
-              <span className="text-stone-500">Bônus de Defesa</span><span className="font-bold">+{item.armor_defense_bonus}</span>
-              <span className="text-stone-500">Penalidade</span><span className="font-bold text-red-600">{item.armor_penalty ?? 0}</span>
-            </div>
+          {entry.notes && (
+            <p className="text-[10px] italic text-stone-400 border-l-2 pl-2" style={{ borderColor: `${theme.border}60` }}>
+              {entry.notes}
+            </p>
           )}
 
-          {/* Melhorias */}
-          {(entry.improvements > 0 || entry.is_arcanium) && (
-            <div className="flex gap-2 flex-wrap">
-              {entry.improvements > 0 && <span className="text-xs bg-amber-100 text-amber-800 rounded-full px-2 py-0.5 font-bold">+{entry.improvements} melhoria{entry.improvements > 1 ? "s" : ""}</span>}
-              {entry.is_arcanium && <span className="text-xs bg-purple-100 text-purple-800 rounded-full px-2 py-0.5 font-bold">Arcanium {entry.arcanium_spell_circle}º</span>}
-            </div>
-          )}
+          <p className="text-[10px] text-stone-500">
+            Valor: {formatMoneyPP(price)} · {(item?.spaces ?? 1) * entry.quantity} espaço{(item?.spaces ?? 1) * entry.quantity !== 1 ? "s" : ""}
+          </p>
 
-          {entry.notes && <p className="text-xs italic text-stone-500 border-l-2 border-amber-300 pl-2">{entry.notes}</p>}
-
-          {/* Preço */}
-          <p className="text-xs text-stone-400">Valor: {formatMoneyPP(price)} · {(item?.spaces ?? 1) * entry.quantity} espaço{(item?.spaces ?? 1) * entry.quantity !== 1 ? "s" : ""}</p>
-
-          {/* Ações */}
-          <div className="flex flex-wrap gap-2">
-            {onHold && <button onClick={onHold} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-800 text-amber-50 hover:bg-amber-700 transition disabled:opacity-50">Empunhar</button>}
-            {onWear && <button onClick={onWear} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-700 text-amber-50 hover:bg-amber-600 transition disabled:opacity-50">Vestir</button>}
-            {onRetrieve && <button onClick={onRetrieve} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-800 text-amber-50 hover:bg-amber-700 transition disabled:opacity-50">Recuperar</button>}
-            {onUnequip && <button onClick={onUnequip} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-stone-700 text-white hover:bg-stone-600 transition disabled:opacity-50">Desequipar</button>}
-            {onStore && <button onClick={onStore} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-stone-200 text-stone-700 hover:bg-stone-300 transition disabled:opacity-50">Guardar</button>}
-            {onSell && !isDmMode && <button onClick={onSell} disabled={isPending} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition disabled:opacity-50">Vender</button>}
+          {/* Extra actions */}
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {onSell && !isDmMode && (
+              <button
+                onClick={onSell}
+                disabled={isPending}
+                className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-red-900/40 text-red-400 border border-red-700/30 hover:bg-red-900/60 transition disabled:opacity-50"
+              >
+                Vender
+              </button>
+            )}
             {onQty && entry.items?.is_stackable && (
               <div className="flex items-center gap-1 ml-auto">
-                <button onClick={() => onQty(-1)} disabled={isPending || entry.quantity <= 1} className="w-7 h-7 rounded-lg bg-stone-200 text-stone-700 font-bold hover:bg-stone-300 disabled:opacity-30 transition"><Minus size={12} /></button>
-                <span className="w-6 text-center text-xs font-bold">{entry.quantity}</span>
-                <button onClick={() => onQty(+1)} disabled={isPending} className="w-7 h-7 rounded-lg bg-stone-200 text-stone-700 font-bold hover:bg-stone-300 disabled:opacity-30 transition"><Plus size={12} /></button>
+                <button
+                  onClick={() => onQty(-1)}
+                  disabled={isPending || entry.quantity <= 1}
+                  className="w-7 h-7 rounded-lg bg-stone-800 text-stone-300 font-bold hover:bg-stone-700 disabled:opacity-30 transition flex items-center justify-center"
+                >
+                  <Minus size={11} />
+                </button>
+                <span className="w-6 text-center text-xs font-bold text-stone-200">{entry.quantity}</span>
+                <button
+                  onClick={() => onQty(+1)}
+                  disabled={isPending}
+                  className="w-7 h-7 rounded-lg bg-stone-800 text-stone-300 font-bold hover:bg-stone-700 disabled:opacity-30 transition flex items-center justify-center"
+                >
+                  <Plus size={11} />
+                </button>
               </div>
             )}
           </div>
-        </div>
 
-        {/* ── Seção Narrador (fora do bg-stone-50, dentro do Fragment) */}
-        {isDmMode && (
-          <div className="border-t-2 border-indigo-100 bg-indigo-50/60 px-4 py-4 space-y-3">
-            <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-600">
-              <Wand2 size={11} /> Narrador
-            </p>
+          {/* DM Panel */}
+          {isDmMode && (
+            <div className="border-t border-indigo-900/50 rounded-lg bg-indigo-950/40 px-3 py-3 mt-1 space-y-3">
+              <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-400">
+                <Wand2 size={10} /> Narrador
+              </p>
 
-            {/* Rótulo personalizado */}
-            <label className="block">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Rótulo</span>
-              <input
-                type="text"
-                value={dmLabel}
-                onChange={(e) => setDmLabel(e.target.value)}
-                placeholder={item?.name ?? "Nome personalizado…"}
-                className="mt-1 block w-full rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
-              />
-            </label>
+              <label className="block">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Rótulo</span>
+                <input
+                  type="text"
+                  value={dmLabel}
+                  onChange={(e) => setDmLabel(e.target.value)}
+                  placeholder={item?.name ?? "Nome personalizado…"}
+                  className="mt-1 block w-full rounded-lg border border-indigo-800/50 bg-stone-900 px-3 py-1.5 text-sm text-stone-200 focus:border-indigo-500 focus:outline-none"
+                />
+              </label>
 
-            {/* Notas */}
-            <label className="block">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Notas homebrew</span>
-              <textarea
-                value={dmNotes}
-                onChange={(e) => setDmNotes(e.target.value)}
-                placeholder="Bônus especiais, descrição da narrativa…"
-                rows={2}
-                className="mt-1 block w-full resize-none rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
-              />
-            </label>
+              <label className="block">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Notas homebrew</span>
+                <textarea
+                  value={dmNotes}
+                  onChange={(e) => setDmNotes(e.target.value)}
+                  placeholder="Bônus especiais, descrição da narrativa…"
+                  rows={2}
+                  className="mt-1 block w-full resize-none rounded-lg border border-indigo-800/50 bg-stone-900 px-3 py-1.5 text-sm text-stone-200 focus:border-indigo-500 focus:outline-none"
+                />
+              </label>
 
-            {/* Melhorias (só para itens do catálogo) */}
-            {item && (
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Melhorias</span>
-                <div className="mt-1 flex gap-1.5">
-                  {[0, 1, 2, 3, 4].map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => setDmImprovements(n)}
-                      className={`h-8 w-8 rounded-lg text-xs font-black transition cursor-pointer ${
-                        dmImprovements === n
-                          ? "bg-indigo-700 text-white shadow"
-                          : "bg-white border border-indigo-200 text-stone-600 hover:bg-indigo-100"
-                      }`}
-                    >
-                      {n === 0 ? "—" : `+${n}`}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Arcanium (só para itens do catálogo) */}
-            {item && (
-              <div>
-                <label className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={dmIsArcanium}
-                    onChange={(e) => setDmIsArcanium(e.target.checked)}
-                    className="accent-indigo-600"
-                  />
-                  <span className="text-xs font-bold text-stone-700">Arcanium</span>
-                </label>
-                {dmIsArcanium && (
-                  <div className="mt-1.5 flex gap-1.5">
-                    {[1, 2, 3, 4, 5].map((n) => (
+              {item && (
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Melhorias</span>
+                  <div className="mt-1 flex gap-1.5">
+                    {[0, 1, 2, 3, 4].map((n) => (
                       <button
                         key={n}
-                        onClick={() => setDmArcaniumCircle(n)}
-                        className={`h-7 w-7 rounded-lg text-xs font-black transition cursor-pointer ${
-                          dmArcaniumCircle === n
-                            ? "bg-purple-700 text-white shadow"
-                            : "bg-white border border-purple-200 text-stone-600 hover:bg-purple-100"
+                        onClick={() => setDmImprovements(n)}
+                        className={`h-8 w-8 rounded-lg text-xs font-black transition cursor-pointer ${
+                          dmImprovements === n
+                            ? "bg-indigo-700 text-white shadow"
+                            : "bg-stone-800 border border-indigo-800/50 text-stone-400 hover:bg-indigo-900/40"
                         }`}
                       >
-                        {n}
+                        {n === 0 ? "—" : `+${n}`}
                       </button>
                     ))}
-                    <span className="ml-1 self-center text-xs text-purple-600">º círculo</span>
+                  </div>
+                </div>
+              )}
+
+              {item && (
+                <div>
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={dmIsArcanium}
+                      onChange={(e) => setDmIsArcanium(e.target.checked)}
+                      className="accent-indigo-600"
+                    />
+                    <span className="text-xs font-bold text-stone-400">Arcanium</span>
+                  </label>
+                  {dmIsArcanium && (
+                    <div className="mt-1.5 flex gap-1.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button
+                          key={n}
+                          onClick={() => setDmArcaniumCircle(n)}
+                          className={`h-7 w-7 rounded-lg text-xs font-black transition cursor-pointer ${
+                            dmArcaniumCircle === n
+                              ? "bg-purple-700 text-white shadow"
+                              : "bg-stone-800 border border-purple-800/50 text-stone-400 hover:bg-purple-900/40"
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                      <span className="ml-1 self-center text-xs text-purple-500">º círculo</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  disabled={dmSaving}
+                  onClick={() =>
+                    startDmSave(async () => {
+                      await dmEditInventoryItem({
+                        inventoryId: entry.id,
+                        characterId,
+                        customLabel: dmLabel || undefined,
+                        notes: dmNotes || undefined,
+                        improvements: dmImprovements,
+                        isArcanium: item ? dmIsArcanium : undefined,
+                        arcaniumSpellCircle: item && dmIsArcanium ? dmArcaniumCircle : undefined,
+                      });
+                      setDmSaved(true);
+                      setTimeout(() => setDmSaved(false), 2500);
+                    })
+                  }
+                  className="flex-1 rounded-lg bg-indigo-700 py-2 text-xs font-bold text-white transition hover:bg-indigo-600 disabled:opacity-50 cursor-pointer"
+                >
+                  {dmSaving ? "Salvando…" : dmSaved ? "✓ Salvo!" : "Salvar alterações"}
+                </button>
+
+                {!dmConfirmDelete ? (
+                  <button
+                    onClick={() => setDmConfirmDelete(true)}
+                    className="rounded-lg border border-red-800/40 bg-red-900/30 px-3 py-2 text-xs font-bold text-red-400 transition hover:bg-red-900/50 cursor-pointer"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-red-400 font-semibold">Confirmar?</span>
+                    <button
+                      disabled={dmSaving}
+                      onClick={() => startDmSave(async () => {
+                        await dmDeleteInventoryItem(entry.id, characterId);
+                      })}
+                      className="rounded-lg bg-red-700 px-2 py-1 text-xs font-bold text-white hover:bg-red-600 transition cursor-pointer disabled:opacity-50"
+                    >
+                      Sim
+                    </button>
+                    <button
+                      onClick={() => setDmConfirmDelete(false)}
+                      className="rounded-lg bg-stone-700 px-2 py-1 text-xs font-bold text-stone-200 hover:bg-stone-600 transition cursor-pointer"
+                    >
+                      Não
+                    </button>
                   </div>
                 )}
               </div>
-            )}
-
-            {/* Botões Salvar / Excluir */}
-            <div className="flex gap-2 pt-1">
-              <button
-                disabled={dmSaving}
-                onClick={() =>
-                  startDmSave(async () => {
-                    await dmEditInventoryItem({
-                      inventoryId: entry.id,
-                      characterId,
-                      customLabel: dmLabel || undefined,
-                      notes: dmNotes || undefined,
-                      improvements: dmImprovements,
-                      isArcanium: item ? dmIsArcanium : undefined,
-                      arcaniumSpellCircle: item && dmIsArcanium ? dmArcaniumCircle : undefined,
-                    });
-                    setDmSaved(true);
-                    setTimeout(() => setDmSaved(false), 2500);
-                  })
-                }
-                className="flex-1 rounded-lg bg-indigo-700 py-2 text-xs font-bold text-white transition hover:bg-indigo-600 disabled:opacity-50 cursor-pointer"
-              >
-                {dmSaving ? "Salvando…" : dmSaved ? "✓ Salvo!" : "Salvar alterações"}
-              </button>
-
-              {!dmConfirmDelete ? (
-                <button
-                  onClick={() => setDmConfirmDelete(true)}
-                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 cursor-pointer"
-                >
-                  Excluir
-                </button>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-red-700 font-semibold">Confirmar?</span>
-                  <button
-                    disabled={dmSaving}
-                    onClick={() => startDmSave(async () => {
-                      await dmDeleteInventoryItem(entry.id, characterId);
-                    })}
-                    className="rounded-lg bg-red-700 px-2 py-1 text-xs font-bold text-white hover:bg-red-600 transition cursor-pointer disabled:opacity-50"
-                  >
-                    Sim
-                  </button>
-                  <button
-                    onClick={() => setDmConfirmDelete(false)}
-                    className="rounded-lg bg-stone-200 px-2 py-1 text-xs font-bold text-stone-700 hover:bg-stone-300 transition cursor-pointer"
-                  >
-                    Não
-                  </button>
-                </div>
-              )}
             </div>
-          </div>
-        )}
-      </>)}
+          )}
+        </div>
+      </div>
     </div>
   );
 }

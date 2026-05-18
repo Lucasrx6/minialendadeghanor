@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Swords, Dices, Crosshair } from "lucide-react";
+import { useState } from "react";
+import { Swords, Dices, Crosshair, ChevronDown, ChevronRight } from "lucide-react";
 import { RollDialog } from "@/components/dice/RollDialog";
 import { hasWeaponProficiency } from "@/lib/ghanor/inventory";
 
@@ -30,208 +30,227 @@ type Props = {
   strMod: number;
   dexMod: number;
   level: number;
-  /** slug da classe principal para checar proficiência */
   characterClass: string;
-  /** bônus de Luta do personagem */
   fightBonus: number;
-  /** bônus de Pontaria do personagem */
   aimBonus: number;
 };
 
+type RollConfig = { label: string; preModifier: number; preModifierBreakdown?: string };
+
 const DAMAGE_LABELS: Record<string, string> = {
-  corte: "Corte",
-  impacto: "Impacto",
-  perfuracao: "Perfuração",
-  corte_perfuracao: "Corte/Perf.",
-  impacto_perfuracao: "Imp./Perf.",
-  corte_impacto: "Corte/Imp.",
+  corte: "Corte", impacto: "Impacto", perfuracao: "Perfuração",
+  corte_perfuracao: "Corte/Perf.", impacto_perfuracao: "Imp./Perf.", corte_impacto: "Corte/Imp.",
 };
 
 const CRIT_LABELS: Record<string, string> = {
   x2: "×2", x3: "×3", x4: "×4",
-  "19": "19-20/×2", "18": "18-20/×2",
-  "19/x3": "19-20/×3",
+  "19": "19-20/×2", "18": "18-20/×2", "19/x3": "19-20/×3",
 };
 
-// Decide se a arma usa Pontaria (distância) ou Luta (corpo a corpo)
 function isRanged(item: WeaponItem): boolean {
   return item.weapon_range !== null && item.weapon_range !== "nenhum";
 }
 
-// Calcula o modificador de ataque total
 function computeAttackMod(
-  item: WeaponItem,
-  strMod: number,
-  dexMod: number,
-  level: number,
-  hasProficiency: boolean,
-  skillBonus: number   // bônus de Luta ou Pontaria já treinado
+  item: WeaponItem, strMod: number, dexMod: number, level: number,
+  hasProficiency: boolean, skillBonus: number,
 ): { total: number; breakdown: string; noProfPenalty: boolean } {
   const halfLevel = Math.floor(level / 2);
   const isLight = item.weapon_grip === "leve" || item.weapon_abilities?.includes("ligeira");
   const ranged = isRanged(item);
-
-  // Ligeira: pode usar Destreza mesmo em corpo a corpo
-  const attrMod = (ranged || isLight) ? dexMod : strMod;
+  const attrMod   = (ranged || isLight) ? dexMod : strMod;
   const attrLabel = (ranged || isLight) ? "Des" : "For";
-
   const noProfPenalty = !hasProficiency;
   const profMod = noProfPenalty ? -5 : 0;
-
   const total = attrMod + halfLevel + skillBonus + profMod;
-  const parts = [
-    `${attrLabel} ${attrMod >= 0 ? "+" : ""}${attrMod}`,
-    `nível/2 +${halfLevel}`,
-  ];
+  const parts = [`${attrLabel} ${attrMod >= 0 ? "+" : ""}${attrMod}`, `nível/2 +${halfLevel}`];
   if (skillBonus) parts.push(`perícia +${skillBonus}`);
   if (noProfPenalty) parts.push("sem prof. −5");
-  const breakdown = parts.join(" + ") + ` = ${total >= 0 ? "+" : ""}${total}`;
-
-  return { total, breakdown, noProfPenalty };
+  return { total, breakdown: parts.join(" + ") + ` = ${total >= 0 ? "+" : ""}${total}`, noProfPenalty };
 }
 
-// Formata dado de dano com modificador de For/Des
 function damageLine(item: WeaponItem, strMod: number, dexMod: number): string {
   const isLight = item.weapon_grip === "leve" || item.weapon_abilities?.includes("ligeira");
   const ranged = isRanged(item);
   const mod = (ranged || isLight) ? dexMod : strMod;
-
-  const dice = item.weapon_damage_dice;
-  if (!dice) return "—";
+  if (!item.weapon_damage_dice) return "—";
   const modStr = mod > 0 ? `+${mod}` : mod < 0 ? `${mod}` : "";
-  return `${dice}${modStr}`;
+  return `${item.weapon_damage_dice}${modStr}`;
 }
 
-export function AttacksSection({
-  weapons, strMod, dexMod, level, characterClass, fightBonus, aimBonus,
-}: Props) {
-  const [rollConfig, setRollConfig] = useState<{
-    label: string; preModifier: number; preModifierBreakdown?: string;
-  } | null>(null);
+// ─── WeaponCard ───────────────────────────────────────────────────────────────
+
+function WeaponCard({
+  weapon, strMod, dexMod, level, characterClass, fightBonus, aimBonus, onRoll,
+}: {
+  weapon: EquippedWeapon; strMod: number; dexMod: number; level: number;
+  characterClass: string; fightBonus: number; aimBonus: number;
+  onRoll: (cfg: RollConfig) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const { item } = weapon;
+  const ranged = isRanged(item);
+  const hasProficiency = hasWeaponProficiency(characterClass, item.weapon_proficiency);
+  const skillBonus = ranged ? aimBonus : fightBonus;
+  const { total: atkTotal, breakdown: atkBreakdown, noProfPenalty } = computeAttackMod(
+    item, strMod, dexMod, level, hasProficiency, skillBonus,
+  );
+  const dmgLine = damageLine(item, strMod, dexMod);
+  const critLabel = CRIT_LABELS[item.weapon_critical] ?? item.weapon_critical;
+  const displayName = weapon.custom_label ?? item.name;
+  const isLight = item.weapon_grip === "leve" || item.weapon_abilities?.includes("ligeira");
+  const mod = (ranged || isLight) ? dexMod : strMod;
+
+  const theme = ranged
+    ? { gradFrom: "#0f172a", gradTo: "#1e293b", border: "#3b82f6", iconClr: "#93c5fd", accentBg: "rgba(59,130,246,0.15)" }
+    : { gradFrom: "#1c1a17", gradTo: "#3c3330", border: "#d97706", iconClr: "#fcd34d", accentBg: "rgba(217,119,6,0.15)" };
+
+  return (
+    <div
+      className="flex flex-col rounded-xl overflow-hidden transition-all duration-150"
+      style={{
+        border: `1.5px solid ${open ? theme.border : theme.border + "40"}`,
+        boxShadow: open ? `0 0 14px ${theme.border}25` : "none",
+      }}
+    >
+      {/* Card face */}
+      <button
+        className="relative flex flex-col items-center gap-2 px-2 pt-5 pb-3 text-center focus:outline-none"
+        style={{ background: `linear-gradient(160deg, ${theme.gradFrom} 0%, ${theme.gradTo} 100%)` }}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {/* Type badge */}
+        <span
+          className="absolute top-2 left-2 rounded-full px-1.5 py-0.5 text-[9px] font-black"
+          style={{ background: `${theme.border}30`, color: theme.iconClr, border: `1px solid ${theme.border}40` }}
+        >
+          {ranged ? "Distância" : "C/C"}
+        </span>
+
+        {ranged
+          ? <Crosshair size={32} style={{ color: theme.iconClr, filter: `drop-shadow(0 2px 8px ${theme.border}90)` }} />
+          : <Swords   size={32} style={{ color: theme.iconClr, filter: `drop-shadow(0 2px 8px ${theme.border}90)` }} />
+        }
+
+        <p className="text-[11px] font-black leading-tight line-clamp-2 px-1 text-stone-100">
+          {displayName}
+          {weapon.improvements > 0 && <span style={{ color: theme.iconClr }}> +{weapon.improvements}</span>}
+          {weapon.is_arcanium && <span className="ml-1 text-purple-300"> ✦</span>}
+        </p>
+
+        <div className="flex items-center gap-3">
+          <div className="text-center">
+            <p className="text-xl font-black" style={{ color: theme.iconClr }}>
+              {atkTotal >= 0 ? "+" : ""}{atkTotal}
+            </p>
+            <p className="text-[9px] uppercase tracking-wider text-stone-400">{ranged ? "Pontaria" : "Luta"}</p>
+          </div>
+          <div className="h-8 w-px bg-stone-700" />
+          <div className="text-center">
+            <p className="text-sm font-black text-stone-200">{dmgLine}</p>
+            <p className="text-[9px] uppercase tracking-wider text-stone-400">Dano</p>
+          </div>
+        </div>
+
+        {noProfPenalty && (
+          <span className="rounded-full border border-red-700/30 bg-red-900/40 px-2 py-0.5 text-[9px] font-bold text-red-400">
+            Sem prof. −5
+          </span>
+        )}
+      </button>
+
+      {/* Action bar */}
+      <div className="flex gap-1 border-t bg-stone-900 p-1.5" style={{ borderColor: `${theme.border}25` }}>
+        <button
+          onClick={() => onRoll({ label: `Ataque — ${displayName}`, preModifier: atkTotal, preModifierBreakdown: atkBreakdown })}
+          className="flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-bold transition active:scale-95"
+          style={{ background: theme.accentBg, color: theme.iconClr, border: `1px solid ${theme.border}35` }}
+        >
+          <Dices size={11} /> Ataque
+        </button>
+        <button
+          onClick={() => onRoll({ label: `Dano — ${displayName}`, preModifier: mod, preModifierBreakdown: `mod ${mod >= 0 ? "+" : ""}${mod}` })}
+          className="flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-bold bg-stone-800 text-stone-300 transition hover:bg-stone-700 active:scale-95"
+        >
+          <Dices size={11} /> Dano
+        </button>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="rounded-lg px-2 text-stone-500 hover:text-stone-300 transition bg-stone-800"
+        >
+          {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        </button>
+      </div>
+
+      {/* Expanded details */}
+      <div className={`overflow-hidden transition-all duration-200 ${open ? "max-h-48" : "max-h-0"}`}>
+        <div className="space-y-2 border-t bg-stone-900/90 px-3 py-3" style={{ borderColor: `${theme.border}25` }}>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+            <span className="text-stone-500">Crítico</span>
+            <span className="font-bold text-stone-200">{critLabel}</span>
+            {item.weapon_damage_type && (
+              <>
+                <span className="text-stone-500">Tipo</span>
+                <span className="font-bold capitalize text-stone-200">{DAMAGE_LABELS[item.weapon_damage_type] ?? item.weapon_damage_type}</span>
+              </>
+            )}
+            <span className="text-stone-500">Proficiência</span>
+            <span className="font-bold capitalize text-stone-200">{item.weapon_proficiency}</span>
+            {item.weapon_grip && (
+              <>
+                <span className="text-stone-500">Empunhadura</span>
+                <span className="font-bold capitalize text-stone-200">{item.weapon_grip.replace("_", " ")}</span>
+              </>
+            )}
+            {ranged && item.weapon_range && (
+              <>
+                <span className="text-stone-500">Alcance</span>
+                <span className="font-bold text-stone-200">{item.weapon_range}</span>
+              </>
+            )}
+          </div>
+          {item.weapon_abilities?.length > 0 && (
+            <p className="text-[11px]" style={{ color: theme.iconClr }}>✦ {item.weapon_abilities.join(", ")}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── AttacksSection ───────────────────────────────────────────────────────────
+
+export function AttacksSection({ weapons, strMod, dexMod, level, characterClass, fightBonus, aimBonus }: Props) {
+  const [rollConfig, setRollConfig] = useState<RollConfig | null>(null);
 
   if (weapons.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-stone-300 px-6 py-8 text-center text-stone-400 text-sm">
+      <div className="rounded-xl border border-dashed border-stone-300 px-6 py-8 text-center text-sm text-stone-400">
         <Swords size={28} className="mx-auto mb-2 opacity-40" />
         <p>Nenhuma arma equipada.</p>
-        <p className="text-xs mt-1">Vá ao Inventário e clique em <strong>Equipar</strong> numa arma.</p>
+        <p className="mt-1 text-xs">Vá ao Inventário e clique em <strong>Equipar</strong> numa arma.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {weapons.map((w) => {
-        const item = w.item;
-        const ranged = isRanged(item);
-        const hasProficiency = hasWeaponProficiency(characterClass, item.weapon_proficiency);
-        const skillBonus = ranged ? aimBonus : fightBonus;
-        const { total: atkTotal, breakdown: atkBreakdown, noProfPenalty } = computeAttackMod(
-          item, strMod, dexMod, level, hasProficiency, skillBonus
-        );
-        const dmgLine = damageLine(item, strMod, dexMod);
-        const critLabel = CRIT_LABELS[item.weapon_critical] ?? item.weapon_critical;
-        const displayName = w.custom_label ?? item.name;
-        const isLight = item.weapon_grip === "leve" || item.weapon_abilities?.includes("ligeira");
-        const mod = (ranged || isLight) ? dexMod : strMod;
-
-        return (
-          <div
+    <div>
+      <div className="grid grid-cols-2 gap-2 items-start">
+        {weapons.map((w) => (
+          <WeaponCard
             key={w.inventoryId}
-            className="rounded-xl border border-amber-200 bg-amber-50/60 overflow-hidden"
-          >
-            {/* Header */}
-            <div className="flex items-center gap-3 px-4 py-3">
-              <div className="text-amber-700">
-                {ranged ? <Crosshair size={18} /> : <Swords size={18} />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-black text-stone-900">
-                  {displayName}
-                  {w.improvements > 0 && (
-                    <span className="ml-2 text-xs font-bold text-amber-700 bg-amber-200 rounded-full px-1.5 py-0.5">
-                      +{w.improvements}
-                    </span>
-                  )}
-                  {w.is_arcanium && (
-                    <span className="ml-1 text-xs font-bold text-purple-700 bg-purple-100 rounded-full px-1.5 py-0.5">
-                      Arcanium
-                    </span>
-                  )}
-                </p>
-                <p className="text-xs text-stone-500 capitalize">
-                  {item.weapon_proficiency}
-                  {" · "}
-                  {item.weapon_grip?.replace("_", " ")}
-                  {ranged && ` · ${item.weapon_range}`}
-                  {item.weapon_damage_type && ` · ${DAMAGE_LABELS[item.weapon_damage_type] ?? item.weapon_damage_type}`}
-                </p>
-              </div>
+            weapon={w}
+            strMod={strMod}
+            dexMod={dexMod}
+            level={level}
+            characterClass={characterClass}
+            fightBonus={fightBonus}
+            aimBonus={aimBonus}
+            onRoll={setRollConfig}
+          />
+        ))}
+      </div>
 
-              {noProfPenalty && (
-                <span className="text-xs font-bold text-red-600 bg-red-100 rounded-full px-2 py-0.5">
-                  Sem prof.
-                </span>
-              )}
-            </div>
-
-            {/* Stats + botões */}
-            <div className="grid grid-cols-2 gap-px bg-amber-200">
-              {/* Ataque */}
-              <div className="bg-white px-4 py-2.5">
-                <p className="text-xs text-stone-500 font-medium mb-0.5">
-                  {ranged ? "Pontaria" : "Luta"}
-                </p>
-                <p className={`text-xl font-black ${noProfPenalty ? "text-red-600" : "text-stone-950"}`}>
-                  {atkTotal >= 0 ? "+" : ""}{atkTotal}
-                </p>
-                <button
-                  onClick={() => setRollConfig({
-                    label: `Ataque — ${displayName}`,
-                    preModifier: atkTotal,
-                    preModifierBreakdown: atkBreakdown,
-                  })}
-                  className="mt-1.5 flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-900 transition"
-                >
-                  <Dices size={12} /> Rolar ataque
-                </button>
-              </div>
-
-              {/* Dano */}
-              <div className="bg-white px-4 py-2.5">
-                <p className="text-xs text-stone-500 font-medium mb-0.5">
-                  Dano · Crítico
-                </p>
-                <p className="text-xl font-black text-stone-950">{dmgLine}</p>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-stone-400 mt-0.5">{critLabel}</p>
-                  <button
-                    onClick={() => setRollConfig({
-                      label: `Dano — ${displayName}`,
-                      preModifier: mod,
-                      preModifierBreakdown: `modificador ${mod >= 0 ? "+" : ""}${mod}`,
-                    })}
-                    className="flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-900 transition"
-                  >
-                    <Dices size={12} /> Rolar dano
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Habilidades especiais */}
-            {item.weapon_abilities?.length > 0 && (
-              <div className="px-4 py-2 bg-amber-50 border-t border-amber-100">
-                <p className="text-xs text-amber-800">
-                  ✦ {item.weapon_abilities.join(", ")}
-                </p>
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {/* Modal de rolagem */}
       {rollConfig && (
         <RollDialog
           open={!!rollConfig}
