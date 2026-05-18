@@ -164,8 +164,8 @@ export function CharacterWizard() {
   }
 
   return (
-    <div className="flex flex-col gap-5 pb-28 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:pb-6">
-      <section className="space-y-4">
+    <div className="flex flex-col gap-5 pb-28 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8 lg:pb-6">
+      <section className="min-w-0 space-y-4">
         <div className="rounded-b-3xl border border-amber-900/15 bg-stone-950 px-4 py-5 text-amber-50 shadow-xl md:rounded-3xl md:px-6">
           <div className="flex items-center justify-between gap-3">
             <div>
