@@ -17,7 +17,6 @@ function shouldShowNav(pathname: string) {
     return false;
   }
   if (pathname === "/" || pathname === "/characters") return true;
-  if (pathname.startsWith("/characters/new")) return true;
   return false;
 }
 
