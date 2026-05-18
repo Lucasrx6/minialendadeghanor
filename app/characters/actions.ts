@@ -13,22 +13,43 @@ import {
   getSize,
 } from "@/lib/ghanor/rules";
 import {
-  getStarterItems,
+  STARTER_KITS,
   hasMartialProficiency,
-  hasHeavyArmorProficiency,
-  hasShieldProficiency,
 } from "@/lib/ghanor/inventory";
 import type { CharacterBuild } from "@/lib/ghanor/types";
 import type { WizardState } from "@/components/wizard/store";
 import crypto from "crypto";
 
+const WIZARD_ARMOR_TO_SLUG: Record<string, string> = {
+  couro: "armadura_couro",
+  couro_batido: "couro_batido",
+  gibao_peles: "gibao_peles",
+  brunea: "brunea",
+};
+
 /** Concede o kit inicial ao personagem recém-criado. */
-async function grantStarterKit(characterId: string, userId: string, classId: string, moneyPc: number) {
+async function grantStarterKit(
+  characterId: string,
+  userId: string,
+  classId: string,
+  wizardArmor: string,
+  wizardShield: string,
+  moneyPc: number,
+) {
   const admin = createAdminClient();
   const hasMartial = hasMartialProficiency(classId);
-  const hasHeavy   = hasHeavyArmorProficiency(classId);
-  const hasShield  = hasShieldProficiency(classId);
-  const slugs = getStarterItems(classId, hasMartial, hasHeavy, hasShield);
+  const kit = STARTER_KITS[classId as keyof typeof STARTER_KITS];
+
+  const slugs: string[] = [
+    "bolsa_lona", "saco_dormir", "traje_viajante", "racao_viagem",
+    ...(kit?.weapons ?? []),
+    ...(kit?.extras ?? []),
+    ...(hasMartial && (kit?.martialWeapons?.length ?? 0) > 0 ? kit.martialWeapons : []),
+  ];
+
+  const armorSlug = WIZARD_ARMOR_TO_SLUG[wizardArmor];
+  if (armorSlug) slugs.push(armorSlug);
+  if (wizardShield && wizardShield !== "none") slugs.push(wizardShield);
 
   if (slugs.length === 0) return;
 
@@ -135,7 +156,7 @@ export async function saveCharacter(input: WizardState) {
   if (error) throw new Error(error.message);
 
   // Kit inicial automático
-  await grantStarterKit(data.id, user.id, input.class, 0).catch(() => null);
+  await grantStarterKit(data.id, user.id, input.class, input.armor, input.shield, 0).catch(() => null);
 
   revalidatePath("/characters");
   return data.id as string;
@@ -277,7 +298,7 @@ export async function saveGuidedCharacter(input: {
   if (error) throw new Error(error.message);
 
   // Kit inicial automático
-  await grantStarterKit(data.id, user.id, input.class, 0).catch(() => null);
+  await grantStarterKit(data.id, user.id, input.class, input.computed.armor ?? "none", input.computed.shield ?? "none", 0).catch(() => null);
 
   revalidatePath("/characters");
   return data.id as string;

@@ -40,7 +40,7 @@ import {
 import { skills } from "@/lib/ghanor/skills";
 import { attributeLabels, attributes, type Attribute, type ClassId } from "@/lib/ghanor/types";
 import { cn } from "@/lib/utils";
-import { useWizardStore } from "./store";
+import { useWizardStore, type WizardState } from "./store";
 
 const stepTitles = [
   "O chamado",
@@ -87,6 +87,20 @@ const classIcons: Record<ClassId, ComponentType<{ size?: number; className?: str
   soldado: Swords,
 };
 
+const WIZARD_ARMOR_DEFAULTS: Record<string, { armor: WizardState["armor"]; shield: WizardState["shield"] }> = {
+  barbaro:   { armor: "gibao_peles",  shield: "escudo_leve" },
+  bardo:     { armor: "couro",        shield: "none" },
+  bucaneiro: { armor: "couro_batido", shield: "none" },
+  cacador:   { armor: "couro_batido", shield: "escudo_leve" },
+  cavaleiro: { armor: "brunea",       shield: "escudo_leve" },
+  clerigo:   { armor: "brunea",       shield: "escudo_leve" },
+  druida:    { armor: "couro",        shield: "escudo_leve" },
+  ladino:    { armor: "couro_batido", shield: "none" },
+  mago:      { armor: "none",         shield: "none" },
+  nobre:     { armor: "couro",        shield: "escudo_leve" },
+  soldado:   { armor: "brunea",       shield: "escudo_leve" },
+};
+
 export function CharacterWizard() {
   const state = useWizardStore();
   const router = useRouter();
@@ -94,10 +108,18 @@ export function CharacterWizard() {
   const [error, setError] = useState<string>();
   const [nameOptions, setNameOptions] = useState<string[]>([]);
   const [originQuery, setOriginQuery] = useState("");
+  const [draftPhase, setDraftPhase] = useState<"checking" | "prompt" | "ready">("checking");
+  const [savedDraft, setSavedDraft] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("ghanor-character-draft");
-    if (saved) state.update(JSON.parse(saved));
+    const raw = window.localStorage.getItem("ghanor-character-draft");
+    if (!raw) { setDraftPhase("ready"); return; }
+    try {
+      const draft = JSON.parse(raw) as Record<string, unknown>;
+      const hasProgress = ((draft.step as number) ?? 1) > 1 || !!((draft.name as string) ?? "").trim();
+      if (hasProgress) { setSavedDraft(draft); setDraftPhase("prompt"); }
+      else setDraftPhase("ready");
+    } catch { setDraftPhase("ready"); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -157,10 +179,47 @@ export function CharacterWizard() {
     });
   }
 
+  function continueDraft() {
+    if (savedDraft) state.update(savedDraft as Partial<WizardState>);
+    setDraftPhase("ready");
+  }
+
+  function startFresh() {
+    window.localStorage.removeItem("ghanor-character-draft");
+    setDraftPhase("ready");
+  }
+
   async function rollNames() {
     const response = await fetch(`/api/random-name?race=${state.race}`);
     const json = await response.json();
     setNameOptions(json.names ?? []);
+  }
+
+  if (draftPhase === "checking") return null;
+
+  if (draftPhase === "prompt" && savedDraft) {
+    const draftName = (savedDraft.name as string) || "";
+    const draftStep = (savedDraft.step as number) ?? 1;
+    return (
+      <Card className="space-y-6 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+          <Save className="text-amber-800" size={28} />
+        </div>
+        <div>
+          <h2 className="text-xl font-black text-stone-950">Rascunho encontrado</h2>
+          <p className="mt-2 text-sm text-stone-600">
+            {draftName
+              ? <><strong>{draftName}</strong> — passo {draftStep} de 8</>
+              : <>Personagem sem nome — chegou até o passo {draftStep} de 8</>
+            }
+          </p>
+        </div>
+        <div className="flex flex-col gap-3">
+          <Button onClick={continueDraft}>Continuar de onde parei</Button>
+          <Button variant="secondary" onClick={startFresh}>Começar do zero</Button>
+        </div>
+      </Card>
+    );
   }
 
   return (
@@ -354,7 +413,10 @@ export function CharacterWizard() {
                       "rounded-lg border p-4 text-left transition",
                       state.class === klass.id ? "border-amber-800 bg-amber-100 shadow-md" : "border-amber-900/15 bg-amber-50/70",
                     )}
-                    onClick={() => state.update({ class: klass.id })}
+                    onClick={() => {
+                      const defaults = WIZARD_ARMOR_DEFAULTS[klass.id];
+                      state.update({ class: klass.id, ...(defaults ?? {}) });
+                    }}
                   >
                     <Icon className="mb-3 text-amber-800" size={30} />
                     <h3 className="font-black text-stone-950">{klass.name}</h3>
@@ -484,14 +546,9 @@ export function CharacterWizard() {
                 Idade
                 <Input type="number" value={state.age ?? ""} onChange={(event) => state.update({ age: Number(event.target.value) })} />
               </label>
-              <label className="text-sm font-semibold">
-                PP iniciais
-                <Input
-                  type="number"
-                  value={state.silverPieces}
-                  onChange={(event) => state.update({ silverPieces: Number(event.target.value) })}
-                />
-              </label>
+              <div className="flex items-center rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                <strong className="mr-1">Dinheiro inicial:</strong> 4d6 PP rolados automaticamente.
+              </div>
               <SelectLine
                 label="Armadura"
                 value={state.armor}
