@@ -9,17 +9,17 @@ export const raceDescriptors: Record<string, string> = {
 };
 
 export const classDescriptors: Record<string, string> = {
-  barbaro: "wielding a massive axe with a fierce battle stance",
-  bardo: "holding a lute and wearing bright traveling clothes",
-  bucaneiro: "with a rapier, confident grin, and duelist posture",
-  cacador: "carrying a bow and weathered survival gear",
-  cavaleiro: "wearing knightly armor and carrying a heraldic shield",
-  clerigo: "holding a sacred symbol with solemn devotion",
-  druida: "with natural charms, leaves, and an animal companion silhouette",
-  ladino: "wearing a hooded cloak with daggers at the belt",
-  mago: "holding an arcane staff with glowing runes",
-  nobre: "wearing refined court clothes with commanding presence",
-  soldado: "in practical armor with a disciplined military stance",
+  barbaro: "a barbarian wielding a massive axe, clad in furs and war paint",
+  bardo: "a bard in bright traveling clothes, lute slung over one shoulder",
+  bucaneiro: "a swashbuckler in a fine coat, rapier at the hip and a confident smirk",
+  cacador: "a hunter in weathered leather armor, bow in hand and quiver on the back",
+  cavaleiro: "a knight in full plate armor bearing a heraldic shield",
+  clerigo: "a cleric in holy vestments, sacred symbol raised in one hand",
+  druida: "a druid adorned with leaves and natural charms, staff carved from living wood",
+  ladino: "a rogue in a dark hooded cloak, twin daggers sheathed at the belt",
+  mago: "a wizard in flowing robes, holding an arcane staff etched with glowing runes",
+  nobre: "a noble in refined court attire, standing with an air of commanding authority",
+  soldado: "a soldier in practical battle armor, hand resting on the pommel of a sword",
 };
 
 export const raceLabels: Record<string, string> = {
@@ -53,12 +53,16 @@ export function buildPortraitPrompt(params: {
   age?: number | null;
   concept?: string | null;
 }): string {
+  const race = raceDescriptors[params.race] ?? "human";
+  const cls = classDescriptors[params.classId] ?? "an adventurer";
+
   return [
-    `A detailed fantasy portrait of a ${raceDescriptors[params.race] ?? "fantasy adventurer"} ${classDescriptors[params.classId] ?? "adventurer"}.`,
+    `Full body fantasy illustration of ${cls}, ${race} race.`,
+    `Standing in a confident heroic pose, gazing toward the horizon.`,
     params.appearance,
     params.age ? `Aged around ${params.age}.` : undefined,
     params.concept,
-    "Medieval high fantasy setting inspired by classic tabletop RPG art. Painterly style, dramatic lighting, three-quarter view, neutral background.",
+    "Full body visible from head to toe. Medieval high fantasy style, painterly digital art, dramatic cinematic lighting, neutral open-sky background.",
   ]
     .filter(Boolean)
     .join(" ");
