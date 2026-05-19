@@ -59,16 +59,15 @@ export async function POST(request: Request) {
   });
 
   try {
-    // Gemini image generation — free tier: 500 req/day
-    // Swap model to "gemini-2.5-flash-image" if you have access to a newer version
+    // Imagen 3 via Google AI — free tier via AI Studio key
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseModalities: ["IMAGE"] },
+          instances: [{ prompt }],
+          parameters: { sampleCount: 1 },
         }),
       }
     );
@@ -80,16 +79,11 @@ export async function POST(request: Request) {
     }
 
     const geminiData = await geminiRes.json() as {
-      candidates?: Array<{
-        content?: { parts?: Array<{ inlineData?: { data?: string; mimeType?: string } }> };
-      }>;
+      predictions?: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
     };
 
-    const imagePart = geminiData.candidates?.[0]?.content?.parts?.find(
-      (p) => p.inlineData?.data
-    );
-    const b64 = imagePart?.inlineData?.data;
-    const mimeType = imagePart?.inlineData?.mimeType ?? "image/png";
+    const b64 = geminiData.predictions?.[0]?.bytesBase64Encoded;
+    const mimeType = geminiData.predictions?.[0]?.mimeType ?? "image/png";
 
     if (!b64) throw new Error("A imagem não retornou dados da API.");
 
