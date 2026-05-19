@@ -491,80 +491,111 @@ export function CharacterSheet({
 
       {/* Sheet tab */}
       {activeTab === "sheet" && <>
-      {/* Hero card */}
-      <Card className="flex flex-col gap-4 p-4">
-        <div className="mx-auto aspect-square w-full max-w-[200px] overflow-hidden rounded-2xl border border-amber-900/20 bg-stone-900">
-          {portraitUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={portraitUrl} alt={`Retrato de ${character.name}`} className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full items-center justify-center bg-stone-900">
-              <ClassIcon classId={character.class} size={96} className="opacity-70" />
+      {/* Hero card — 2 colunas: retrato | info+botões */}
+      <Card className="p-4 sm:p-5">
+        <div className="grid gap-5 md:grid-cols-[minmax(320px,48%)_minmax(0,1fr)] md:items-start">
+
+          {/* Coluna esquerda: retrato ampliado, sem corte agressivo */}
+          <div className="mx-auto w-full max-w-[560px] md:mx-0">
+            <div className="relative aspect-[4/5] min-h-[420px] overflow-hidden rounded-2xl border border-amber-900/20 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950/80 shadow-inner sm:min-h-[520px] xl:min-h-[640px]">
+              {portraitUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={portraitUrl}
+                  alt={`Retrato de ${character.name}`}
+                  className="h-full w-full object-contain object-center p-2"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <ClassIcon classId={character.class} size={120} className="opacity-70" />
+                </div>
+              )}
+              {isPending && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
+                  <Sparkles size={32} className="text-amber-300 animate-pulse" />
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Info principal */}
-        <div className="space-y-4 text-center sm:text-left">
-          <div>
-            <h1 className="text-2xl font-black leading-tight text-stone-950 sm:text-3xl">{character.name}</h1>
-            <p className="mt-1 text-sm font-semibold text-stone-600 sm:text-base">
-              {raceById[character.race as keyof typeof raceById]?.name}
-              {" · "}
-              {classDisplay}
-              {" · "}
-              <span className="text-amber-800">Nível {level}</span>
-              {" · "}
-              <em className="text-stone-500">{TIER_LABELS[tier]}</em>
-            </p>
-            {character.concept && <p className="mt-2 italic text-amber-900">{character.concept}</p>}
+            {/* Botões de retrato abaixo da imagem */}
+            <div className="mt-3 grid grid-cols-2 gap-2 print:hidden">
+              <Button
+                variant="secondary"
+                className="justify-center text-sm"
+                disabled={isPending}
+                onClick={() => setShowPortraitConfirm(true)}
+                title="Gerar retrato com IA"
+              >
+                <Sparkles size={15} /> IA
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePortraitFileChange}
+              />
+              <Button
+                variant="secondary"
+                className="justify-center text-sm"
+                disabled={isPending}
+                onClick={() => fileInputRef.current?.click()}
+                title="Enviar foto"
+              >
+                <Upload size={15} /> Foto
+              </Button>
+            </div>
           </div>
 
-          <div className="scroll-chips -mx-1 px-1 print:hidden">
-            <Button variant="secondary" className="shrink-0" onClick={() => router.push(`/characters/${character.id}/edit`)}>
-              <Edit size={16} /> Editar
-            </Button>
-            <Button variant="secondary" className="shrink-0" onClick={() => window.print()}>
-              <FileText size={16} /> PDF
-            </Button>
-            <Button variant="secondary" className="shrink-0" disabled={isPending} onClick={() => setShowPortraitConfirm(true)}>
-              <Sparkles size={16} /> Retrato
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handlePortraitFileChange}
-            />
-            <Button variant="secondary" className="shrink-0" disabled={isPending} onClick={() => fileInputRef.current?.click()}>
-              <Upload size={16} /> Foto
-            </Button>
-            <Button variant="secondary" className="shrink-0" onClick={() => router.push(`/characters/${character.id}/shop`)}>
-              <Store size={16} /> Loja
-            </Button>
-            <Button
-              variant="secondary"
-              className="shrink-0"
-              onClick={() => router.push(`/characters/${character.id}/levelup`)}
-              disabled={level >= 20}
-              title={level >= 20 ? "Nível máximo atingido" : ""}
-            >
-              <TrendingUp size={16} /> Nível
-            </Button>
-            <Button
-              variant="danger"
-              className="shrink-0"
-              disabled={isPending}
-              onClick={() => startTransition(async () => {
-                await deleteCharacter(character.id);
-                router.push("/characters");
-              })}
-            >
-              <Trash2 size={16} /> Excluir
-            </Button>
+          {/* Coluna direita: nome, info e ações */}
+          <div className="flex min-w-0 flex-col gap-5">
+            <div>
+              <h1 className="text-2xl font-black leading-tight text-stone-950 sm:text-4xl">{character.name}</h1>
+              <p className="mt-1 text-sm font-semibold text-stone-600 sm:text-base">
+                {raceById[character.race as keyof typeof raceById]?.name}
+                {" · "}
+                {classDisplay}
+                {" · "}
+                <span className="text-amber-800">Nível {level}</span>
+                {" · "}
+                <em className="text-stone-500">{TIER_LABELS[tier]}</em>
+              </p>
+              {character.concept && <p className="mt-2 italic text-amber-900">{character.concept}</p>}
+            </div>
+
+            <div className="grid gap-2 print:hidden sm:grid-cols-2 xl:grid-cols-3">
+              <Button variant="secondary" className="justify-center" onClick={() => router.push(`/characters/${character.id}/edit`)}>
+                <Edit size={16} /> Editar
+              </Button>
+              <Button variant="secondary" className="justify-center" onClick={() => window.print()}>
+                <FileText size={16} /> PDF
+              </Button>
+              <Button variant="secondary" className="justify-center" onClick={() => router.push(`/characters/${character.id}/shop`)}>
+                <Store size={16} /> Loja
+              </Button>
+              <Button
+                variant="secondary"
+                className="justify-center"
+                onClick={() => router.push(`/characters/${character.id}/levelup`)}
+                disabled={level >= 20}
+                title={level >= 20 ? "Nível máximo atingido" : ""}
+              >
+                <TrendingUp size={16} /> Nível
+              </Button>
+              <Button
+                variant="danger"
+                className="justify-center sm:col-span-2 xl:col-span-1"
+                disabled={isPending}
+                onClick={() => startTransition(async () => {
+                  await deleteCharacter(character.id);
+                  router.push("/characters");
+                })}
+              >
+                <Trash2 size={16} /> Excluir
+              </Button>
+            </div>
+            {portraitMessage && <p className="text-sm font-semibold text-red-800">{portraitMessage}</p>}
           </div>
-          {portraitMessage && <p className="text-sm font-semibold text-red-800">{portraitMessage}</p>}
         </div>
       </Card>
 
