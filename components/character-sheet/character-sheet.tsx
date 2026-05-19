@@ -24,6 +24,7 @@ import { SpellsSection, type ActiveEffect } from "@/components/character-sheet/s
 import { computeDefenseWithEquipment, getArmorPenaltyForSkill, WORN_LIMIT } from "@/lib/ghanor/inventory";
 import { useDmMode } from "@/lib/hooks/use-dm-mode";
 import { DmModeBanner } from "@/components/inventory/dm-mode-banner";
+import { PortraitConfirmDialog } from "@/components/character-sheet/portrait-confirm-dialog";
 import type { CharacterBuild, Attribute } from "@/lib/ghanor/types";
 import type { Companion } from "@/lib/ghanor/animals";
 
@@ -118,6 +119,7 @@ export function CharacterSheet({
   const [isDmSaving, startDmSave] = useTransition();
   const [portraitUrl, setPortraitUrl] = useState(character.portrait_url);
   const [portraitMessage, setPortraitMessage] = useState<string>();
+  const [showPortraitConfirm, setShowPortraitConfirm] = useState(false);
   const [rollConfig, setRollConfig] = useState<RollConfig | null>(null);
   const [showToast, setShowToast] = useState(!!justLeveledUpTo);
   const { isActive: isDmMode, toggle: toggleDm, hydrated: dmHydrated } = useDmMode(character.id);
@@ -328,6 +330,7 @@ export function CharacterSheet({
   }
 
   function generatePortrait() {
+    setShowPortraitConfirm(false);
     setPortraitMessage(undefined);
     startTransition(async () => {
       const response = await fetch("/api/generate-portrait", {
@@ -524,7 +527,7 @@ export function CharacterSheet({
             <Button variant="secondary" className="shrink-0" onClick={() => window.print()}>
               <FileText size={16} /> PDF
             </Button>
-            <Button variant="secondary" className="shrink-0" disabled={isPending} onClick={generatePortrait}>
+            <Button variant="secondary" className="shrink-0" disabled={isPending} onClick={() => setShowPortraitConfirm(true)}>
               <Sparkles size={16} /> Retrato
             </Button>
             <input
@@ -770,6 +773,20 @@ export function CharacterSheet({
       {/* Jornada (histórico de evoluções) */}
       {levelUpHistory.length > 0 && (
         <JourneySection history={levelUpHistory} />
+      )}
+
+      {/* Dialog de confirmação de retrato */}
+      {showPortraitConfirm && (
+        <PortraitConfirmDialog
+          characterName={character.name}
+          race={character.race}
+          classId={character.class}
+          appearance={(character as Record<string, unknown>).appearance as string | null}
+          hasExistingPortrait={!!portraitUrl}
+          isPending={isPending}
+          onConfirm={generatePortrait}
+          onCancel={() => setShowPortraitConfirm(false)}
+        />
       )}
 
       {/* Modal de rolagem */}

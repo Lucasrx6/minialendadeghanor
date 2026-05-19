@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { buildPortraitPrompt } from "@/lib/ghanor/portrait";
 
 const inputSchema = z.object({
   characterId: z.string().uuid(),
@@ -13,33 +13,12 @@ const inputSchema = z.object({
   concept: z.string().optional().nullable(),
 });
 
-const raceDescriptors: Record<string, string> = {
-  humano: "human",
-  anao: "stocky, bearded dwarf with intricate braids",
-  elfo: "slender elf with long pointed ears and nature-toned coloring",
-  gigante: "massive 3-meter-tall giant with broad shoulders and small eyes, wearing rough furs",
-  hobgoblin: "tall hobgoblin with yellowish fur, animalistic snout, and tusks",
-  meio_elfo: "half-elf with elegant elven features and human stature",
-  aberrante: "uncanny aberrant being mutated by the Devourer's black oil",
-};
-
-const classDescriptors: Record<string, string> = {
-  barbaro: "wielding a massive axe with a fierce battle stance",
-  bardo: "holding a lute and wearing bright traveling clothes",
-  bucaneiro: "with a rapier, confident grin, and duelist posture",
-  cacador: "carrying a bow and weathered survival gear",
-  cavaleiro: "wearing knightly armor and carrying a heraldic shield",
-  clerigo: "holding a sacred symbol with solemn devotion",
-  druida: "with natural charms, leaves, and an animal companion silhouette",
-  ladino: "wearing a hooded cloak with daggers at the belt",
-  mago: "holding an arcane staff with glowing runes",
-  nobre: "wearing refined court clothes with commanding presence",
-  soldado: "in practical armor with a disciplined military stance",
-};
-
 export async function POST(request: Request) {
-  if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json({ error: "Geração de retrato não configurada neste ambiente." }, { status: 503 });
+  if (!process.env.GEMINI_API_KEY) {
+    return NextResponse.json(
+      { error: "Geração de retrato não configurada neste ambiente. Adicione GEMINI_API_KEY ao .env.local." },
+      { status: 503 }
+    );
   }
 
   const body = inputSchema.safeParse(await request.json());
@@ -48,14 +27,12 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Entre na sua conta para gerar retratos." }, { status: 401 });
 
   const { data: character } = await supabase
     .from("characters")
-    .select("id,user_id,portrait_generated_at")
+    .select("id, user_id, portrait_generated_at")
     .eq("id", body.data.characterId)
     .single();
 
@@ -66,56 +43,81 @@ export async function POST(request: Request) {
   if (character.portrait_generated_at) {
     const last = new Date(character.portrait_generated_at).getTime();
     if (Date.now() - last < 8 * 60 * 60 * 1000) {
-      return NextResponse.json({ error: "Limite simples: aguarde algumas horas antes de gerar outro retrato." }, { status: 429 });
+      return NextResponse.json(
+        { error: "Aguarde algumas horas antes de gerar outro retrato." },
+        { status: 429 }
+      );
     }
   }
 
-  const prompt = [
-    `A detailed fantasy portrait of a ${raceDescriptors[body.data.race] ?? "fantasy adventurer"} ${classDescriptors[body.data.class] ?? "adventurer"}.`,
-    body.data.appearance,
-    body.data.age ? `Aged around ${body.data.age}.` : undefined,
-    body.data.concept,
-    "Medieval high fantasy setting inspired by classic tabletop RPG art. Painterly style, dramatic lighting, three-quarter view, neutral background.",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const prompt = buildPortraitPrompt({
+    race: body.data.race,
+    classId: body.data.class,
+    appearance: body.data.appearance,
+    age: body.data.age,
+    concept: body.data.concept,
+  });
 
   try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const image = await openai.images.generate({
-      model: "dall-e-3",
-      prompt,
-      size: "1024x1024",
-      quality: "hd",
-      n: 1,
-      response_format: "b64_json",
-    });
+    // Gemini image generation — free tier: 500 req/day
+    // Swap model to "gemini-2.5-flash-image" if you have access to a newer version
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ["IMAGE"] },
+        }),
+      }
+    );
 
-    const b64 = image.data?.[0]?.b64_json;
-    if (!b64) throw new Error("A imagem não retornou dados.");
+    if (!geminiRes.ok) {
+      const errBody = await geminiRes.json().catch(() => ({}));
+      const msg = (errBody as { error?: { message?: string } }).error?.message ?? "Erro na API Gemini.";
+      return NextResponse.json({ error: msg }, { status: 502 });
+    }
+
+    const geminiData = await geminiRes.json() as {
+      candidates?: Array<{
+        content?: { parts?: Array<{ inlineData?: { data?: string; mimeType?: string } }> };
+      }>;
+    };
+
+    const imagePart = geminiData.candidates?.[0]?.content?.parts?.find(
+      (p) => p.inlineData?.data
+    );
+    const b64 = imagePart?.inlineData?.data;
+    const mimeType = imagePart?.inlineData?.mimeType ?? "image/png";
+
+    if (!b64) throw new Error("A imagem não retornou dados da API.");
 
     const admin = createAdminClient();
     const bytes = Buffer.from(b64, "base64");
     const path = `${user.id}/${body.data.characterId}.png`;
+
     const { error: uploadError } = await admin.storage
       .from("character-portraits")
-      .upload(path, bytes, { contentType: "image/png", upsert: true });
+      .upload(path, bytes, { contentType: mimeType, upsert: true });
 
     if (uploadError) throw uploadError;
 
-    const { data: publicUrl } = admin.storage.from("character-portraits").getPublicUrl(path);
+    const { data: urlData } = admin.storage.from("character-portraits").getPublicUrl(path);
+
     await admin
       .from("characters")
       .update({
-        portrait_url: publicUrl.publicUrl,
+        portrait_url: urlData.publicUrl,
         portrait_prompt: prompt,
         portrait_generated_at: new Date().toISOString(),
       })
       .eq("id", body.data.characterId)
       .eq("user_id", user.id);
 
-    return NextResponse.json({ url: publicUrl.publicUrl });
-  } catch {
-    return NextResponse.json({ error: "Não conseguimos gerar o retrato agora - tente novamente." }, { status: 500 });
+    return NextResponse.json({ url: `${urlData.publicUrl}?t=${Date.now()}` });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Erro desconhecido.";
+    return NextResponse.json({ error: `Não conseguimos gerar o retrato: ${msg}` }, { status: 500 });
   }
 }
