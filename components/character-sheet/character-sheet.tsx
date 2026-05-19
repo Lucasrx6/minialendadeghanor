@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Edit, FileText, Sparkles, Trash2, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package, ScrollText, Store, Wand2, Check } from "lucide-react";
+import { Edit, FileText, Sparkles, Trash2, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package, ScrollText, Store, Wand2, Check, Upload } from "lucide-react";
 import { deleteCharacter } from "@/app/characters/actions";
 import { dmEditCharacterStats } from "@/app/actions/dm";
+import { uploadPortrait } from "@/app/actions/portrait";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
 import { classById } from "@/lib/ghanor/classes";
@@ -286,6 +287,46 @@ export function CharacterSheet({
     });
   }
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function resizeImage(file: File, maxDim = 1024): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const ratio = Math.min(maxDim / img.width, maxDim / img.height, 1);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Falha ao processar imagem.")), "image/jpeg", 0.92);
+      };
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("Imagem inválida.")); };
+      img.src = objectUrl;
+    });
+  }
+
+  function handlePortraitFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setPortraitMessage(undefined);
+    startTransition(async () => {
+      try {
+        const resized = await resizeImage(file);
+        const fd = new FormData();
+        fd.append("characterId", character.id);
+        fd.append("file", resized, "portrait.jpg");
+        const result = await uploadPortrait(fd);
+        if ("error" in result) { setPortraitMessage(result.error); return; }
+        setPortraitUrl(result.url);
+      } catch (err) {
+        setPortraitMessage(err instanceof Error ? err.message : "Erro ao enviar imagem.");
+      }
+    });
+  }
+
   function generatePortrait() {
     setPortraitMessage(undefined);
     startTransition(async () => {
@@ -485,6 +526,16 @@ export function CharacterSheet({
             </Button>
             <Button variant="secondary" className="shrink-0" disabled={isPending} onClick={generatePortrait}>
               <Sparkles size={16} /> Retrato
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePortraitFileChange}
+            />
+            <Button variant="secondary" className="shrink-0" disabled={isPending} onClick={() => fileInputRef.current?.click()}>
+              <Upload size={16} /> Foto
             </Button>
             <Button variant="secondary" className="shrink-0" onClick={() => router.push(`/characters/${character.id}/shop`)}>
               <Store size={16} /> Loja
