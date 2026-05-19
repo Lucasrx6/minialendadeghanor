@@ -78,7 +78,7 @@ export function PortraitConfirmDialog({
               )}
             </div>
             <p className="mt-2 text-xs text-stone-400">
-              Gerado por Gemini · limite de 1 geração a cada 8 h
+              Gerado por Pollinations AI · limite de 1 geração a cada 8 h
             </p>
           </div>
         </div>

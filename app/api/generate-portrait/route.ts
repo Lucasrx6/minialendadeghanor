@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { buildPortraitPrompt } from "@/lib/ghanor/portrait";
 
+const POLLINATIONS_URL = "https://image.pollinations.ai/prompt";
+
 const inputSchema = z.object({
   characterId: z.string().uuid(),
   race: z.string(),
@@ -14,13 +16,6 @@ const inputSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  if (!process.env.GEMINI_API_KEY) {
-    return NextResponse.json(
-      { error: "Geração de retrato não configurada neste ambiente. Adicione GEMINI_API_KEY ao .env.local." },
-      { status: 503 }
-    );
-  }
-
   const body = inputSchema.safeParse(await request.json());
   if (!body.success) {
     return NextResponse.json({ error: "Dados inválidos para gerar o retrato." }, { status: 400 });
@@ -59,41 +54,30 @@ export async function POST(request: Request) {
   });
 
   try {
-    // Imagen 3 via Google AI — free tier via AI Studio key
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          instances: [{ prompt }],
-          parameters: { sampleCount: 1 },
-        }),
-      }
+    // Pollinations AI — gratuito, sem API key, modelos FLUX
+    const encodedPrompt = encodeURIComponent(prompt);
+    const imageRes = await fetch(
+      `${POLLINATIONS_URL}/${encodedPrompt}?width=512&height=768&nologo=true&model=flux`,
+      { signal: AbortSignal.timeout(90_000) }
     );
 
-    if (!geminiRes.ok) {
-      const errBody = await geminiRes.json().catch(() => ({}));
-      const msg = (errBody as { error?: { message?: string } }).error?.message ?? "Erro na API Gemini.";
-      return NextResponse.json({ error: msg }, { status: 502 });
+    if (!imageRes.ok) {
+      throw new Error(`Pollinations retornou status ${imageRes.status}.`);
     }
 
-    const geminiData = await geminiRes.json() as {
-      predictions?: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
-    };
+    const imageBuffer = await imageRes.arrayBuffer();
+    const bytes = Buffer.from(imageBuffer);
+    const mimeType = "image/jpeg";
 
-    const b64 = geminiData.predictions?.[0]?.bytesBase64Encoded;
-    const mimeType = geminiData.predictions?.[0]?.mimeType ?? "image/png";
-
-    if (!b64) throw new Error("A imagem não retornou dados da API.");
+    if (bytes.length < 1000) throw new Error("A imagem retornada está vazia.");
 
     const admin = createAdminClient();
-    const bytes = Buffer.from(b64, "base64");
     const path = `${user.id}/${body.data.characterId}.png`;
 
     const { error: uploadError } = await admin.storage
       .from("character-portraits")
       .upload(path, bytes, { contentType: mimeType, upsert: true });
+
 
     if (uploadError) throw uploadError;
 
