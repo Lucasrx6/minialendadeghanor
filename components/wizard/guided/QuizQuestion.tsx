@@ -13,7 +13,7 @@ interface Props {
 
 export function QuizQuestion({ question, total, index, onAnswer, onBack }: Props) {
   return (
-    <div className="w-full max-w-3xl mx-auto py-8 animate-in fade-in slide-in-from-right-8 duration-300">
+    <div className="mx-auto w-full max-w-2xl py-8 animate-in fade-in slide-in-from-right-8 duration-300">
       <div className="mb-8 flex items-center justify-between">
         <span className="text-sm font-bold uppercase tracking-widest text-amber-900/60">
           Ato {question.act} — {ACT_LABELS[question.act]}

@@ -78,7 +78,7 @@ export function QuizRaceSelect({ initialRace, initialChoices, onNext }: Props) {
             onClick={() => handleRaceClick(race.id)}
           >
             <h3 className="text-xl font-bold text-stone-950 mb-2">{race.name}</h3>
-            <p className="text-sm text-stone-600 mb-4 h-10">{race.summary}</p>
+            <p className="text-sm text-stone-600 mb-4 min-h-[2.5rem]">{race.summary}</p>
             <div className="text-xs font-semibold text-amber-900/80">
               Modificadores: {Object.entries(race.modifiers).map(([attr, val]) => `${val > 0 ? '+' : ''}${val} ${attributeLabels[attr as Attribute]}`).join(', ') || 'Nenhum'}
             </div>
