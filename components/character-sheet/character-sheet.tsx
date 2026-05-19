@@ -493,11 +493,11 @@ export function CharacterSheet({
       {activeTab === "sheet" && <>
       {/* Hero card — 2 colunas: retrato | info+botões */}
       <Card className="p-4 sm:p-5">
-        <div className="grid gap-5 md:grid-cols-[minmax(320px,48%)_minmax(0,1fr)] md:items-start">
+        <div className="grid gap-5 lg:grid-cols-[minmax(260px,380px)_minmax(0,1fr)] lg:items-start">
 
-          {/* Coluna esquerda: retrato ampliado, sem corte agressivo */}
-          <div className="mx-auto w-full max-w-[560px] md:mx-0">
-            <div className="relative aspect-[4/5] min-h-[420px] overflow-hidden rounded-2xl border border-amber-900/20 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950/80 shadow-inner sm:min-h-[520px] xl:min-h-[640px]">
+          {/* Coluna esquerda: retrato responsivo, sem corte agressivo */}
+          <div className="mx-auto w-full max-w-[360px] lg:mx-0 lg:max-w-[380px]">
+            <div className="relative aspect-[4/5] max-h-[70vh] overflow-hidden rounded-2xl border border-amber-900/20 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950/80 shadow-inner">
               {portraitUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
