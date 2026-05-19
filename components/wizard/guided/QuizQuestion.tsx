@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { Question } from "@/lib/ghanor/quiz";
+import { ACT_LABELS } from "@/lib/ghanor/quiz";
 
 interface Props {
   question: Question;
@@ -15,7 +16,7 @@ export function QuizQuestion({ question, total, index, onAnswer, onBack }: Props
     <div className="w-full max-w-3xl mx-auto py-8 animate-in fade-in slide-in-from-right-8 duration-300">
       <div className="mb-8 flex items-center justify-between">
         <span className="text-sm font-bold uppercase tracking-widest text-amber-900/60">
-          Ato {question.act}
+          Ato {question.act} — {ACT_LABELS[question.act]}
         </span>
         <span className="text-sm font-bold text-stone-500">
           {index + 1} / {total}

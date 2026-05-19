@@ -12,13 +12,13 @@ export function QuizWelcome({ onStart }: Props) {
         <BookOpen size={32} />
       </span>
       <h1 className="text-2xl font-black leading-tight text-stone-950 sm:text-3xl">
-        Vamos contar uma pequena história
+        Vamos contar uma pequena história sobre você
       </h1>
       <p className="text-base leading-relaxed text-stone-700">
-        Suas respostas moldam atributos, classe e perícias. Não há resposta certa — seja honesto com o herói que você quer ser.
+        As próximas 18 perguntas são sobre como você funciona no dia a dia — seu jeito, suas escolhas, seu temperamento. Não tem resposta certa nem errada. No fim, vamos sugerir qual classe de A Lenda de Ghanor combina mais com a pessoa que você é.
       </p>
       <Button fullWidth size="lg" className="mt-2" onClick={onStart}>
-        Começar a história
+        Começar
       </Button>
     </div>
   );

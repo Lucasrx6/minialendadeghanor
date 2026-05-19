@@ -9,10 +9,11 @@ import type { RaceId } from "@/lib/ghanor/types";
 import { QuizWelcome } from "./QuizWelcome";
 import { QuizRaceSelect } from "./QuizRaceSelect";
 import { QuizQuestion } from "./QuizQuestion";
+import { QuizActTransition } from "./QuizActTransition";
 import { QuizTouches } from "./QuizTouches";
 import { QuizResult } from "./QuizResult";
 
-export type GuidedWizardStep = "welcome" | "race" | "quiz" | "touches" | "result";
+export type GuidedWizardStep = "welcome" | "race" | "quiz" | "act_transition" | "touches" | "result";
 
 export function GuidedCreationWizard() {
   const [step, setStep] = useState<GuidedWizardStep>("welcome");
@@ -32,6 +33,7 @@ export function GuidedCreationWizard() {
   });
 
   const [computedResult, setComputedResult] = useState<GeneratedCharacter | null>(null);
+  const [pendingTransitionAct, setPendingTransitionAct] = useState<2 | 3 | null>(null);
 
   const handleStart = () => {
     setStep("race");
@@ -55,11 +57,21 @@ export function GuidedCreationWizard() {
       }
       setAnswers(newAnswers);
     }
-    
-    if (currentQuestionIndex < QUESTIONS.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-    } else {
+
+    const nextIndex = currentQuestionIndex + 1;
+    if (nextIndex >= QUESTIONS.length) {
       setStep("touches");
+      return;
+    }
+
+    const currentAct = QUESTIONS[currentQuestionIndex].act;
+    const nextAct = QUESTIONS[nextIndex].act;
+    if (nextAct !== currentAct) {
+      setPendingTransitionAct(nextAct as 2 | 3);
+      setCurrentQuestionIndex(nextIndex);
+      setStep("act_transition");
+    } else {
+      setCurrentQuestionIndex(nextIndex);
     }
   };
 
@@ -81,6 +93,11 @@ export function GuidedCreationWizard() {
     setStep("result");
   };
 
+  const handleTransitionDone = () => {
+    setPendingTransitionAct(null);
+    setStep("quiz");
+  };
+
   const handleRestart = () => {
     setStep("welcome");
     setRace(null);
@@ -88,6 +105,7 @@ export function GuidedCreationWizard() {
     setAnswers([]);
     setCurrentQuestionIndex(0);
     setComputedResult(null);
+    setPendingTransitionAct(null);
   };
 
   return (
@@ -105,12 +123,19 @@ export function GuidedCreationWizard() {
       )}
       
       {step === "quiz" && (
-        <QuizQuestion 
+        <QuizQuestion
           question={QUESTIONS[currentQuestionIndex]}
           total={QUESTIONS.length}
           index={currentQuestionIndex}
           onAnswer={handleAnswer}
           onBack={handlePrevQuestion}
+        />
+      )}
+
+      {step === "act_transition" && pendingTransitionAct && (
+        <QuizActTransition
+          toAct={pendingTransitionAct}
+          onDone={handleTransitionDone}
         />
       )}
       
