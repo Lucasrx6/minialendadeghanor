@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { LevelUpCelebration } from "@/components/wizard/LevelUpCelebration";
 import {
   ArrowLeft, ArrowRight, CheckCircle2, ChevronDown, ChevronRight,
   Sparkles, TrendingUp, Swords, BookOpen,
@@ -46,6 +47,8 @@ export function LevelUpWizard({ character }: Props) {
   const [isPending, startTransition] = useTransition();
   const [step, setStep] = useState(1);
   const [toast, setToast] = useState<string | null>(null);
+  const [celebrationLevel, setCelebrationLevel] = useState<number | null>(null);
+  const [celebrationTarget, setCelebrationTarget] = useState<string | null>(null);
 
   const [notes, setNotes] = useState("");
   const [newClassId, setNewClassId] = useState<ClassId>(character.class as ClassId);
@@ -136,14 +139,23 @@ export function LevelUpWizard({ character }: Props) {
     startTransition(async () => {
       const result = await saveLevelUp(input);
       if (result.success) {
-        router.push(`/characters/${character.id}?levelup=${result.newLevel}`);
+        setCelebrationLevel(result.newLevel);
+        setCelebrationTarget(`/characters/${character.id}?levelup=${result.newLevel}`);
       } else {
         setToast(result.error);
       }
     });
   }
 
+  const onCelebrationDone = useCallback(() => {
+    if (celebrationTarget) router.push(celebrationTarget);
+  }, [celebrationTarget, router]);
+
   return (
+    <>
+    {celebrationLevel !== null && (
+      <LevelUpCelebration level={celebrationLevel} onDone={onCelebrationDone} />
+    )}
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5c86a_0,#f6ead0_40%,#efe1bd_100%)] py-10 px-4">
       <div className="mx-auto max-w-2xl space-y-6">
         {/* Header */}
@@ -657,6 +669,7 @@ export function LevelUpWizard({ character }: Props) {
         )}
       </div>
     </div>
+    </>
   );
 }
 

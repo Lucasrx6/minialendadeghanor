@@ -258,7 +258,21 @@ export function RollDialog({
       role="dialog" aria-modal="true" aria-label="Rolagem de dados"
     >
       {/* ── Canvas 3D ── */}
-      <div id={CONTAINER_ID} ref={containerRef} className="flex-1 relative" style={{ minHeight: 200 }} />
+      <div
+        id={CONTAINER_ID}
+        ref={containerRef}
+        className="flex-1 relative"
+        style={{
+          minHeight: 200,
+          background: [
+            "radial-gradient(ellipse at 50% 115%, rgba(160,90,20,0.22) 0%, transparent 55%)",
+            "radial-gradient(ellipse at 50% 60%, rgba(60,38,18,0.55) 0%, transparent 80%)",
+            "linear-gradient(180deg, #0e0905 0%, #1c1309 35%, #281a0d 65%, #1a0e06 100%)",
+          ].join(", "),
+          backgroundBlendMode: "screen, normal, normal",
+          boxShadow: "inset 0 -60px 80px rgba(140,75,10,0.12)",
+        }}
+      />
 
       {/* ── Animação de dano (cobre o canvas quando fechar é acionado) ── */}
       {playingEffect && hitEffect && (

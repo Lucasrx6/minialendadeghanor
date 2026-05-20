@@ -5,6 +5,7 @@ import { Swords, Dices, Crosshair, ChevronDown, ChevronRight } from "lucide-reac
 import { RollDialog } from "@/components/dice/RollDialog";
 import { type HitEffectType } from "@/components/dice/HitEffect";
 import { hasWeaponProficiency } from "@/lib/ghanor/inventory";
+import { useTilt } from "@/lib/hooks/useTilt";
 
 type WeaponItem = {
   slug: string;
@@ -89,6 +90,7 @@ function WeaponCard({
   onRoll: (cfg: RollConfig) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const tilt = useTilt(7);
   const { item } = weapon;
   const ranged = isRanged(item);
   const hasProficiency = hasWeaponProficiency(characterClass, item.weapon_proficiency);
@@ -107,6 +109,12 @@ function WeaponCard({
     : { gradFrom: "#1c1a17", gradTo: "#3c3330", border: "#d97706", iconClr: "#fcd34d", accentBg: "rgba(217,119,6,0.15)" };
 
   return (
+    <div
+      ref={tilt.ref}
+      onMouseMove={tilt.onMouseMove}
+      onMouseLeave={tilt.onMouseLeave}
+      style={{ transformStyle: "preserve-3d", transition: "transform 0.12s ease", borderRadius: "0.75rem" }}
+    >
     <div
       className="flex flex-col rounded-xl overflow-hidden transition-all duration-150"
       style={{
@@ -215,6 +223,7 @@ function WeaponCard({
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }
