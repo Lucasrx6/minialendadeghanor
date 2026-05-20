@@ -30,6 +30,139 @@ type Props = {
 
 const CONTAINER_ID = "dice-box-scene";
 
+// ─── Ícone SVG do dado ────────────────────────────────────────────────────────
+
+function DieIcon({
+  die,
+  fill,
+  stroke,
+  textColor,
+  disabled,
+}: {
+  die: DieType;
+  fill: string;
+  stroke: string;
+  textColor: string;
+  disabled: boolean;
+}) {
+  const detailColor = disabled ? "#4b5563" : textColor;
+  const detailOpacity = 0.25;
+
+  // Atributos compartilhados para os polígonos
+  const poly = {
+    fill,
+    stroke,
+    strokeWidth: 3.5,
+    strokeLinejoin: "round" as const,
+    strokeLinecap: "round" as const,
+  };
+
+  const num = (x: number, y: number, size: number) => (
+    <text
+      x={x}
+      y={y}
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={size}
+      fontWeight="900"
+      fontFamily="ui-sans-serif, system-ui, -apple-system, sans-serif"
+      fill={textColor}
+      style={{ userSelect: "none", pointerEvents: "none" }}
+    >
+      {die}
+    </text>
+  );
+
+  const detail = (d: string) => (
+    <path d={d} stroke={detailColor} strokeWidth={1.5} fill="none" opacity={detailOpacity} strokeLinecap="round" />
+  );
+
+  switch (die) {
+    // ── d4: triângulo pontiagudo (tetraedro) ──────────────────────────────────
+    case 4: {
+      // Inner lines: from each vertex to midpoint of opposite edge (peace-sign rotated)
+      // Vertices: A(50,5) B(93,88) C(7,88) — midpoints: AB-mid(71.5,46.5) BC-mid(50,88) CA-mid(28.5,46.5)
+      return (
+        <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,5 93,88 7,88" {...poly} />
+          {detail("M50,5 L50,88 M93,88 L28.5,46.5 M7,88 L71.5,46.5")}
+          {num(50, 68, 21)}
+        </svg>
+      );
+    }
+
+    // ── d6: cubo isométrico ───────────────────────────────────────────────────
+    case 6: {
+      // Top face, left face, right face
+      return (
+        <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          {/* Top face */}
+          <polygon points="50,12 86,32 50,52 14,32" {...poly} />
+          {/* Left face */}
+          <polygon points="14,32 14,72 50,92 50,52" {...poly} />
+          {/* Right face */}
+          <polygon points="50,52 86,32 86,72 50,92" {...poly} />
+          {num(50, 64, 24)}
+        </svg>
+      );
+    }
+
+    // ── d8: diamante (octaedro) ───────────────────────────────────────────────
+    case 8: {
+      // Inner X lines (visible ridges of octahedron face)
+      return (
+        <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,5 95,50 50,95 5,50" {...poly} />
+          {detail("M50,5 L50,95 M5,50 L95,50")}
+          {num(50, 53, 24)}
+        </svg>
+      );
+    }
+
+    // ── d10: kite (trapezoedro pentagonal) ────────────────────────────────────
+    case 10: {
+      // Chevron shape — kite wider at top
+      return (
+        <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,5 90,44 68,93 32,93 10,44" {...poly} />
+          {detail("M50,5 L50,93 M10,44 L90,44")}
+          {num(50, 58, 19)}
+        </svg>
+      );
+    }
+
+    // ── d12: pentágono (dodecaedro) ───────────────────────────────────────────
+    case 12: {
+      // Regular pentagon — top vertex, radius≈44, center (50,52)
+      // Vertices at angles: -90°, -90°+72°, -90°+144°, -90°+216°, -90°+288°
+      // p0=(50, 8) p1=(92,37) p2=(76,88) p3=(24,88) p4=(8,37)
+      return (
+        <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,8 92,37 76,88 24,88 8,37" {...poly} />
+          {/* Lines from each vertex to center (50,52) */}
+          {detail("M50,8 L50,52 M92,37 L50,52 M76,88 L50,52 M24,88 L50,52 M8,37 L50,52")}
+          {num(50, 55, 20)}
+        </svg>
+      );
+    }
+
+    // ── d20: triângulo equilátero (icosaedro) ─────────────────────────────────
+    case 20: {
+      // Wider, more equilateral triangle than d4
+      // Inner inverted triangle (midpoints) — classic d20 face pattern
+      // Vertices: A(50,10) B(90,82) C(10,82) — midpoints: AB(70,46) BC(50,82) CA(30,46)
+      return (
+        <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,10 90,82 10,82" {...poly} />
+          {/* Inner inverted triangle connecting midpoints */}
+          {detail("M70,46 L50,82 L30,46 Z")}
+          {num(50, 64, 18)}
+        </svg>
+      );
+    }
+  }
+}
+
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 export function RollDialog({
@@ -72,13 +205,10 @@ export function RollDialog({
     let cancelled = false;
 
     const run = async () => {
-      // Wait two frames so the container has rendered and has dimensions
       await new Promise<void>((r) => setTimeout(r, 150));
       if (cancelled || !containerRef.current) return;
 
       try {
-        // Load directly from /public to bypass webpack bundler — dice-box uses
-        // circular ES imports that break webpack chunk loading
         // Load directly from /public — bypasses webpack to avoid circular-import issues
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mod = await (Function('return import("/dice-box/dice-box.es.js")')() as Promise<any>);
@@ -86,7 +216,6 @@ export function RollDialog({
 
         if (cancelled) return;
 
-        // v1.1+ API: single config object with `container` field
         const db = new DiceBox({
           container: `#${CONTAINER_ID}`,
           assetPath: "/dice-box/",
@@ -108,7 +237,6 @@ export function RollDialog({
         await db.init();
         if (cancelled) return;
 
-        // Force canvas to fill the container after BabylonJS init
         const canvas = document.getElementById("dice-box-canvas-el") as HTMLCanvasElement | null;
         if (canvas) {
           canvas.style.width = "100%";
@@ -123,7 +251,6 @@ export function RollDialog({
         diceBoxRef.current = db;
         setReady(true);
 
-        // Auto-roll se vier pré-configurado
         if (preCounts) {
           const notation = (Object.entries(preCounts) as [string, number][])
             .filter(([, n]) => n > 0)
@@ -152,7 +279,6 @@ export function RollDialog({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Esc para fechar
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (open && e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
@@ -186,7 +312,7 @@ export function RollDialog({
 
   if (!open) return null;
 
-  const isCrit = results.length >= 1 && results.some(r => r.die === 20 && r.result === 20);
+  const isCrit   = results.length >= 1 && results.some(r => r.die === 20 && r.result === 20);
   const isFumble = results.length === 1 && results[0].die === 20 && results[0].result === 1;
 
   return (
@@ -197,7 +323,7 @@ export function RollDialog({
       aria-modal="true"
       aria-label="Rolagem de dados"
     >
-      {/* ── Canvas 3D — ocupa toda a área acima do painel ── */}
+      {/* ── Canvas 3D ── */}
       <div
         id={CONTAINER_ID}
         ref={containerRef}
@@ -215,8 +341,7 @@ export function RollDialog({
           )}
           {preModifier !== 0 && preModifierBreakdown && (
             <p className="text-xs text-stone-400 mt-0.5 drop-shadow">
-              {preModifierBreakdown}{" "}
-              ={" "}
+              {preModifierBreakdown}{" "}={" "}
               <span className="text-amber-400 font-bold">
                 {preModifier >= 0 ? "+" : ""}{preModifier}
               </span>
@@ -232,7 +357,7 @@ export function RollDialog({
         </button>
       </div>
 
-      {/* ── Painel inferior de controles ── */}
+      {/* ── Painel inferior ── */}
       <div className="bg-stone-950 border-t border-stone-800 px-4 pt-3 pb-safe pb-5 shrink-0">
 
         {/* Resultados */}
@@ -241,7 +366,7 @@ export function RollDialog({
             {results.map((r, i) => (
               <span
                 key={i}
-                className="inline-flex flex-col items-center justify-center rounded-lg w-10 h-10 shrink-0 transition-transform animate-in fade-in zoom-in duration-200"
+                className="inline-flex flex-col items-center justify-center rounded-lg w-10 h-10 shrink-0 animate-in fade-in zoom-in duration-200"
                 style={{ background: COLORS[r.die].bg, border: `1.5px solid ${COLORS[r.die].border}` }}
               >
                 <span className="font-black text-sm leading-none" style={{ color: COLORS[r.die].text }}>
@@ -252,8 +377,6 @@ export function RollDialog({
                 </span>
               </span>
             ))}
-
-            {/* Total */}
             <div className="ml-auto text-right shrink-0">
               {preModifier !== 0 ? (
                 <>
@@ -269,15 +392,15 @@ export function RollDialog({
           </div>
         )}
 
-        {/* Crítico / falha crítica */}
+        {/* Crítico / falha */}
         {!isRolling && results.length > 0 && (isCrit || isFumble) && (
           <p className={`text-xs font-black text-center mb-2 tracking-widest ${isCrit ? "text-amber-400" : "text-red-400"}`}>
             {isCrit ? "⚡ ACERTO CRÍTICO!" : "💀 FALHA CRÍTICA!"}
           </p>
         )}
 
-        {/* Botões de dados */}
-        <div className="grid grid-cols-6 gap-1.5 mb-3">
+        {/* Botões de dados — ícones SVG */}
+        <div className="grid grid-cols-6 gap-2 mb-3">
           {DICE_TYPES.map((die) => {
             const c = COLORS[die];
             const disabled = !ready || isRolling || !!initError;
@@ -286,22 +409,29 @@ export function RollDialog({
                 key={die}
                 onClick={() => addDie(die)}
                 disabled={disabled}
-                className="rounded-xl py-3 font-black text-sm transition active:scale-95"
+                title={`Rolar 1d${die}`}
+                className="flex items-center justify-center rounded-xl transition active:scale-90 hover:brightness-125 focus-visible:outline-none"
                 style={{
-                  background: disabled ? "#1f2937" : c.bg,
-                  color: disabled ? "#6b7280" : c.text,
-                  border: `1.5px solid ${disabled ? "#374151" : c.border}`,
+                  aspectRatio: "1",
+                  padding: "6px",
+                  background: disabled ? "#1f2937" : c.bg + "33",
+                  border: `2px solid ${disabled ? "#374151" : c.border}`,
                   opacity: isRolling ? 0.5 : 1,
                 }}
-                title={`Rolar 1d${die}`}
               >
-                d{die}
+                <DieIcon
+                  die={die}
+                  fill={disabled ? "#374151" : c.bg}
+                  stroke={disabled ? "#4b5563" : c.border}
+                  textColor={disabled ? "#6b7280" : c.text}
+                  disabled={disabled}
+                />
               </button>
             );
           })}
         </div>
 
-        {/* Rodapé: limpar + status + fechar */}
+        {/* Rodapé */}
         <div className="flex items-center gap-2">
           <button
             onClick={handleClear}
@@ -321,8 +451,8 @@ export function RollDialog({
               : isRolling
               ? "Rolando…"
               : results.length === 0
-              ? "Clique num dado para rolar"
-              : "Clique para adicionar mais dados"}
+              ? "Toque em um dado para rolar"
+              : "Toque para adicionar mais dados"}
           </p>
 
           <button
