@@ -48,7 +48,7 @@ export function RollDialog({
   const [ready, setReady] = useState(false);
   const [isRolling, setIsRolling] = useState(false);
   const [results, setResults] = useState<RollEntry[]>([]);
-  const [initError, setInitError] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
 
   const naturalSum = results.reduce((s, r) => s + r.result, 0);
   const finalTotal = naturalSum + preModifier;
@@ -64,7 +64,7 @@ export function RollDialog({
       setReady(false);
       setIsRolling(false);
       setResults([]);
-      setInitError(false);
+      setInitError(null);
       hasRolledRef.current = false;
       return;
     }
@@ -72,14 +72,23 @@ export function RollDialog({
     let cancelled = false;
 
     const run = async () => {
-      // Wait one frame for the container div to be mounted
-      await new Promise<void>((r) => setTimeout(r, 80));
+      // Wait two frames so the container has rendered and has dimensions
+      await new Promise<void>((r) => setTimeout(r, 150));
       if (cancelled || !containerRef.current) return;
 
       try {
-        const { default: DiceBox } = await import("@3d-dice/dice-box");
+        // Load directly from /public to bypass webpack bundler — dice-box uses
+        // circular ES imports that break webpack chunk loading
+        // Load directly from /public — bypasses webpack to avoid circular-import issues
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mod = await (Function('return import("/dice-box/dice-box.es.js")')() as Promise<any>);
+        const DiceBox = mod.default;
 
-        const db = new DiceBox(`#${CONTAINER_ID}`, {
+        if (cancelled) return;
+
+        // v1.1+ API: single config object with `container` field
+        const db = new DiceBox({
+          container: `#${CONTAINER_ID}`,
           assetPath: "/dice-box/",
           theme: "default",
           offscreen: false,
@@ -98,6 +107,13 @@ export function RollDialog({
 
         await db.init();
         if (cancelled) return;
+
+        // Force canvas to fill the container after BabylonJS init
+        const canvas = document.getElementById("dice-box-canvas-el") as HTMLCanvasElement | null;
+        if (canvas) {
+          canvas.style.width = "100%";
+          canvas.style.height = "100%";
+        }
 
         db.onRollComplete = (allResults: Array<{ sides: number; value: number }>) => {
           setResults(allResults.map((r) => ({ die: r.sides as DieType, result: r.value })));
@@ -126,7 +142,7 @@ export function RollDialog({
       } catch (err) {
         if (!cancelled) {
           console.error("[DiceBox] init error:", err);
-          setInitError(true);
+          setInitError(err instanceof Error ? err.message : String(err));
         }
       }
     };
@@ -185,7 +201,8 @@ export function RollDialog({
       <div
         id={CONTAINER_ID}
         ref={containerRef}
-        className="flex-1 relative overflow-hidden"
+        className="flex-1 relative"
+        style={{ minHeight: 200 }}
       />
 
       {/* Cabeçalho flutuante */}
@@ -263,7 +280,7 @@ export function RollDialog({
         <div className="grid grid-cols-6 gap-1.5 mb-3">
           {DICE_TYPES.map((die) => {
             const c = COLORS[die];
-            const disabled = !ready || isRolling || initError;
+            const disabled = !ready || isRolling || !!initError;
             return (
               <button
                 key={die}
@@ -298,7 +315,7 @@ export function RollDialog({
 
           <p className="flex-1 text-center text-xs text-stone-600">
             {initError
-              ? "Erro ao carregar dados 3D"
+              ? `Erro: ${initError}`
               : !ready
               ? "Carregando…"
               : isRolling
