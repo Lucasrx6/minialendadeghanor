@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Edit, FileText, Sparkles, Trash2, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package, ScrollText, Store, Wand2, Check, Upload } from "lucide-react";
 import { deleteCharacter } from "@/app/characters/actions";
-import { dmEditCharacterStats } from "@/app/actions/dm";
+import { dmEditCharacterStats, dmEditCharacterSkills } from "@/app/actions/dm";
 import { uploadPortrait } from "@/app/actions/portrait";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
@@ -12,10 +12,10 @@ import { classById } from "@/lib/ghanor/classes";
 import { originById } from "@/lib/ghanor/origins";
 import { raceById } from "@/lib/ghanor/races";
 import { calculateSkillBonus } from "@/lib/ghanor/rules";
-import { skillById } from "@/lib/ghanor/skills";
+import { skillById, skills as allSkills } from "@/lib/ghanor/skills";
 import { formatClassLevels, tierForLevel, TIER_LABELS, TIER_FLAVOR, computeSkillRollModifier, type Tier } from "@/lib/ghanor/leveling";
 import { RollDialog } from "@/components/dice/RollDialog";
-import { ClassIcon } from "@/components/ui/item-icon";
+import { ClassIcon, RaceIcon } from "@/components/ui/item-icon";
 import { JourneySection } from "@/components/character-sheet/journey-section";
 import { InventoryTab } from "@/components/character-sheet/inventory-tab";
 import { CompanionsTab } from "@/components/character-sheet/companions-tab";
@@ -125,6 +125,9 @@ export function CharacterSheet({
   const { isActive: isDmMode, toggle: toggleDm, hydrated: dmHydrated } = useDmMode(character.id);
   const [dmPatch, setDmPatch] = useState<DmPatch>({});
   const [dmSaved, setDmSaved] = useState(false);
+  const [isDmSkillsSaving, startDmSkillsSave] = useTransition();
+  const [dmSkillsDraft, setDmSkillsDraft] = useState<string[] | null>(null);
+  const [dmSkillsSaved, setDmSkillsSaved] = useState(false);
 
   // ── Rastreador de PV / PM ──────────────────────────────────────
   const [hpCurrent, setHpCurrent] = useState(character.hp_max);
@@ -434,6 +437,58 @@ export function CharacterSheet({
           >
             {isDmSaving ? "Salvando…" : "Salvar alterações"}
           </Button>
+
+          {/* Perícias treinadas */}
+          <div className="border-t border-indigo-200 pt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-wider text-indigo-600">Perícias Treinadas</p>
+              {dmSkillsSaved && (
+                <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                  <Check size={13} /> Salvo
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3">
+              {allSkills.map((skill) => {
+                const isChecked = (dmSkillsDraft ?? character.trained_skills).includes(skill.id);
+                return (
+                  <label key={skill.id} className="flex cursor-pointer select-none items-center gap-1.5 rounded px-1 py-0.5 text-xs hover:bg-indigo-100">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => {
+                        const current = dmSkillsDraft ?? character.trained_skills;
+                        setDmSkillsDraft(
+                          e.target.checked
+                            ? [...current, skill.id]
+                            : current.filter((s) => s !== skill.id),
+                        );
+                      }}
+                      className="accent-indigo-600"
+                    />
+                    {skill.name}
+                  </label>
+                );
+              })}
+            </div>
+            {dmSkillsDraft !== null && (
+              <Button
+                fullWidth
+                disabled={isDmSkillsSaving}
+                className="mt-2 bg-indigo-700 hover:bg-indigo-600 active:bg-indigo-800"
+                onClick={() =>
+                  startDmSkillsSave(async () => {
+                    await dmEditCharacterSkills({ characterId: character.id, trainedSkills: dmSkillsDraft });
+                    setDmSkillsDraft(null);
+                    setDmSkillsSaved(true);
+                    setTimeout(() => setDmSkillsSaved(false), 3000);
+                  })
+                }
+              >
+                {isDmSkillsSaving ? "Salvando…" : "Salvar perícias"}
+              </Button>
+            )}
+          </div>
         </Card>
       )}
 
@@ -551,7 +606,8 @@ export function CharacterSheet({
           <div className="flex min-w-0 flex-col gap-5">
             <div>
               <h1 className="text-2xl font-black leading-tight text-stone-950 sm:text-4xl">{character.name}</h1>
-              <p className="mt-1 text-sm font-semibold text-stone-600 sm:text-base">
+              <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-stone-600 sm:text-base">
+                <RaceIcon raceId={character.race} size={14} className="shrink-0 opacity-70" />
                 {raceById[character.race as keyof typeof raceById]?.name}
                 {" · "}
                 {classDisplay}

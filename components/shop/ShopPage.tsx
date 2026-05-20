@@ -417,7 +417,7 @@ export function ShopPage({ characterId, moneyPc, initialSession }: Props) {
             >
               <div className="flex items-center gap-3 px-4 py-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 border border-amber-100">
-                  <ItemIcon slug={item.slug} size={22} />
+                  <ItemIcon slug={item.slug} category={item.category} size={22} />
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">

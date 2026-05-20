@@ -1,19 +1,59 @@
 "use client";
 
 import { useState } from "react";
-import { Package } from "lucide-react";
+import {
+  Sword, Shield, Shirt, FlaskConical, Sparkles, Wrench,
+  Backpack, Target, Eye, Skull, Atom, PawPrint, Anchor,
+  Handshake, ShoppingBag, Crown, Package,
+  User, Mountain, Leaf, TrendingUp, ShieldAlert, Star,
+} from "lucide-react";
+
+// ─── Categoria → ícone Lucide ─────────────────────────────────────────────────
+
+type LucideIcon = React.ComponentType<{ size?: number; className?: string }>;
+
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+  arma:                  Sword,
+  armadura:              Shield,
+  escudo:                Shield,
+  municao:               Target,
+  equipamento_aventura:  Backpack,
+  ferramenta:            Wrench,
+  vestuario:             Shirt,
+  esoterico:             Eye,
+  alquimico_preparado:   FlaskConical,
+  alquimico_catalisador: Atom,
+  alquimico_veneno:      Skull,
+  alquimia_mistica:      Sparkles,
+  animal:                PawPrint,
+  veiculo:               Anchor,
+  servico:               Handshake,
+  bens_comuns:           ShoppingBag,
+  item_magico:           Crown,
+};
+
+// ─── Raça → ícone Lucide ──────────────────────────────────────────────────────
+
+const RACE_ICON: Record<string, LucideIcon> = {
+  humano:     User,
+  anao:       Mountain,
+  elfo:       Leaf,
+  gigante:    TrendingUp,
+  hobgoblin:  ShieldAlert,
+  meio_elfo:  Star,
+  aberrante:  Atom,
+};
+
+// ─── ItemIcon ─────────────────────────────────────────────────────────────────
 
 type Props = {
   slug: string;
+  category?: string;
   size?: number;
   className?: string;
 };
 
-/**
- * Renders the SVG icon for an item slug from /img/equip-*.svg.
- * Tries equip-generic-{slug} first, then equip-arma-{slug}, then falls back to Package icon.
- */
-export function ItemIcon({ slug, size = 20, className }: Props) {
+export function ItemIcon({ slug, category, size = 20, className }: Props) {
   const [attempt, setAttempt] = useState<0 | 1 | 2>(0);
 
   const srcs = [
@@ -22,7 +62,8 @@ export function ItemIcon({ slug, size = 20, className }: Props) {
   ];
 
   if (attempt === 2) {
-    return <Package size={size} className={className} />;
+    const CategoryIcon = (category && CATEGORY_ICON[category]) ? CATEGORY_ICON[category] : Package;
+    return <CategoryIcon size={size} className={className} />;
   }
 
   return (
@@ -38,16 +79,14 @@ export function ItemIcon({ slug, size = 20, className }: Props) {
   );
 }
 
+// ─── ClassIcon ────────────────────────────────────────────────────────────────
+
 type ClassIconProps = {
   classId: string;
   size?: number;
   className?: string;
 };
 
-/**
- * Renders the SVG class icon for a class ID from /img/class-{id}.svg.
- * Falls back to null if the icon doesn't exist.
- */
 export function ClassIcon({ classId, size = 32, className }: ClassIconProps) {
   const [failed, setFailed] = useState(false);
 
@@ -64,4 +103,17 @@ export function ClassIcon({ classId, size = 32, className }: ClassIconProps) {
       onError={() => setFailed(true)}
     />
   );
+}
+
+// ─── RaceIcon ─────────────────────────────────────────────────────────────────
+
+type RaceIconProps = {
+  raceId: string;
+  size?: number;
+  className?: string;
+};
+
+export function RaceIcon({ raceId, size = 16, className }: RaceIconProps) {
+  const Icon = RACE_ICON[raceId] ?? User;
+  return <Icon size={size} className={className} />;
 }

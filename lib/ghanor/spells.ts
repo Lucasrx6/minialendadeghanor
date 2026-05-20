@@ -11,6 +11,18 @@ export type SpellEffectType =
   | "utilidade"
   | "invocação";
 
+export type SpellElement =
+  | "fogo"
+  | "gelo"
+  | "relampago"
+  | "acido"
+  | "sonoro"
+  | "necro"
+  | "sagrado"
+  | "trevas"
+  | "luz"
+  | "psiquico";
+
 export type SpellCastingTime = "ação" | "ação rápida" | "reação" | "1 minuto";
 export type SpellSave = "Fortitude" | "Reflexo" | "Vontade";
 export type SpellTradition = "arcana" | "divina" | "natural";
@@ -33,6 +45,7 @@ export type Spell = {
   target: string;
   duration: string;
   effect_type: SpellEffectType;
+  element?: SpellElement;
   description: string;
   dice?: string;
   save?: SpellSave;
@@ -235,6 +248,7 @@ export const spells: Spell[] = [
     target: "1 criatura",
     duration: "instantâneo",
     effect_type: "dano",
+    element: "gelo",
     description:
       "Lança um projétil de gelo que congela levemente o alvo ao acertar. Causa 1d6 de dano " +
       "frio e reduz o deslocamento do alvo em 3m até o início do próximo turno.",
@@ -342,6 +356,7 @@ export const spells: Spell[] = [
     target: "1 criatura",
     duration: "instantâneo",
     effect_type: "dano",
+    element: "necro",
     description:
       "Canaliza energia negativa que queima ao toque, ferindo criaturas vivas (ou curando " +
       "mortos-vivos pelo mesmo valor). Causa 1d8 de dano necrótico mais o modificador de Sabedoria.",
@@ -364,6 +379,7 @@ export const spells: Spell[] = [
     target: "1 objeto",
     duration: "cena",
     effect_type: "utilidade",
+    element: "luz",
     description:
       "Faz um objeto brilhar com luz mágica equivalente a uma tocha, iluminando um raio de 9m " +
       "por 1 cena. Pode ser conjurada em um objeto que o conjurador segura ou ao alcance de toque.",
@@ -570,6 +586,7 @@ export const spells: Spell[] = [
     target: "1 criatura",
     duration: "instantâneo",
     effect_type: "dano",
+    element: "psiquico",
     description:
       "Conjura uma adaga de energia psíquica que contorna armaduras físicas e atinge diretamente " +
       "a mente do alvo. Causa 2d6 de dano mental; o alvo fica confuso por 1 turno se falhar no teste.",
@@ -628,6 +645,7 @@ export const spells: Spell[] = [
     target: "1 criatura",
     duration: "cena",
     effect_type: "dano",
+    element: "sagrado",
     description:
       "Invoca uma arma de energia divina que flutua no ar e ataca por conta própria. A cada " +
       "turno, como ação livre, a arma ataca um alvo a alcance médio causando 2d6 de dano sagrado.",
@@ -737,6 +755,7 @@ export const spells: Spell[] = [
     target: "1 objeto ou criatura",
     duration: "instantâneo",
     effect_type: "dano",
+    element: "sonoro",
     description:
       "Cria uma vibração mágica explosiva que pode partir objetos ou desestruturar criaturas. " +
       "Um objeto não mágico de até 5kg é destruído; uma criatura sofre 2d6 de dano sonoro se falhar no teste.",
@@ -755,6 +774,7 @@ export const spells: Spell[] = [
     target: "Área de 6m de raio",
     duration: "cena",
     effect_type: "controle",
+    element: "trevas",
     description:
       "Preenche uma área de 6m de raio com trevas mágicas impenetráveis pelo resto da cena. " +
       "Bloqueia visão normal e de baixa luminosidade; criaturas com visão no escuro mágica ainda podem ver.",
@@ -771,6 +791,7 @@ export const spells: Spell[] = [
     target: "1 criatura",
     duration: "instantâneo",
     effect_type: "dano",
+    element: "acido",
     description:
       "Expele um jato de ácido mágico que corrói armaduras e queima carne. Causa 2d6 de dano " +
       "ácido; se acertar, o alvo sofre –1 na Defesa até o fim da cena (não cumulativo).",
@@ -884,6 +905,7 @@ export const spells: Spell[] = [
     target: "1 criatura",
     duration: "instantâneo",
     effect_type: "dano",
+    element: "relampago",
     description:
       "Canaliza uma descarga elétrica pela mão do conjurador. Causa 2d6 de dano elétrico; " +
       "se o alvo usar armadura metálica, o dano aumenta em 1d6 extra.",
@@ -1002,6 +1024,7 @@ export const spells: Spell[] = [
     target: "Área de 9m de raio",
     duration: "instantâneo",
     effect_type: "dano",
+    element: "fogo",
     description:
       "Detona uma explosão de fogo mágico em uma área de 9m de raio. Todas as criaturas na " +
       "área sofrem 3d6 de dano de fogo; aquelas que passarem no teste de Reflexo sofrem apenas metade.",
@@ -1045,6 +1068,7 @@ export const spells: Spell[] = [
     target: "Área de 6m de raio",
     duration: "1 dia",
     effect_type: "debuff",
+    element: "necro",
     description:
       "Corrompe uma área com energia profana e negativa por 24 horas. Criaturas vivas (exceto " +
       "mortos-vivos) sofrem –2 em todos os testes; mortos-vivos na área ganham +2 em testes e Defesa.",

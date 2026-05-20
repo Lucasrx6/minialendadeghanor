@@ -20,9 +20,16 @@ import {
   Search,
   Play,
   Dices,
+  Snowflake,
+  Skull,
+  Sun,
+  Moon,
+  Volume2,
+  FlaskConical,
+  Atom,
 } from "lucide-react";
 import { RollDialog } from "@/components/dice/RollDialog";
-import { spellById, spellByName, spells as ALL_SPELLS, type SpellEffectType, type Spell } from "@/lib/ghanor/spells";
+import { spellById, spellByName, spells as ALL_SPELLS, type SpellEffectType, type SpellElement, type Spell } from "@/lib/ghanor/spells";
 import { powerById, powerByName, powers as ALL_POWERS, type Power, type PowerActivation } from "@/lib/ghanor/powers";
 import {
   addSpellToCharacter,
@@ -45,6 +52,25 @@ const EFFECT_CONFIG: Record<SpellEffectType, {
   controle:    { label: "Controle",  Icon: Eye,      gradFrom: "#4a1d96", gradTo: "#5b21b6", border: "#a855f7", iconClr: "#d8b4fe", txtClr: "#ede9fe" },
   utilidade:   { label: "Utilidade", Icon: Wrench,   gradFrom: "#292524", gradTo: "#44403c", border: "#78716c", iconClr: "#d6d3d1", txtClr: "#f5f5f4" },
   "invocação": { label: "Invocação", Icon: Star,     gradFrom: "#134e4a", gradTo: "#115e59", border: "#14b8a6", iconClr: "#5eead4", txtClr: "#ccfbf1" },
+};
+
+type IconConfig = {
+  label: string;
+  Icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
+  gradFrom: string; gradTo: string; border: string; iconClr: string; txtClr: string;
+};
+
+const ELEMENT_CONFIG: Record<SpellElement, IconConfig> = {
+  fogo:      { label: "Fogo",      Icon: Flame,       gradFrom: "#7c1d1d", gradTo: "#991b1b", border: "#ef4444", iconClr: "#fca5a5", txtClr: "#fee2e2" },
+  gelo:      { label: "Gelo",      Icon: Snowflake,   gradFrom: "#0c4a6e", gradTo: "#075985", border: "#38bdf8", iconClr: "#7dd3fc", txtClr: "#e0f2fe" },
+  relampago: { label: "Relâmpago", Icon: Zap,         gradFrom: "#713f12", gradTo: "#854d0e", border: "#eab308", iconClr: "#fde047", txtClr: "#fefce8" },
+  acido:     { label: "Ácido",     Icon: FlaskConical,gradFrom: "#14532d", gradTo: "#166534", border: "#4ade80", iconClr: "#86efac", txtClr: "#dcfce7" },
+  sonoro:    { label: "Sonoro",    Icon: Volume2,     gradFrom: "#1c1917", gradTo: "#292524", border: "#a8a29e", iconClr: "#d6d3d1", txtClr: "#f5f5f4" },
+  necro:     { label: "Necrótico", Icon: Skull,       gradFrom: "#0f172a", gradTo: "#1e293b", border: "#475569", iconClr: "#94a3b8", txtClr: "#e2e8f0" },
+  sagrado:   { label: "Sagrado",   Icon: Sun,         gradFrom: "#78350f", gradTo: "#92400e", border: "#f59e0b", iconClr: "#fcd34d", txtClr: "#fffbeb" },
+  trevas:    { label: "Trevas",    Icon: Moon,        gradFrom: "#2e1065", gradTo: "#3b0764", border: "#7c3aed", iconClr: "#c4b5fd", txtClr: "#ede9fe" },
+  luz:       { label: "Luz",       Icon: Sun,         gradFrom: "#78350f", gradTo: "#92400e", border: "#fbbf24", iconClr: "#fde68a", txtClr: "#fffbeb" },
+  psiquico:  { label: "Psíquico",  Icon: Atom,        gradFrom: "#4a1d96", gradTo: "#5b21b6", border: "#a855f7", iconClr: "#d8b4fe", txtClr: "#ede9fe" },
 };
 
 const ACTIVATION_CONFIG: Record<PowerActivation, {
@@ -108,7 +134,7 @@ function parseDice(
 // ─── SpellCastEffect ──────────────────────────────────────────────────────────
 
 function SpellCastEffect({ spell, totalMp, onDone }: { spell: Spell; totalMp: number; onDone: () => void }) {
-  const ec = EFFECT_CONFIG[spell.effect_type] ?? EFFECT_CONFIG.utilidade;
+  const ec = (spell.element ? ELEMENT_CONFIG[spell.element] : null) ?? EFFECT_CONFIG[spell.effect_type] ?? EFFECT_CONFIG.utilidade;
   const [phase, setPhase] = useState<"enter" | "show" | "exit">("enter");
 
   useEffect(() => {
@@ -179,7 +205,7 @@ function SpellUseModal({
   const canConfirm = mpCurrent >= totalMp;
   const effectiveAttrs = attrs ?? { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 };
   const diceConfig = spell.dice ? parseDice(spell.dice, effectiveAttrs) : null;
-  const ec = EFFECT_CONFIG[spell.effect_type] ?? EFFECT_CONFIG.utilidade;
+  const ec = (spell.element ? ELEMENT_CONFIG[spell.element] : null) ?? EFFECT_CONFIG[spell.effect_type] ?? EFFECT_CONFIG.utilidade;
 
   return (
     <>
@@ -379,7 +405,7 @@ function SpellCard({
   dmPending: boolean; mpCurrent: number; onUse: (spell: Spell) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const ec = EFFECT_CONFIG[spell.effect_type] ?? EFFECT_CONFIG.utilidade;
+  const ec = (spell.element ? ELEMENT_CONFIG[spell.element] : null) ?? EFFECT_CONFIG[spell.effect_type] ?? EFFECT_CONFIG.utilidade;
   const canUse = mpCurrent >= spell.mp_cost;
 
   return (

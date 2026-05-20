@@ -2,6 +2,7 @@ import { aberrantMutations, raceById } from "./races";
 import { classById } from "./classes";
 import { originById } from "./origins";
 import { skillById } from "./skills";
+import { CASTERS_ADD_KEY_ATTR_TO_MP, KEY_ATTR } from "./leveling";
 import type { ArmorId, Attribute, Attributes, CharacterBuild, ShieldId } from "./types";
 
 export const pointBuyCosts: Record<number, number> = {
@@ -125,6 +126,12 @@ export function calculateMp(build: CharacterBuild) {
   const origin = originById[build.origin];
   const extraOrigin = build.extraOrigin ? originById[build.extraOrigin] : undefined;
   const mutationBonus = build.raceChoices?.mutations?.includes("ascetico") ? 3 : 0;
+  const attrs = getFinalAttributes(build);
+  const keyAttr = KEY_ATTR[build.class];
+  const keyAttrMod = Array.isArray(keyAttr)
+    ? Math.max(...keyAttr.map((k) => attrs[k]))
+    : attrs[keyAttr];
+  const casterBonus = CASTERS_ADD_KEY_ATTR_TO_MP.includes(build.class) ? keyAttrMod * level : 0;
   return (
     klass.mpPerLevel * level +
     (race.mpPerLevelBonus ?? 0) * level +
@@ -132,7 +139,8 @@ export function calculateMp(build: CharacterBuild) {
     (origin?.mpPerLevelBonus ?? 0) * level +
     (extraOrigin?.mpBonus ?? 0) +
     (extraOrigin?.mpPerLevelBonus ?? 0) * level +
-    mutationBonus
+    mutationBonus +
+    casterBonus
   );
 }
 

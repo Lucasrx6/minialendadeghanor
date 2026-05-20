@@ -7,6 +7,7 @@ import {
   calculateDefense,
   calculateHp,
   calculateMp,
+  collectOriginSkills,
   getFinalAttributes,
   getMovement,
   getRequiredClassSkills,
@@ -112,7 +113,7 @@ export async function saveCharacter(input: WizardState) {
     classChoices: input.classChoices,
     armor: input.armor,
     shield: input.shield,
-    trainedSkills: [...new Set([...getRequiredClassSkills(input), ...input.trainedSkills])],
+    trainedSkills: [...new Set([...getRequiredClassSkills(input), ...collectOriginSkills(input), ...input.trainedSkills])],
   };
   const attrs = getFinalAttributes(build);
 

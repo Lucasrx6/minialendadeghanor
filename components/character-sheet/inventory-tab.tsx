@@ -553,7 +553,7 @@ function InventoryCard({
           style={{ background: `${theme.border}20`, border: `1.5px solid ${theme.border}50` }}
         >
           {item?.slug
-            ? <ItemIcon slug={item.slug} size={22} />
+            ? <ItemIcon slug={item.slug} category={item?.category} size={22} />
             : <FallbackIcon size={20} style={{ color: theme.iconClr }} />
           }
         </div>

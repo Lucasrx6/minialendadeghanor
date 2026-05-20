@@ -286,7 +286,7 @@ export function AddItemModal({ open, onClose, characterId, catalog, isDmMode, on
                         }`}
                       >
                         <span className="shrink-0">
-                          <ItemIcon slug={item.slug} size={18} />
+                          <ItemIcon slug={item.slug} category={item.category} size={18} />
                         </span>
                         <span className="flex-1 min-w-0 text-sm font-semibold truncate">
                           {item.name}
@@ -315,7 +315,7 @@ export function AddItemModal({ open, onClose, characterId, catalog, isDmMode, on
                   {/* Item summary */}
                   <div className="flex items-start gap-2">
                     <span className="shrink-0 mt-0.5 text-amber-800">
-                      <ItemIcon slug={selected.slug} size={20} />
+                      <ItemIcon slug={selected.slug} category={selected.category} size={20} />
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="font-black text-stone-900 text-sm">{selected.name}</p>

@@ -509,8 +509,9 @@ export function CharacterWizard() {
           <Card className="space-y-4">
             <SectionTitle>O que você sabe fazer sob pressão</SectionTitle>
             <p className="text-sm leading-6 text-stone-700">
-              Sua classe já concede algumas perícias. Aqui você escolhe as demais: {selectedClass.chooseSkills} pela classe e
-              {Math.max(finalAttrs.int, 0) > 0 ? ` ${Math.max(finalAttrs.int, 0)} extra(s) pela Inteligência.` : " nenhuma extra por Inteligência no momento."}
+              Sua classe concede <strong>{selectedClass.fixedSkills.length} perícia(s) treinada(s)</strong> automaticamente (já incluídas).
+              Aqui você escolhe mais: <strong>{selectedClass.chooseSkills}</strong> pela classe
+              {Math.max(finalAttrs.int, 0) > 0 ? ` e ${Math.max(finalAttrs.int, 0)} extra(s) pela Inteligência.` : ", sem extras por Inteligência no momento."}
             </p>
             <ChoiceGrid
               options={skills.map((skill) => ({ id: skill.id, label: `${skill.name} (${attributeLabels[skill.attribute]})` }))}
@@ -562,7 +563,8 @@ export function CharacterWizard() {
                   min={18}
                   placeholder="18"
                   value={state.age ?? ""}
-                  onChange={(event) => state.update({ age: Math.max(18, Number(event.target.value) || 18) })}
+                  onChange={(event) => state.update({ age: Number(event.target.value) || undefined })}
+                  onBlur={() => { if ((state.age ?? 0) < 18) state.update({ age: 18 }); }}
                 />
               </label>
               <div className="flex items-center rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">

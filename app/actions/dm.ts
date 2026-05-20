@@ -194,6 +194,28 @@ export async function removeSpellFromCharacter(
   }
 }
 
+// ── Editar perícias treinadas do personagem (DM) ─────────────────────────────
+
+const SkillsSchema = z.object({
+  characterId:   z.string().uuid(),
+  trainedSkills: z.array(z.string()),
+});
+
+export async function dmEditCharacterSkills(raw: z.infer<typeof SkillsSchema>) {
+  const input = SkillsSchema.parse(raw);
+  const user = await getAuthUser();
+  await assertOwns(input.characterId, user.id);
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("characters")
+    .update({ trained_skills: input.trainedSkills })
+    .eq("id", input.characterId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/characters/${input.characterId}`);
+}
+
 // ── Gerenciar poderes do personagem (DM) ──────────────────────────────────────
 
 export async function addPowerToCharacter(
