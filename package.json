@@ -13,6 +13,7 @@
     "audit:catalog": "node ./scripts/audit-catalog.js"
   },
   "dependencies": {
+    "@3d-dice/dice-box": "^1.1.4",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.4",
