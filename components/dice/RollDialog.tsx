@@ -289,7 +289,7 @@ export function RollDialog({
 
   function addDie(die: DieType) {
     const db = diceBoxRef.current;
-    if (!db || isRolling || !ready) return;
+    if (!db || !ready) return;
     setIsRolling(true);
     if (!hasRolledRef.current) {
       hasRolledRef.current = true;
@@ -403,7 +403,7 @@ export function RollDialog({
         <div className="grid grid-cols-6 gap-2 mb-3">
           {DICE_TYPES.map((die) => {
             const c = COLORS[die];
-            const disabled = !ready || isRolling || !!initError;
+            const disabled = !ready || !!initError;
             return (
               <button
                 key={die}
@@ -416,7 +416,6 @@ export function RollDialog({
                   padding: "6px",
                   background: disabled ? "#1f2937" : c.bg + "33",
                   border: `2px solid ${disabled ? "#374151" : c.border}`,
-                  opacity: isRolling ? 0.5 : 1,
                 }}
               >
                 <DieIcon
