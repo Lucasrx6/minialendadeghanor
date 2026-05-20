@@ -29,6 +29,7 @@ import {
   Atom,
 } from "lucide-react";
 import { RollDialog } from "@/components/dice/RollDialog";
+import { spellElementToHitEffect } from "@/components/dice/HitEffect";
 import { spellById, spellByName, spells as ALL_SPELLS, type SpellEffectType, type SpellElement, type Spell } from "@/lib/ghanor/spells";
 import { powerById, powerByName, powers as ALL_POWERS, type Power, type PowerActivation } from "@/lib/ghanor/powers";
 import {
@@ -336,6 +337,7 @@ function SpellUseModal({
           preCounts={rollOpen === "attack" ? { 20: 1 } : (diceConfig?.counts ?? { 6: 1 })}
           preModifier={rollOpen === "spell" ? (diceConfig?.modifier ?? 0) : 0}
           preModifierBreakdown={rollOpen === "spell" && diceConfig?.modBreakdown ? diceConfig.modBreakdown : undefined}
+          hitEffect={rollOpen === "spell" ? spellElementToHitEffect(spell.element) : undefined}
         />
       )}
     </>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Swords, Dices, Crosshair, ChevronDown, ChevronRight } from "lucide-react";
 import { RollDialog } from "@/components/dice/RollDialog";
+import { type HitEffectType } from "@/components/dice/HitEffect";
 import { hasWeaponProficiency } from "@/lib/ghanor/inventory";
 
 type WeaponItem = {
@@ -35,7 +36,7 @@ type Props = {
   aimBonus: number;
 };
 
-type RollConfig = { label: string; preModifier: number; preModifierBreakdown?: string };
+type RollConfig = { label: string; preModifier: number; preModifierBreakdown?: string; hitEffect?: HitEffectType };
 
 const DAMAGE_LABELS: Record<string, string> = {
   corte: "Corte", impacto: "Impacto", perfuracao: "Perfuração",
@@ -169,7 +170,7 @@ function WeaponCard({
           <Dices size={11} /> Ataque
         </button>
         <button
-          onClick={() => onRoll({ label: `Dano — ${displayName}`, preModifier: mod, preModifierBreakdown: `mod ${mod >= 0 ? "+" : ""}${mod}` })}
+          onClick={() => onRoll({ label: `Dano — ${displayName}`, preModifier: mod, preModifierBreakdown: `mod ${mod >= 0 ? "+" : ""}${mod}`, hitEffect: ranged ? "arrow" : "slash" })}
           className="flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-bold bg-stone-800 text-stone-300 transition hover:bg-stone-700 active:scale-95"
         >
           <Dices size={11} /> Dano
@@ -258,6 +259,7 @@ export function AttacksSection({ weapons, strMod, dexMod, level, characterClass,
           preLabel={rollConfig.label}
           preModifier={rollConfig.preModifier}
           preModifierBreakdown={rollConfig.preModifierBreakdown}
+          hitEffect={rollConfig.hitEffect}
         />
       )}
     </div>
