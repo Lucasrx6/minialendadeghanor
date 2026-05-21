@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Users, XCircle } from "lucide-react";
+import { Users, XCircle, Dices } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { closeArena } from "@/app/actions/arena";
+import { closeArena, dmAddNpcToArena } from "@/app/actions/arena";
 import { ArenaTokenShare } from "@/components/arena/ArenaTokenShare";
 import { ArenaPlayerCard } from "@/components/arena/ArenaPlayerCard";
 import { DmActionDrawer } from "@/components/arena/DmActionDrawer";
@@ -16,6 +16,8 @@ export function ArenaDashboard({ arena: initial }: { arena: ArenaWithParticipant
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set());
   const [activeParticipant, setActiveParticipant] = useState<ArenaParticipant | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isAddingNpc, setIsAddingNpc] = useState(false);
+  const [npcError, setNpcError] = useState<string | null>(null);
   const router = useRouter();
 
   // Supabase Realtime subscription
@@ -88,6 +90,15 @@ export function ArenaDashboard({ arena: initial }: { arena: ArenaWithParticipant
     });
   }
 
+  async function handleAddNpc() {
+    setIsAddingNpc(true);
+    setNpcError(null);
+    const res = await dmAddNpcToArena(initial.id);
+    setIsAddingNpc(false);
+    if ("error" in res) setNpcError(res.error);
+    // On success, Realtime INSERT triggers router.refresh() automatically
+  }
+
   function handleUpdated(participantId: string, patch: Partial<ArenaParticipant>) {
     setParticipants((prev) =>
       prev.map((p) => (p.id === participantId ? { ...p, ...patch } : p))
@@ -123,6 +134,19 @@ export function ArenaDashboard({ arena: initial }: { arena: ArenaWithParticipant
         <div className="mt-3">
           <p className="text-xs font-bold text-stone-500 mb-1.5">Token de acesso</p>
           <ArenaTokenShare token={initial.token} />
+        </div>
+        <div className="mt-3">
+          <button
+            onClick={handleAddNpc}
+            disabled={isAddingNpc}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-indigo-400/50 bg-indigo-50/50 py-2.5 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100/70 disabled:opacity-50"
+          >
+            <Dices size={16} />
+            {isAddingNpc ? "Gerando NPC..." : "Gerar Personagem Aleatório"}
+          </button>
+          {npcError && (
+            <p className="mt-1.5 text-center text-xs text-red-600">{npcError}</p>
+          )}
         </div>
       </div>
 

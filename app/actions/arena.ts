@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { calculateHp, calculateMp, calculateDefense } from "@/lib/ghanor/rules";
+import type { CharacterBuild, RaceId, ClassId } from "@/lib/ghanor/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -14,12 +16,8 @@ async function getAuthUser() {
 }
 
 function generateToken(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let token = "";
-  // Usa crypto para ser imprevisível
   const { randomInt } = require("crypto") as typeof import("crypto");
-  for (let i = 0; i < 8; i++) token += chars[randomInt(0, chars.length)];
-  return token;
+  return String(randomInt(100, 1000));
 }
 
 async function assertDm(arenaId: string, userId: string) {
@@ -617,5 +615,111 @@ export async function removeParticipantByDm(input: {
     return { ok: true };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Erro ao remover participante." };
+  }
+}
+
+// ─── dmAddNpcToArena ──────────────────────────────────────────────────────────
+
+const NPC_NAMES = [
+  "Aldric", "Brenno", "Calvar", "Dravos", "Erkan",
+  "Fenris", "Gorak", "Harald", "Irvan", "Jorath",
+  "Aera",   "Brinda", "Cynia",  "Dreva",  "Elara",
+  "Fayla",  "Gruna",  "Hira",   "Isolde", "Janya",
+  "Mord",   "Sveld",  "Taruk",  "Ulfen",  "Varyn",
+];
+
+const NPC_RACES: RaceId[] = [
+  "humano", "humano", "humano",
+  "anao", "elfo", "gigante", "hobgoblin", "meio_elfo",
+];
+
+const NPC_CLASSES: ClassId[] = [
+  "barbaro", "soldado", "ladino", "cacador", "cavaleiro",
+  "clerigo", "druida", "mago", "bardo", "bucaneiro", "nobre",
+];
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function generateNpcData() {
+  const name = `${pick(NPC_NAMES)} (NPC)`;
+  const race = pick(NPC_RACES);
+  const klass = pick(NPC_CLASSES);
+  const level = Math.floor(Math.random() * 5) + 1;
+
+  // Distribui 6 valores [-1, 0, 0, 1, 1, 2] aleatoriamente nos atributos
+  const pool = [-1, 0, 0, 1, 1, 2].sort(() => Math.random() - 0.5);
+  const baseAttributes = {
+    str: pool[0], dex: pool[1], con: pool[2],
+    int: pool[3], wis: pool[4], cha: pool[5],
+  };
+
+  const build: CharacterBuild = {
+    race,
+    class: klass,
+    origin: "campones",
+    level,
+    baseAttributes,
+    raceChoices: {},
+  };
+
+  const hp = Math.max(1, calculateHp(build));
+  const mp = Math.max(0, calculateMp(build));
+  const defense = calculateDefense(build);
+
+  return { name, race, class: klass, level, baseAttributes, hp, mp, defense };
+}
+
+export async function dmAddNpcToArena(
+  arenaId: string
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    const user = await getAuthUser();
+    await assertDm(arenaId, user.id);
+
+    const admin = createAdminClient();
+    const npc = generateNpcData();
+
+    const { data: char, error: charErr } = await admin
+      .from("characters")
+      .insert({
+        user_id: user.id,
+        name: npc.name,
+        attr_method: "points",
+        attr_str: npc.baseAttributes.str,
+        attr_dex: npc.baseAttributes.dex,
+        attr_con: npc.baseAttributes.con,
+        attr_int: npc.baseAttributes.int,
+        attr_wis: npc.baseAttributes.wis,
+        attr_cha: npc.baseAttributes.cha,
+        race: npc.race,
+        class: npc.class,
+        origin: "campones",
+        current_level: npc.level,
+        class_levels: { [npc.class]: npc.level },
+        hp_max: npc.hp,
+        mp_max: npc.mp,
+        defense: npc.defense,
+      })
+      .select("id")
+      .single();
+
+    if (charErr || !char) return { error: "Erro ao criar personagem NPC." };
+
+    const { error: partErr } = await admin
+      .from("arena_participants")
+      .insert({
+        arena_id: arenaId,
+        character_id: char.id,
+        user_id: user.id,
+        hp_current: npc.hp,
+        mp_current: npc.mp,
+      });
+
+    if (partErr) return { error: partErr.message };
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro desconhecido." };
   }
 }
