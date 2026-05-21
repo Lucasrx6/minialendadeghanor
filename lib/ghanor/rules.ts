@@ -2,7 +2,7 @@ import { aberrantMutations, raceById } from "./races";
 import { classById } from "./classes";
 import { originById } from "./origins";
 import { skillById } from "./skills";
-import { CASTERS_ADD_KEY_ATTR_TO_MP, KEY_ATTR } from "./leveling";
+import { CASTERS_ADD_KEY_ATTR_TO_MP, KEY_ATTR, trainingBonus } from "./leveling";
 import type { ArmorId, Attribute, Attributes, CharacterBuild, ShieldId } from "./types";
 
 export const pointBuyCosts: Record<number, number> = {
@@ -179,14 +179,24 @@ export function calculateSkillBonus(build: CharacterBuild, skillId: string) {
   const attrs = getFinalAttributes(build);
   const skill = skillById[skillId];
   if (!skill) return 0;
-  const trained = build.trainedSkills?.includes(skillId) ? 2 : 0;
-  return Math.floor((build.level ?? 1) / 2) + attrs[skill.attribute] + trained + (getSkillFlatBonuses(build)[skillId] ?? 0);
+  const level = build.level ?? 1;
+  const trained = build.trainedSkills?.includes(skillId) ? trainingBonus(level) : 0;
+  return Math.floor(level / 2) + attrs[skill.attribute] + trained + (getSkillFlatBonuses(build)[skillId] ?? 0);
 }
+
+const CLASSES_NEEDING_INITIAL_SKILL = new Set(["bucaneiro", "cacador", "soldado"]);
+const CLASSES_NEEDING_SOCIAL_SKILL = new Set(["nobre"]);
 
 export function getRequiredClassSkills(build: Pick<CharacterBuild, "class" | "classChoices">) {
   const klass = classById[build.class];
-  const chosenInitial = build.classChoices?.initialSkill;
-  const nobleChoice = build.classChoices?.socialSkill;
+  // Only apply initialSkill for classes that explicitly require Luta-or-Pontaria choice
+  const chosenInitial = CLASSES_NEEDING_INITIAL_SKILL.has(build.class)
+    ? (build.classChoices?.initialSkill ?? "luta")
+    : undefined;
+  // Only apply socialSkill for Nobre
+  const nobleChoice = CLASSES_NEEDING_SOCIAL_SKILL.has(build.class)
+    ? (build.classChoices?.socialSkill ?? "diplomacia")
+    : undefined;
   return [
     ...klass.fixedSkills,
     ...(chosenInitial ? [chosenInitial] : []),

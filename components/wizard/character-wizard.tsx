@@ -40,6 +40,7 @@ import {
   calculateDefense,
   calculateHp,
   calculateMp,
+  collectOriginSkills,
   generateAttributeRolls,
   getFinalAttributes,
   getMovement,
@@ -151,7 +152,7 @@ export function CharacterWizard() {
       classChoices: state.classChoices,
       armor: state.armor,
       shield: state.shield,
-      trainedSkills: [...new Set([...getRequiredClassSkills(state), ...state.trainedSkills])],
+      trainedSkills: [...new Set([...getRequiredClassSkills(state), ...collectOriginSkills(state), ...state.trainedSkills])],
     }),
     [state],
   );
@@ -160,6 +161,9 @@ export function CharacterWizard() {
   const selectedClass = classes.find((klass) => klass.id === state.class)!;
   const selectedRace = races.find((race) => race.id === state.race)!;
   const selectedOrigin = origins.find((origin) => origin.id === state.origin)!;
+  const autoGrantedSkills = [...new Set([...getRequiredClassSkills(state), ...collectOriginSkills(state)])];
+  const skillChoiceLimit = selectedClass.chooseSkills + Math.max(finalAttrs.int, 0);
+  const userChosenSkills = state.trainedSkills.filter((s) => !autoGrantedSkills.includes(s));
   const remainingPoints = 10 - pointBuySpent(state.baseAttributes);
   const circle1Spells = getSpellsForClass(state.class).filter((s) => s.circle === 1);
   const canUseMagic =
@@ -444,17 +448,34 @@ export function CharacterWizard() {
             </div>
             <Card className="space-y-3">
               <SectionTitle>O primeiro juramento do caminho</SectionTitle>
-              <p className="text-sm text-stone-700">{selectedClass.needsChoice ?? "Esta classe não exige uma escolha extra para o MVP."}</p>
+              {selectedClass.needsChoice ? (
+                <p className="text-sm text-stone-700">{selectedClass.needsChoice}</p>
+              ) : (
+                <p className="text-sm text-stone-500 italic">Esta classe não exige escolhas extras no 1º nível.</p>
+              )}
               <div className="grid gap-3 sm:grid-cols-2">
-                <SelectLine
-                  label="Perícia inicial marcial"
-                  value={state.classChoices.initialSkill ?? "luta"}
-                  onChange={(value) => state.update({ classChoices: { ...state.classChoices, initialSkill: value } })}
-                  options={[
-                    { id: "luta", label: "Luta" },
-                    { id: "pontaria", label: "Pontaria" },
-                  ]}
-                />
+                {["bucaneiro", "cacador", "soldado"].includes(state.class) && (
+                  <SelectLine
+                    label="Perícia de combate inicial"
+                    value={state.classChoices.initialSkill ?? "luta"}
+                    onChange={(value) => state.update({ classChoices: { ...state.classChoices, initialSkill: value } })}
+                    options={[
+                      { id: "luta", label: "Luta" },
+                      { id: "pontaria", label: "Pontaria" },
+                    ]}
+                  />
+                )}
+                {state.class === "nobre" && (
+                  <SelectLine
+                    label="Perícia social inicial"
+                    value={state.classChoices.socialSkill ?? "diplomacia"}
+                    onChange={(value) => state.update({ classChoices: { ...state.classChoices, socialSkill: value } })}
+                    options={[
+                      { id: "diplomacia", label: "Diplomacia" },
+                      { id: "intimidacao", label: "Intimidação" },
+                    ]}
+                  />
+                )}
                 <label className="text-sm font-semibold">
                   Detalhe livre da classe
                   <Input
@@ -508,15 +529,45 @@ export function CharacterWizard() {
         {state.step === 6 && (
           <Card className="space-y-4">
             <SectionTitle>O que você sabe fazer sob pressão</SectionTitle>
+
+            {/* Automatic skills panel */}
+            {autoGrantedSkills.length > 0 && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wider text-amber-700">
+                  Perícias automáticas ({autoGrantedSkills.length})
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {autoGrantedSkills.map((skillId) => {
+                    const sk = skills.find((s) => s.id === skillId);
+                    return sk ? (
+                      <span
+                        key={skillId}
+                        className="inline-flex items-center gap-1 rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900"
+                      >
+                        <Check size={10} /> {sk.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
+
             <p className="text-sm leading-6 text-stone-700">
-              Sua classe concede <strong>{selectedClass.fixedSkills.length} perícia(s) treinada(s)</strong> automaticamente (já incluídas).
-              Aqui você escolhe mais: <strong>{selectedClass.chooseSkills}</strong> pela classe
-              {Math.max(finalAttrs.int, 0) > 0 ? ` e ${Math.max(finalAttrs.int, 0)} extra(s) pela Inteligência.` : ", sem extras por Inteligência no momento."}
+              Escolha mais <strong>{skillChoiceLimit}</strong> perícia(s) à escolha
+              {Math.max(finalAttrs.int, 0) > 0
+                ? ` (${selectedClass.chooseSkills} pela classe + ${Math.max(finalAttrs.int, 0)} pela Inteligência)`
+                : ` (${selectedClass.chooseSkills} pela classe)`}.{" "}
+              <span className={userChosenSkills.length >= skillChoiceLimit ? "font-bold text-amber-700" : "text-stone-500"}>
+                {userChosenSkills.length}/{skillChoiceLimit} escolhidas.
+              </span>
             </p>
+
             <ChoiceGrid
-              options={skills.map((skill) => ({ id: skill.id, label: `${skill.name} (${attributeLabels[skill.attribute]})` }))}
-              selected={state.trainedSkills}
-              limit={selectedClass.chooseSkills + Math.max(finalAttrs.int, 0)}
+              options={skills
+                .filter((s) => !autoGrantedSkills.includes(s.id))
+                .map((s) => ({ id: s.id, label: `${s.name} (${attributeLabels[s.attribute]})` }))}
+              selected={userChosenSkills}
+              limit={skillChoiceLimit}
               onChange={(selected) => state.update({ trainedSkills: selected })}
             />
           </Card>
