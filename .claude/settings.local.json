@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"C:/Users/Arklok/OneDrive/Documentos/alendadeghanor\" rev-parse --git-common-dir)",
+      "Bash(git -C \"C:/Users/Arklok/OneDrive/Documentos/alendadeghanor\" rev-parse --git-dir)",
+      "Bash(git *)",
+      "Read(//c/Users/Arklok/.claude/plugins/cache/understand-anything/understand-anything/2.7.4/**)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm --filter @understand-anything/core build)",
+      "Bash(mkdir -p \"C:/Users/Arklok/OneDrive/Documentos/alendadeghanor/.understand-anything/intermediate\")",
+      "Bash(mkdir -p \"C:/Users/Arklok/OneDrive/Documentos/alendadeghanor/.understand-anything/tmp\")",
+      "Bash(node -e ' *)",
+      "Bash(node \"C:/Users/Arklok/OneDrive/Documentos/alendadeghanor/.understand-anything/tmp/ua-project-scan.js\" \"C:/Users/Arklok/OneDrive/Documentos/alendadeghanor\" \"C:/Users/Arklok/OneDrive/Documentos/alendadeghanor/.understand-anything/tmp/ua-scan-results.json\")",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(python *)",
+      "Bash(node *)",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(GRAPH_DIR=\"C:/Users/Arklok/OneDrive/Documentos/alendadeghanor\" npx vite --host 127.0.0.1)",
+      "Bash(start /B cmd /C \"set GRAPH_DIR=C:/Users/Arklok/OneDrive/Documentos/alendadeghanor && npx vite --host 127.0.0.1 > C:/Users/Arklok/AppData/Local/Temp/vite-dashboard.log 2>&1\")",
+      "Bash(echo \"PID: $!\")"
+    ]
+  }
+}
