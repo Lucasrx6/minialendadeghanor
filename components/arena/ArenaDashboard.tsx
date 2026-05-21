@@ -95,8 +95,11 @@ export function ArenaDashboard({ arena: initial }: { arena: ArenaWithParticipant
     setNpcError(null);
     const res = await dmAddNpcToArena(initial.id);
     setIsAddingNpc(false);
-    if ("error" in res) setNpcError(res.error);
-    // On success, Realtime INSERT triggers router.refresh() automatically
+    if ("error" in res) {
+      setNpcError(res.error);
+    } else {
+      router.refresh();
+    }
   }
 
   function handleUpdated(participantId: string, patch: Partial<ArenaParticipant>) {
