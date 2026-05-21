@@ -219,13 +219,13 @@ export function DmActionDrawer({ participant, arenaId, onClose, onUpdated, onRem
       {/* Overlay */}
       <div
         ref={overlayRef}
-        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Drawer */}
       <div
-        className="fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-3xl bg-amber-50 shadow-2xl"
+        className="fixed inset-x-0 bottom-0 z-[60] flex flex-col rounded-t-3xl bg-amber-50 shadow-2xl"
         style={{ maxHeight: "88dvh" }}
       >
         {/* Handle */}
