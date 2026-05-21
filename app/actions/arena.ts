@@ -723,3 +723,77 @@ export async function dmAddNpcToArena(
     return { error: err instanceof Error ? err.message : "Erro desconhecido." };
   }
 }
+
+// ─── searchArenaItems ─────────────────────────────────────────────────────────
+
+export type CatalogItem = {
+  slug: string;
+  name: string;
+  category: string;
+  price_pc: number;
+  spaces: number;
+};
+
+export async function searchArenaItems(
+  query: string
+): Promise<CatalogItem[]> {
+  if (query.trim().length < 2) return [];
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("items")
+      .select("slug, name, category, price_pc, spaces")
+      .eq("is_purchasable", true)
+      .ilike("name", `%${query.trim()}%`)
+      .order("name")
+      .limit(30);
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+// ─── dmAddCustomItem ──────────────────────────────────────────────────────────
+
+export async function dmAddCustomItem(input: {
+  arenaId: string;
+  characterId: string;
+  name: string;
+  spaces: number;
+  notes?: string;
+}): Promise<{ ok: true } | { error: string }> {
+  try {
+    const user = await getAuthUser();
+    await assertDm(input.arenaId, user.id);
+
+    const admin = createAdminClient();
+
+    const { data: char } = await admin
+      .from("characters")
+      .select("user_id")
+      .eq("id", input.characterId)
+      .single();
+
+    if (!char) return { error: "Personagem não encontrado." };
+
+    const { error } = await admin
+      .from("character_inventory")
+      .insert({
+        character_id: input.characterId,
+        user_id: char.user_id,
+        item_id: null,
+        custom_name: input.name.trim(),
+        quantity: 1,
+        location: "carried",
+        spaces: undefined,
+        notes: input.notes?.trim() || null,
+        acquired_from: "dm_manual",
+      });
+
+    if (error) return { error: error.message };
+    revalidatePath(`/characters/${input.characterId}`);
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro desconhecido." };
+  }
+}

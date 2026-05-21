@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
-import { X, Heart, Sparkles, Coins, Package, ExternalLink, UserMinus } from "lucide-react";
-import { dmAdjustHp, dmSetHp, dmAdjustMp, dmSetMp, dmAdjustMoney, removeParticipantByDm } from "@/app/actions/arena";
+import { X, Heart, Sparkles, Coins, Package, ExternalLink, UserMinus, Wand2 } from "lucide-react";
+import { dmAdjustHp, dmSetHp, dmAdjustMp, dmSetMp, dmAdjustMoney, removeParticipantByDm, searchArenaItems, dmAddCustomItem } from "@/app/actions/arena";
 import { addToInventory } from "@/app/actions/inventory";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { formatMoney, toPc } from "@/lib/ghanor/inventory";
-import type { ArenaParticipant } from "@/app/actions/arena";
+import type { ArenaParticipant, CatalogItem } from "@/app/actions/arena";
 
 type Props = {
   participant: ArenaParticipant | null;
@@ -17,13 +16,6 @@ type Props = {
   onRemoved: (participantId: string) => void;
 };
 
-type CatalogItem = {
-  slug: string;
-  name: string;
-  category: string;
-  price_pc: number;
-  spaces: number;
-};
 
 function StatControl({
   label, icon, current, max, color,
@@ -113,23 +105,32 @@ export function DmActionDrawer({ participant, arenaId, onClose, onUpdated, onRem
   const [moneyMode, setMoneyMode] = useState<"give" | "take">("give");
   const [moneyError, setMoneyError] = useState<string | null>(null);
 
+  const [itemMode, setItemMode] = useState<"catalog" | "custom">("catalog");
   const [itemSearch, setItemSearch] = useState("");
-  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [searchResults, setSearchResults] = useState<CatalogItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [itemError, setItemError] = useState<string | null>(null);
   const [itemSuccess, setItemSuccess] = useState<string | null>(null);
 
+  const [customName, setCustomName] = useState("");
+  const [customSpaces, setCustomSpaces] = useState("0");
+  const [customNotes, setCustomNotes] = useState("");
+  const [isPendingCustom, startCustom] = useTransition();
+
   const overlayRef = useRef<HTMLDivElement>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (activeSection !== "items" || catalog.length > 0) return;
-    const supabase = createClient();
-    supabase
-      .from("items")
-      .select("slug, name, category, price_pc, spaces")
-      .eq("is_purchasable", true)
-      .order("name")
-      .then(({ data }) => setCatalog(data ?? []));
-  }, [activeSection, catalog.length]);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (itemSearch.trim().length < 2) { setSearchResults([]); return; }
+    setIsSearching(true);
+    searchTimerRef.current = setTimeout(async () => {
+      const results = await searchArenaItems(itemSearch);
+      setSearchResults(results);
+      setIsSearching(false);
+    }, 300);
+    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
+  }, [itemSearch]);
 
   if (!participant) return null;
 
@@ -196,7 +197,28 @@ export function DmActionDrawer({ participant, arenaId, onClose, onUpdated, onRem
         isDmMode: true,
       });
       if ("error" in res) { setItemError(res.error ?? "Erro ao adicionar item."); return; }
-      setItemSuccess(`${item.name} adicionado ao inventário!`);
+      setItemSuccess(`${item.name} adicionado!`);
+      setTimeout(() => setItemSuccess(null), 3000);
+    });
+  }
+
+  function handleAddCustomItem() {
+    if (!customName.trim()) { setItemError("Informe o nome do item."); return; }
+    setItemError(null);
+    setItemSuccess(null);
+    startCustom(async () => {
+      const res = await dmAddCustomItem({
+        arenaId,
+        characterId: participant!.character_id,
+        name: customName.trim(),
+        spaces: parseFloat(customSpaces) || 0,
+        notes: customNotes,
+      });
+      if ("error" in res) { setItemError(res.error); return; }
+      setItemSuccess(`"${customName.trim()}" adicionado ao inventário!`);
+      setCustomName("");
+      setCustomSpaces("0");
+      setCustomNotes("");
       setTimeout(() => setItemSuccess(null), 3000);
     });
   }
@@ -210,9 +232,6 @@ export function DmActionDrawer({ participant, arenaId, onClose, onUpdated, onRem
     });
   }
 
-  const filteredCatalog = itemSearch.length >= 2
-    ? catalog.filter((i) => i.name.toLowerCase().includes(itemSearch.toLowerCase())).slice(0, 30)
-    : [];
 
   return (
     <>
@@ -308,51 +327,139 @@ export function DmActionDrawer({ participant, arenaId, onClose, onUpdated, onRem
           {/* ── Itens ── */}
           {activeSection === "items" && (
             <>
-              <div>
-                <label className="text-sm font-bold text-stone-700 block mb-1.5">
-                  Buscar item do catálogo
-                </label>
-                <input
-                  type="text"
-                  value={itemSearch}
-                  onChange={(e) => setItemSearch(e.target.value)}
-                  placeholder="Digite o nome do item…"
-                  className="w-full rounded-xl border border-amber-900/20 bg-white px-4 py-3 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200"
-                />
+              {/* Toggle catálogo / customizado */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => { setItemMode("catalog"); setItemError(null); setItemSuccess(null); }}
+                  className={`rounded-xl py-2.5 text-sm font-bold transition cursor-pointer ${
+                    itemMode === "catalog"
+                      ? "bg-amber-800 text-amber-50"
+                      : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                  }`}
+                >
+                  <Package size={13} className="inline mr-1.5" />Catálogo
+                </button>
+                <button
+                  onClick={() => { setItemMode("custom"); setItemError(null); setItemSuccess(null); }}
+                  className={`rounded-xl py-2.5 text-sm font-bold transition cursor-pointer ${
+                    itemMode === "custom"
+                      ? "bg-indigo-700 text-white"
+                      : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                  }`}
+                >
+                  <Wand2 size={13} className="inline mr-1.5" />Customizado
+                </button>
               </div>
 
               {itemSuccess && (
-                <p className="text-sm font-semibold text-emerald-700">{itemSuccess}</p>
+                <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{itemSuccess}</p>
               )}
               {itemError && (
-                <p className="text-sm font-semibold text-red-700">{itemError}</p>
+                <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{itemError}</p>
               )}
 
-              {itemSearch.length >= 2 && filteredCatalog.length === 0 && (
-                <p className="text-sm text-stone-500 text-center py-4">Nenhum item encontrado.</p>
-              )}
-
-              <div className="space-y-1.5">
-                {filteredCatalog.map((item) => (
-                  <div
-                    key={item.slug}
-                    className="flex items-center justify-between rounded-xl border border-amber-900/10 bg-white/80 px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-stone-900 truncate">{item.name}</p>
-                      <p className="text-[10px] text-stone-500">{item.category} · {item.spaces} esp.</p>
-                    </div>
-                    <Button
-                      variant="secondary"
-                      disabled={isPendingItem}
-                      onClick={() => handleAddItem(item)}
-                      className="ml-3 shrink-0 text-xs py-1 px-3"
-                    >
-                      <Package size={12} /> Dar
-                    </Button>
+              {/* ── Catálogo ── */}
+              {itemMode === "catalog" && (
+                <>
+                  <div>
+                    <label className="text-sm font-bold text-stone-700 block mb-1.5">
+                      Buscar item do catálogo
+                    </label>
+                    <input
+                      autoFocus
+                      type="text"
+                      value={itemSearch}
+                      onChange={(e) => setItemSearch(e.target.value)}
+                      placeholder="Ex: Espada, Poção, Capa…"
+                      className="w-full rounded-xl border border-amber-900/20 bg-white px-4 py-3 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                    />
                   </div>
-                ))}
-              </div>
+
+                  {isSearching && (
+                    <p className="text-sm text-stone-400 text-center">Buscando…</p>
+                  )}
+                  {!isSearching && itemSearch.length >= 2 && searchResults.length === 0 && (
+                    <p className="text-sm text-stone-500 text-center py-2">Nenhum item encontrado.</p>
+                  )}
+                  {itemSearch.length < 2 && (
+                    <p className="text-xs text-stone-400 text-center">Digite ao menos 2 letras para buscar.</p>
+                  )}
+
+                  <div className="space-y-1.5">
+                    {searchResults.map((item) => (
+                      <div
+                        key={item.slug}
+                        className="flex items-center justify-between rounded-xl border border-amber-900/10 bg-white/80 px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-stone-900 truncate">{item.name}</p>
+                          <p className="text-[10px] text-stone-500 capitalize">{item.category} · {item.spaces} esp.</p>
+                        </div>
+                        <Button
+                          variant="secondary"
+                          disabled={isPendingItem}
+                          onClick={() => handleAddItem(item)}
+                          className="ml-3 shrink-0 text-xs py-1 px-3"
+                        >
+                          <Package size={12} /> Dar
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* ── Item Customizado ── */}
+              {itemMode === "custom" && (
+                <div className="space-y-3">
+                  <p className="text-xs text-stone-500">
+                    Crie um item livre — recompensas, armas únicas, amuletos, bônus mágicos, etc.
+                  </p>
+                  <div>
+                    <label className="text-sm font-bold text-stone-700 block mb-1">Nome do item *</label>
+                    <input
+                      autoFocus
+                      type="text"
+                      value={customName}
+                      onChange={(e) => setCustomName(e.target.value)}
+                      placeholder="Ex: Espada do Rei Sombrio, Amuleto +2…"
+                      maxLength={100}
+                      className="w-full rounded-xl border border-amber-900/20 bg-white px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-bold text-stone-700 block mb-1">Espaços de carga</label>
+                    <input
+                      type="number"
+                      value={customSpaces}
+                      onChange={(e) => setCustomSpaces(e.target.value)}
+                      min={0}
+                      step={0.5}
+                      className="w-full rounded-xl border border-amber-900/20 bg-white px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-bold text-stone-700 block mb-1">Descrição / efeito (opcional)</label>
+                    <textarea
+                      value={customNotes}
+                      onChange={(e) => setCustomNotes(e.target.value)}
+                      placeholder="Concede +2 em Força, causa 2d8 de dano…"
+                      rows={3}
+                      maxLength={300}
+                      className="w-full rounded-xl border border-amber-900/20 bg-white px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none"
+                    />
+                  </div>
+                  <Button
+                    fullWidth
+                    disabled={isPendingCustom || !customName.trim()}
+                    onClick={handleAddCustomItem}
+                    className="bg-indigo-700 hover:bg-indigo-600"
+                  >
+                    <Wand2 size={15} />
+                    {isPendingCustom ? "Adicionando…" : "Adicionar item customizado"}
+                  </Button>
+                </div>
+              )}
             </>
           )}
 
