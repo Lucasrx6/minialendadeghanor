@@ -54,19 +54,16 @@ function isRanged(item: WeaponItem): boolean {
 }
 
 function computeAttackMod(
-  item: WeaponItem, strMod: number, dexMod: number, level: number,
+  item: WeaponItem, _strMod: number, _dexMod: number, _level: number,
   hasProficiency: boolean, skillBonus: number,
 ): { total: number; breakdown: string; noProfPenalty: boolean } {
-  const halfLevel = Math.floor(level / 2);
-  const isLight = item.weapon_grip === "leve" || item.weapon_abilities?.includes("ligeira");
   const ranged = isRanged(item);
-  const attrMod   = (ranged || isLight) ? dexMod : strMod;
-  const attrLabel = (ranged || isLight) ? "Des" : "For";
   const noProfPenalty = !hasProficiency;
   const profMod = noProfPenalty ? -5 : 0;
-  const total = attrMod + halfLevel + skillBonus + profMod;
-  const parts = [`${attrLabel} ${attrMod >= 0 ? "+" : ""}${attrMod}`, `nível/2 +${halfLevel}`];
-  if (skillBonus) parts.push(`perícia +${skillBonus}`);
+  // Attack = Luta or Pontaria skill (already includes attr + half level + training + flat)
+  const total = skillBonus + profMod;
+  const skillName = ranged ? "Pontaria" : "Luta";
+  const parts = [`${skillName} ${skillBonus >= 0 ? "+" : ""}${skillBonus}`];
   if (noProfPenalty) parts.push("sem prof. −5");
   return { total, breakdown: parts.join(" + ") + ` = ${total >= 0 ? "+" : ""}${total}`, noProfPenalty };
 }

@@ -268,8 +268,8 @@ export function CharacterSheet({
   };
 
   // Bônus de Luta e Pontaria (agora que `build` está disponível)
-  const fightBonus = character.trained_skills.includes("luta") ? calculateSkillBonus(build, "luta") : 0;
-  const aimBonus   = character.trained_skills.includes("pontaria") ? calculateSkillBonus(build, "pontaria") : 0;
+  const fightBonus = calculateSkillBonus(build, "luta");
+  const aimBonus   = calculateSkillBonus(build, "pontaria");
 
   function openAttrRoll(attr: string) {
     const attrMod = attrs[attr];
@@ -290,11 +290,24 @@ export function CharacterSheet({
     const finalAttrs = getFinalAttributes(build);
     const attrMod = finalAttrs[skill.attribute];
     const flatBonus = getSkillFlatBonuses(build)[skillId] ?? 0;
-    const total = calculateSkillBonus(build, skillId);
+    const penalty = getArmorPenaltyForSkill(skillId, armorPenalty, {
+      characterClass: character.class,
+      equippedArmor: equippedArmor?.items ? {
+        armor_defense_bonus: equippedArmor.items.armor_defense_bonus ?? 0,
+        armor_penalty: equippedArmor.items.armor_penalty ?? 0,
+        armor_category: equippedArmor.items.armor_category,
+      } : undefined,
+      equippedShield: equippedShield?.items ? {
+        armor_defense_bonus: equippedShield.items.armor_defense_bonus ?? 0,
+        armor_penalty: equippedShield.items.armor_penalty ?? 0,
+      } : undefined,
+    });
+    const total = calculateSkillBonus(build, skillId) + penalty;
     const parts: string[] = [`${ATTR_LABELS[skill.attribute]} ${attrMod >= 0 ? "+" : ""}${attrMod}`];
     if (trained) parts.push(`treino +${trainBonus}`);
     parts.push(`nível/2 +${hl}`);
     if (flatBonus !== 0) parts.push(`origem ${flatBonus >= 0 ? "+" : ""}${flatBonus}`);
+    if (penalty < 0) parts.push(`armadura ${penalty}`);
     setRollConfig({
       label: skill.name,
       preModifier: total,
