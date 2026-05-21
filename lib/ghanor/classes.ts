@@ -76,7 +76,7 @@ export const classes: ClassData[] = [
     fixedSkills: ["atuacao", "reflexos"],
     chooseSkills: 6,
     skillOptions: broadOptions,
-    proficiency: "Armas simples, armaduras leves e instrumentos.",
+    proficiency: "Armas simples e marciais, armaduras leves e instrumentos.",
     firstLevelAbility: "Inspiração: usa PM para conceder bônus aos aliados.",
   },
   {
@@ -127,7 +127,7 @@ export const classes: ClassData[] = [
     fixedSkills: ["religiao", "vontade"],
     chooseSkills: 2,
     skillOptions: broadOptions,
-    proficiency: "Armas simples, armaduras leves e médias, escudos.",
+    proficiency: "Armas simples, todas as armaduras e escudos.",
     firstLevelAbility: "Devoto de um Santo: escolha um santo padroeiro.",
     needsChoice: "Informe um santo padroeiro.",
   },

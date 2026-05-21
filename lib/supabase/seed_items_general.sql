@@ -42,7 +42,7 @@ values
 ('pederneira','Pederneira','equipamento_aventura',10,1,'Kit para acender fogueiras em qualquer condição.',false,true,112),
 ('racao_viagem','Ração de viagem','equipamento_aventura',10,0.5,'Comida seca e preservada para uma semana de viagem.',true,true,112),
 ('saco_dormir','Saco de dormir','equipamento_aventura',10,1,'Rolo de tecido grosso para dormir em campo.',false,true,112),
-('simbolo_sagrado','Símbolo sagrado','equipamento_aventura',50,1,'Amuleto ou símbolo da divindade do personagem.',false,false,112),
+('simbolo_sagrado','Símbolo sagrado','equipamento_aventura',50,1,'Amuleto ou símbolo da divindade do personagem.',false,true,112),
 ('tocha','Tocha','equipamento_aventura',1,1,'Vara com ponta embebida em alcatrão, ilumina por horas.',true,true,112),
 ('vara_madeira','Vara de madeira (3m)','equipamento_aventura',2,1,'Vara resistente de três metros de comprimento.',false,false,112)
 on conflict (slug) do update set name = excluded.name, price_pc = excluded.price_pc;

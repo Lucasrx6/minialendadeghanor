@@ -16,6 +16,7 @@ type DiceSkin = {
   swatch: string;
   palette: DicePalette;
   table: string;
+  diceFilter: string;
 };
 
 const SKINS: DiceSkin[] = [
@@ -23,6 +24,8 @@ const SKINS: DiceSkin[] = [
     id: "classico",
     name: "Clássico",
     swatch: "#d97706",
+    // Textura padrão é verde (~120°). Rotaciona -70° → laranja/âmbar
+    diceFilter: "hue-rotate(-70deg) saturate(1.5)",
     palette: {
       4:  { bg: "#7c2d12", border: "#ea580c", text: "#fed7aa" },
       6:  { bg: "#1e3a5f", border: "#3b82f6", text: "#bfdbfe" },
@@ -41,6 +44,8 @@ const SKINS: DiceSkin[] = [
     id: "ouro",
     name: "Ouro Real",
     swatch: "#fbbf24",
+    // -60° + saturate alto → ouro brilhante
+    diceFilter: "hue-rotate(-60deg) saturate(2) brightness(1.15)",
     palette: {
       4:  { bg: "#451a03", border: "#d97706", text: "#fde68a" },
       6:  { bg: "#3d1f00", border: "#f59e0b", text: "#fef3c7" },
@@ -58,6 +63,8 @@ const SKINS: DiceSkin[] = [
     id: "sangue",
     name: "Sangue",
     swatch: "#ef4444",
+    // -120° → vermelho puro
+    diceFilter: "hue-rotate(-120deg) saturate(1.7)",
     palette: {
       4:  { bg: "#3f0000", border: "#dc2626", text: "#fecaca" },
       6:  { bg: "#450a0a", border: "#ef4444", text: "#fee2e2" },
@@ -75,6 +82,8 @@ const SKINS: DiceSkin[] = [
     id: "gelo",
     name: "Gelo",
     swatch: "#38bdf8",
+    // +120° → azul gelo
+    diceFilter: "hue-rotate(120deg) saturate(1.3) brightness(1.05)",
     palette: {
       4:  { bg: "#0c1a2e", border: "#38bdf8", text: "#e0f2fe" },
       6:  { bg: "#0a1929", border: "#7dd3fc", text: "#bae6fd" },
@@ -92,6 +101,8 @@ const SKINS: DiceSkin[] = [
     id: "floresta",
     name: "Floresta",
     swatch: "#22c55e",
+    // Mantém verde nativo, só enriquece saturação
+    diceFilter: "saturate(1.6) brightness(0.95)",
     palette: {
       4:  { bg: "#052e16", border: "#22c55e", text: "#bbf7d0" },
       6:  { bg: "#14532d", border: "#4ade80", text: "#dcfce7" },
@@ -109,6 +120,8 @@ const SKINS: DiceSkin[] = [
     id: "arcano",
     name: "Arcano",
     swatch: "#a855f7",
+    // +160° → roxo/violeta
+    diceFilter: "hue-rotate(160deg) saturate(1.6)",
     palette: {
       4:  { bg: "#2e1065", border: "#8b5cf6", text: "#ede9fe" },
       6:  { bg: "#3b0764", border: "#a855f7", text: "#f3e8ff" },
@@ -126,6 +139,8 @@ const SKINS: DiceSkin[] = [
     id: "sombra",
     name: "Sombra",
     swatch: "#94a3b8",
+    // Dessatura quase completamente → cinza escuro
+    diceFilter: "saturate(0.12) brightness(0.65)",
     palette: {
       4:  { bg: "#09090b", border: "#6b7280", text: "#d1d5db" },
       6:  { bg: "#111827", border: "#9ca3af", text: "#e5e7eb" },
@@ -354,6 +369,8 @@ export function RollDialog({
       hasRolledRef.current = false;
       return;
     }
+    // Sorteia uma skin aleatória a cada abertura
+    setSkinId(SKINS[Math.floor(Math.random() * SKINS.length)].id);
 
     let cancelled = false;
 
@@ -434,6 +451,7 @@ export function RollDialog({
     setResults([]);
     hasRolledRef.current = false;
     setIsRolling(false);
+    setSkinId(SKINS[Math.floor(Math.random() * SKINS.length)].id);
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -458,6 +476,8 @@ export function RollDialog({
           minHeight: 200,
           background: currentSkin.table,
           boxShadow: "inset 0 -60px 80px rgba(0,0,0,0.3)",
+          filter: currentSkin.diceFilter,
+          transition: "filter 0.4s ease",
         }}
       />
 

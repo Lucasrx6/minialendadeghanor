@@ -430,6 +430,34 @@ export async function adjustQuantity(inventoryId: string, newQuantity: number) {
   revalidatePath(`/characters/${inv.character_id}`);
 }
 
+// ─── consumeItem ──────────────────────────────────────────────────────────────
+
+export async function consumeItem(inventoryId: string): Promise<{ ok: true } | { error: string }> {
+  try {
+    const user = await getAuthenticatedUser();
+    const admin = createAdminClient();
+
+    const { data: inv } = await admin
+      .from("character_inventory")
+      .select("character_id, user_id, quantity")
+      .eq("id", inventoryId)
+      .single();
+
+    if (!inv || inv.user_id !== user.id) return { error: "Item não encontrado." };
+
+    if (inv.quantity <= 1) {
+      await admin.from("character_inventory").delete().eq("id", inventoryId);
+    } else {
+      await admin.from("character_inventory").update({ quantity: inv.quantity - 1 }).eq("id", inventoryId);
+    }
+
+    revalidatePath(`/characters/${inv.character_id}`);
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro ao consumir item." };
+  }
+}
+
 // ─── addCustomItem ────────────────────────────────────────────────────────────
 
 export async function addCustomItem(input: {

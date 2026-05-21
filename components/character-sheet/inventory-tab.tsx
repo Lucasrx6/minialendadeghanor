@@ -11,8 +11,9 @@ import {
   carryZone, WORN_LIMIT, priceWithArcanium,
 } from "@/lib/ghanor/inventory";
 import {
-  moveItem, sellItem, adjustQuantity, adjustMoney, type InventoryLocation,
+  moveItem, sellItem, adjustQuantity, adjustMoney, consumeItem, type InventoryLocation,
 } from "@/app/actions/inventory";
+import { ConsumeEffect, getConsumeType, type ConsumeType } from "@/components/character-sheet/ConsumeEffect";
 import { AddItemModal } from "@/components/inventory/add-item-modal";
 import { Button } from "@/components/ui/button";
 import { ItemIcon } from "@/components/ui/item-icon";
@@ -146,6 +147,7 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const [sellConfirm, setSellConfirm] = useState<string | null>(null);
+  const [consumeEffect, setConsumeEffect] = useState<{ type: ConsumeType; itemName: string } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [showMoney, setShowMoney] = useState(false);
@@ -193,6 +195,18 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
     if (next < 0) return;
     startTransition(async () => { await adjustQuantity(id, next); });
   }
+
+  function handleConsume(entry: InvEntry) {
+    const cat = entry.items?.category ?? (entry.custom_data?.category as string) ?? "bens_comuns";
+    const name = itemName(entry);
+    startTransition(async () => {
+      const result = await consumeItem(entry.id);
+      if ("error" in result) { showToast(result.error); return; }
+      setConsumeEffect({ type: getConsumeType(cat), itemName: name });
+    });
+  }
+
+  const CONSUMABLE_CATS = new Set(["bens_comuns", "alquimico_preparado", "alquimia_mistica", "alquimico_veneno", "municao"]);
 
   const tabs = [
     { key: "equipped", label: "Equipado", count: equipped.length + worn.length },
@@ -328,6 +342,8 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
               const isCosmetic = !isCustom && (entry.items?.is_cosmetic ?? false);
               const canHold = !isCosmetic && (isCustom || isDmMode || (entry.items?.can_be_held ?? false));
               const canWear = !isCosmetic && (isCustom || isDmMode || (entry.items?.can_be_worn ?? false));
+              const cat = entry.items?.category ?? (entry.custom_data?.category as string) ?? "";
+              const canConsume = (entry.items?.is_stackable ?? false) && CONSUMABLE_CATS.has(cat);
               return (
                 <InventoryCard
                   key={entry.id}
@@ -340,6 +356,7 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
                   onStore={() => handleMove(entry.id, "storage")}
                   onSell={() => setSellConfirm(entry.id)}
                   onQty={(d) => handleQty(entry.id, d, entry.quantity)}
+                  onConsume={canConsume ? () => handleConsume(entry) : undefined}
                 />
               );
             })
@@ -460,6 +477,15 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
           {toast}
         </div>
       )}
+
+      {/* ── Consume effect overlay ───────────────────────────── */}
+      {consumeEffect && (
+        <ConsumeEffect
+          type={consumeEffect.type}
+          itemName={consumeEffect.itemName}
+          onDone={() => setConsumeEffect(null)}
+        />
+      )}
     </div>
   );
 }
@@ -468,7 +494,7 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
 
 function InventoryCard({
   entry, badge, isPending, isDmMode, characterId,
-  onHold, onWear, onRetrieve, onUnequip, onStore, onSell, onQty,
+  onHold, onWear, onRetrieve, onUnequip, onStore, onSell, onQty, onConsume,
 }: {
   entry: InvEntry;
   badge?: string;
@@ -482,6 +508,7 @@ function InventoryCard({
   onStore?: () => void;
   onSell?: () => void;
   onQty?: (delta: number) => void;
+  onConsume?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [dmLabel, setDmLabel] = useState(entry.custom_label ?? "");
@@ -698,6 +725,16 @@ function InventoryCard({
 
           {/* Extra actions */}
           <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {onConsume && (
+              <button
+                onClick={onConsume}
+                disabled={isPending}
+                className="text-[11px] font-bold px-3 py-1.5 rounded-lg transition disabled:opacity-50"
+                style={{ background: `${theme.border}25`, color: theme.iconClr, border: `1px solid ${theme.border}40` }}
+              >
+                Consumir
+              </button>
+            )}
             {onSell && !isDmMode && (
               <button
                 onClick={onSell}
