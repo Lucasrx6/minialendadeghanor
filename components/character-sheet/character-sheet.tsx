@@ -11,9 +11,9 @@ import { Card, SectionTitle } from "@/components/ui/card";
 import { classById } from "@/lib/ghanor/classes";
 import { originById } from "@/lib/ghanor/origins";
 import { raceById } from "@/lib/ghanor/races";
-import { calculateSkillBonus } from "@/lib/ghanor/rules";
+import { calculateSkillBonus, getFinalAttributes, getSkillFlatBonuses } from "@/lib/ghanor/rules";
 import { skillById, skills as allSkills } from "@/lib/ghanor/skills";
-import { formatClassLevels, tierForLevel, TIER_LABELS, TIER_FLAVOR, computeSkillRollModifier, type Tier } from "@/lib/ghanor/leveling";
+import { formatClassLevels, tierForLevel, TIER_LABELS, TIER_FLAVOR, trainingBonus, type Tier } from "@/lib/ghanor/leveling";
 import { RollDialog } from "@/components/dice/RollDialog";
 import { ClassIcon, RaceIcon } from "@/components/ui/item-icon";
 import { JourneySection } from "@/components/character-sheet/journey-section";
@@ -284,11 +284,20 @@ export function CharacterSheet({
     const skill = skillById[skillId];
     if (!skill) return;
     const trained = character.trained_skills.includes(skillId);
-    const { total, attrMod, trainBonus, halfLevel: hl } = computeSkillRollModifier({ level, attrMod: attrs[skill.attribute], trained });
+    const hl = Math.floor(level / 2);
+    const trainBonus = trained ? trainingBonus(level) : 0;
+    const finalAttrs = getFinalAttributes(build);
+    const attrMod = finalAttrs[skill.attribute];
+    const flatBonus = getSkillFlatBonuses(build)[skillId] ?? 0;
+    const total = calculateSkillBonus(build, skillId);
+    const parts: string[] = [`${ATTR_LABELS[skill.attribute]} ${attrMod >= 0 ? "+" : ""}${attrMod}`];
+    if (trained) parts.push(`treino +${trainBonus}`);
+    parts.push(`nível/2 +${hl}`);
+    if (flatBonus !== 0) parts.push(`origem ${flatBonus >= 0 ? "+" : ""}${flatBonus}`);
     setRollConfig({
       label: skill.name,
       preModifier: total,
-      preModifierBreakdown: `${ATTR_LABELS[skill.attribute]} ${attrMod >= 0 ? "+" : ""}${attrMod}${trained ? ` + treino +${trainBonus}` : ""} + nível/2 +${hl}`,
+      preModifierBreakdown: parts.join(" + "),
     });
   }
 

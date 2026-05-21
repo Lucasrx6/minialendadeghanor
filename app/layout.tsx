@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AppShell } from "@/components/layout/app-shell";
+import { NavigationProgress, PageTransitionLayout } from "@/components/layout/page-transition";
 
 export const metadata: Metadata = {
   title: "Forja de Ghanor",
@@ -37,7 +38,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="h-full antialiased">
       <body className="min-h-dvh flex flex-col bg-[#f3e2bd] text-stone-950">
-        <AppShell>{children}</AppShell>
+        <NavigationProgress />
+        <AppShell>
+          <PageTransitionLayout>{children}</PageTransitionLayout>
+        </AppShell>
       </body>
     </html>
   );
