@@ -25,6 +25,7 @@ import { computeDefenseWithEquipment, getArmorPenaltyForSkill, WORN_LIMIT } from
 import { useDmMode } from "@/lib/hooks/use-dm-mode";
 import { DmModeBanner } from "@/components/inventory/dm-mode-banner";
 import { PortraitConfirmDialog } from "@/components/character-sheet/portrait-confirm-dialog";
+import { ArenaBanner } from "@/components/arena/ArenaBanner";
 import type { CharacterBuild, Attribute } from "@/lib/ghanor/types";
 import type { Companion } from "@/lib/ghanor/animals";
 
@@ -365,6 +366,7 @@ export function CharacterSheet({
 
   return (
     <div className="space-y-6 print:bg-white">
+      <ArenaBanner characterId={character.id} />
       {dmHydrated && <DmModeBanner active={isDmMode} onToggle={toggleDm} />}
 
       {/* ── Painel de edição do Narrador ── */}

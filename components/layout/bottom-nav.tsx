@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Users, PlusCircle } from "lucide-react";
+import { Home, Users, PlusCircle, Swords } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/", label: "Início", icon: Home, match: (p: string) => p === "/" },
   { href: "/characters", label: "Heróis", icon: Users, match: (p: string) => p === "/characters" },
+  { href: "/arena", label: "Arena", icon: Swords, match: (p: string) => p === "/arena" || p.startsWith("/arena/") },
   { href: "/characters/new/guided", label: "Criar", icon: PlusCircle, match: (p: string) => p.includes("/new") },
 ] as const;
 
@@ -16,7 +17,7 @@ function shouldShowNav(pathname: string) {
   if (pathname.startsWith("/login") || pathname.startsWith("/signup") || pathname.startsWith("/auth")) {
     return false;
   }
-  if (pathname === "/" || pathname === "/characters") return true;
+  if (pathname === "/" || pathname === "/characters" || pathname === "/arena" || pathname.startsWith("/arena/")) return true;
   return false;
 }
 
