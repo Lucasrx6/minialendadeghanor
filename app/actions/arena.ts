@@ -797,3 +797,47 @@ export async function dmAddCustomItem(input: {
     return { error: err instanceof Error ? err.message : "Erro desconhecido." };
   }
 }
+
+// ─── dmAdjustAttribute ────────────────────────────────────────────────────────
+
+const ATTR_COLUMNS: Record<string, string> = {
+  str: "attr_str", dex: "attr_dex", con: "attr_con",
+  int: "attr_int", wis: "attr_wis", cha: "attr_cha",
+};
+
+export async function dmAdjustAttribute(input: {
+  arenaId: string;
+  characterId: string;
+  attr: "str" | "dex" | "con" | "int" | "wis" | "cha";
+  delta: number;
+}): Promise<{ ok: true; newValue: number } | { error: string }> {
+  try {
+    const user = await getAuthUser();
+    await assertDm(input.arenaId, user.id);
+
+    const col = ATTR_COLUMNS[input.attr];
+    const admin = createAdminClient();
+
+    const { data: char } = await admin
+      .from("characters")
+      .select(`id, ${col}`)
+      .eq("id", input.characterId)
+      .single();
+
+    if (!char) return { error: "Personagem não encontrado." };
+
+    const current = (char as unknown as Record<string, number>)[col] ?? 0;
+    const newValue = Math.max(-5, Math.min(10, current + input.delta));
+
+    const { error } = await admin
+      .from("characters")
+      .update({ [col]: newValue })
+      .eq("id", input.characterId);
+
+    if (error) return { error: error.message };
+    revalidatePath(`/characters/${input.characterId}`);
+    return { ok: true, newValue };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro desconhecido." };
+  }
+}

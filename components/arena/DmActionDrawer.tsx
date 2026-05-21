@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
-import { X, Heart, Sparkles, Coins, Package, ExternalLink, UserMinus, Wand2 } from "lucide-react";
-import { dmAdjustHp, dmSetHp, dmAdjustMp, dmSetMp, dmAdjustMoney, removeParticipantByDm, searchArenaItems, dmAddCustomItem } from "@/app/actions/arena";
+import { X, Heart, Sparkles, Coins, Package, ExternalLink, UserMinus, Wand2, ChevronDown, ChevronRight } from "lucide-react";
+import { dmAdjustHp, dmSetHp, dmAdjustMp, dmSetMp, dmAdjustMoney, removeParticipantByDm, searchArenaItems, dmAddCustomItem, dmAdjustAttribute } from "@/app/actions/arena";
 import { addToInventory } from "@/app/actions/inventory";
 import { Button } from "@/components/ui/button";
 import { formatMoney, toPc } from "@/lib/ghanor/inventory";
@@ -99,6 +99,8 @@ export function DmActionDrawer({ participant, arenaId, onClose, onUpdated, onRem
   const [isPendingMoney, startMoney] = useTransition();
   const [isPendingItem, startItem] = useTransition();
   const [isPendingRemove, startRemove] = useTransition();
+  const [isPendingAttr, startAttr] = useTransition();
+  const [showAttrs, setShowAttrs] = useState(false);
 
   const [moneyPo, setMoneyPo] = useState("");
   const [moneyReason, setMoneyReason] = useState("");
@@ -232,6 +234,30 @@ export function DmActionDrawer({ participant, arenaId, onClose, onUpdated, onRem
     });
   }
 
+  type AttrKey = "str" | "dex" | "con" | "int" | "wis" | "cha";
+  const ATTR_INFO: { key: AttrKey; label: string; short: string }[] = [
+    { key: "str", label: "Força",        short: "FOR" },
+    { key: "dex", label: "Destreza",     short: "DES" },
+    { key: "con", label: "Constituição", short: "CON" },
+    { key: "int", label: "Inteligência", short: "INT" },
+    { key: "wis", label: "Sabedoria",    short: "SAB" },
+    { key: "cha", label: "Carisma",      short: "CAR" },
+  ];
+
+  const [localAttrs, setLocalAttrs] = useState<Record<AttrKey, number>>({
+    str: char.attr_str, dex: char.attr_dex, con: char.attr_con,
+    int: char.attr_int, wis: char.attr_wis, cha: char.attr_cha,
+  });
+
+  function handleAdjustAttr(attr: AttrKey, delta: number) {
+    startAttr(async () => {
+      const res = await dmAdjustAttribute({ arenaId, characterId: participant!.character_id, attr, delta });
+      if ("ok" in res) {
+        setLocalAttrs((prev) => ({ ...prev, [attr]: res.newValue }));
+      }
+    });
+  }
+
 
   return (
     <>
@@ -313,6 +339,47 @@ export function DmActionDrawer({ participant, arenaId, onClose, onUpdated, onRem
                 color="blue" isPending={isPendingMp}
                 onDelta={handleAdjustMp} onSet={handleSetMp}
               />
+              <div className="h-px bg-stone-200" />
+
+              {/* ── Atributos ── */}
+              <div>
+                <button
+                  onClick={() => setShowAttrs((v) => !v)}
+                  className="flex w-full items-center justify-between rounded-xl border border-amber-900/15 bg-white/60 px-3 py-2.5 text-sm font-bold text-stone-700 transition hover:bg-amber-50 cursor-pointer"
+                >
+                  <span>Atributos &amp; Bônus</span>
+                  {showAttrs ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                </button>
+
+                {showAttrs && (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {ATTR_INFO.map(({ key, label, short }) => (
+                      <div key={key} className="flex items-center justify-between rounded-xl border border-amber-900/10 bg-white/80 px-3 py-2">
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-stone-400">{short}</p>
+                          <p className="text-lg font-black text-stone-900 leading-none">
+                            {localAttrs[key] >= 0 ? "+" : ""}{localAttrs[key]}
+                          </p>
+                          <p className="text-[10px] text-stone-400 truncate">{label}</p>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <button
+                            onClick={() => handleAdjustAttr(key, +1)}
+                            disabled={isPendingAttr}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 text-sm font-black transition hover:bg-emerald-200 disabled:opacity-40 cursor-pointer"
+                          >+</button>
+                          <button
+                            onClick={() => handleAdjustAttr(key, -1)}
+                            disabled={isPendingAttr}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-100 text-red-700 text-sm font-black transition hover:bg-red-200 disabled:opacity-40 cursor-pointer"
+                          >−</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="h-px bg-stone-200" />
               <button
                 onClick={handleRemove}
