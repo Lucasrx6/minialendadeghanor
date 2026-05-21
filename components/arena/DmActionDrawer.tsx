@@ -92,6 +92,17 @@ function StatControl({
   );
 }
 
+type AttrKey = "str" | "dex" | "con" | "int" | "wis" | "cha";
+
+const ATTR_INFO: { key: AttrKey; label: string; short: string }[] = [
+  { key: "str", label: "Força",        short: "FOR" },
+  { key: "dex", label: "Destreza",     short: "DES" },
+  { key: "con", label: "Constituição", short: "CON" },
+  { key: "int", label: "Inteligência", short: "INT" },
+  { key: "wis", label: "Sabedoria",    short: "SAB" },
+  { key: "cha", label: "Carisma",      short: "CAR" },
+];
+
 export function DmActionDrawer({ participant, arenaId, onClose, onUpdated, onRemoved }: Props) {
   const [activeSection, setActiveSection] = useState<"stats" | "items" | "money">("stats");
   const [isPendingHp, startHp] = useTransition();
@@ -119,8 +130,24 @@ export function DmActionDrawer({ participant, arenaId, onClose, onUpdated, onRem
   const [customNotes, setCustomNotes] = useState("");
   const [isPendingCustom, startCustom] = useTransition();
 
+  const [localAttrs, setLocalAttrs] = useState<Record<AttrKey, number>>({
+    str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0,
+  });
+
   const overlayRef = useRef<HTMLDivElement>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!participant) return;
+    setLocalAttrs({
+      str: participant.character.attr_str,
+      dex: participant.character.attr_dex,
+      con: participant.character.attr_con,
+      int: participant.character.attr_int,
+      wis: participant.character.attr_wis,
+      cha: participant.character.attr_cha,
+    });
+  }, [participant?.character_id]);
 
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
@@ -233,21 +260,6 @@ export function DmActionDrawer({ participant, arenaId, onClose, onUpdated, onRem
       onClose();
     });
   }
-
-  type AttrKey = "str" | "dex" | "con" | "int" | "wis" | "cha";
-  const ATTR_INFO: { key: AttrKey; label: string; short: string }[] = [
-    { key: "str", label: "Força",        short: "FOR" },
-    { key: "dex", label: "Destreza",     short: "DES" },
-    { key: "con", label: "Constituição", short: "CON" },
-    { key: "int", label: "Inteligência", short: "INT" },
-    { key: "wis", label: "Sabedoria",    short: "SAB" },
-    { key: "cha", label: "Carisma",      short: "CAR" },
-  ];
-
-  const [localAttrs, setLocalAttrs] = useState<Record<AttrKey, number>>({
-    str: char.attr_str, dex: char.attr_dex, con: char.attr_con,
-    int: char.attr_int, wis: char.attr_wis, cha: char.attr_cha,
-  });
 
   function handleAdjustAttr(attr: AttrKey, delta: number) {
     startAttr(async () => {
