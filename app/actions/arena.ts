@@ -76,8 +76,26 @@ export type ArenaParticipant = {
   character: ArenaCharacter;
 };
 
+export type ArenaEnemy = {
+  id: string;
+  arena_id: string;
+  template_id: string;
+  custom_name: string | null;
+  hp_max: number;
+  hp_current: number;
+  defense: number;
+  attack_bonus: number;
+  damage_dice: string;
+  damage_mod: number;
+  status_effects: string[];
+  is_defeated: boolean;
+  sort_order: number;
+  created_at: string;
+};
+
 export type ArenaWithParticipants = ArenaRow & {
   participants: ArenaParticipant[];
+  enemies: ArenaEnemy[];
   role: "dm" | "participant" | "none";
 };
 
@@ -245,6 +263,16 @@ export async function getArenaByToken(
       ? "participant"
       : "none";
 
+    // Carrega inimigos da arena (só relevante para o DM, mas inócuo para outros)
+    const { data: rawEnemies } = await admin
+      .from("arena_enemies")
+      .select("*")
+      .eq("arena_id", arena.id)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    const enemies: ArenaEnemy[] = (rawEnemies ?? []) as ArenaEnemy[];
+
     return {
       id: arena.id,
       token: arena.token,
@@ -253,6 +281,7 @@ export async function getArenaByToken(
       is_active: arena.is_active,
       created_at: arena.created_at,
       participants,
+      enemies,
       role,
     };
   } catch (err) {
@@ -795,6 +824,181 @@ export async function dmAddCustomItem(input: {
     return { ok: true };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Erro desconhecido." };
+  }
+}
+
+// ─── dmAdjustAttribute ────────────────────────────────────────────────────────
+
+// ─── dmAddEnemy ───────────────────────────────────────────────────────────────
+
+export async function dmAddEnemy(input: {
+  arenaId: string;
+  templateId: string;
+  customName?: string;
+  hp: number;
+  defense: number;
+  attackBonus: number;
+  damageDice: string;
+  damageMod: number;
+}): Promise<{ ok: true; enemy: ArenaEnemy } | { error: string }> {
+  try {
+    const user = await getAuthUser();
+    await assertDm(input.arenaId, user.id);
+    const admin = createAdminClient();
+
+    const { data: last } = await admin
+      .from("arena_enemies")
+      .select("sort_order")
+      .eq("arena_id", input.arenaId)
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const sortOrder = (last?.sort_order ?? -1) + 1;
+
+    const { data, error } = await admin
+      .from("arena_enemies")
+      .insert({
+        arena_id: input.arenaId,
+        template_id: input.templateId,
+        custom_name: input.customName ?? null,
+        hp_max: input.hp,
+        hp_current: input.hp,
+        defense: input.defense,
+        attack_bonus: input.attackBonus,
+        damage_dice: input.damageDice,
+        damage_mod: input.damageMod,
+        status_effects: [],
+        is_defeated: false,
+        sort_order: sortOrder,
+      })
+      .select("*")
+      .single();
+
+    if (error) return { error: error.message };
+    return { ok: true, enemy: data as ArenaEnemy };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro ao adicionar inimigo." };
+  }
+}
+
+// ─── dmAdjustEnemyHp ──────────────────────────────────────────────────────────
+
+export async function dmAdjustEnemyHp(input: {
+  arenaId: string;
+  enemyId: string;
+  delta: number;
+}): Promise<{ ok: true; newHp: number } | { error: string }> {
+  try {
+    const user = await getAuthUser();
+    await assertDm(input.arenaId, user.id);
+    const admin = createAdminClient();
+
+    const { data: enemy } = await admin
+      .from("arena_enemies")
+      .select("id, hp_current, hp_max")
+      .eq("id", input.enemyId)
+      .eq("arena_id", input.arenaId)
+      .single();
+
+    if (!enemy) return { error: "Inimigo não encontrado." };
+
+    const newHp = Math.max(0, Math.min(enemy.hp_max, enemy.hp_current + input.delta));
+    const { error } = await admin
+      .from("arena_enemies")
+      .update({ hp_current: newHp, is_defeated: newHp === 0 })
+      .eq("id", input.enemyId);
+
+    if (error) return { error: error.message };
+    return { ok: true, newHp };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro ao ajustar PV." };
+  }
+}
+
+// ─── dmToggleEnemyStatus ──────────────────────────────────────────────────────
+
+export async function dmToggleEnemyStatus(input: {
+  arenaId: string;
+  enemyId: string;
+  status: string;
+}): Promise<{ ok: true } | { error: string }> {
+  try {
+    const user = await getAuthUser();
+    await assertDm(input.arenaId, user.id);
+    const admin = createAdminClient();
+
+    const { data: enemy } = await admin
+      .from("arena_enemies")
+      .select("id, status_effects")
+      .eq("id", input.enemyId)
+      .eq("arena_id", input.arenaId)
+      .single();
+
+    if (!enemy) return { error: "Inimigo não encontrado." };
+
+    const current: string[] = enemy.status_effects ?? [];
+    const updated = current.includes(input.status)
+      ? current.filter((s) => s !== input.status)
+      : [...current, input.status];
+
+    const { error } = await admin
+      .from("arena_enemies")
+      .update({ status_effects: updated })
+      .eq("id", input.enemyId);
+
+    if (error) return { error: error.message };
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro ao alterar status." };
+  }
+}
+
+// ─── dmDefeatEnemy ────────────────────────────────────────────────────────────
+
+export async function dmDefeatEnemy(input: {
+  arenaId: string;
+  enemyId: string;
+}): Promise<{ ok: true } | { error: string }> {
+  try {
+    const user = await getAuthUser();
+    await assertDm(input.arenaId, user.id);
+    const admin = createAdminClient();
+
+    const { error } = await admin
+      .from("arena_enemies")
+      .update({ is_defeated: true, hp_current: 0 })
+      .eq("id", input.enemyId)
+      .eq("arena_id", input.arenaId);
+
+    if (error) return { error: error.message };
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro ao derrotar inimigo." };
+  }
+}
+
+// ─── dmRemoveEnemy ────────────────────────────────────────────────────────────
+
+export async function dmRemoveEnemy(input: {
+  arenaId: string;
+  enemyId: string;
+}): Promise<{ ok: true } | { error: string }> {
+  try {
+    const user = await getAuthUser();
+    await assertDm(input.arenaId, user.id);
+    const admin = createAdminClient();
+
+    const { error } = await admin
+      .from("arena_enemies")
+      .delete()
+      .eq("id", input.enemyId)
+      .eq("arena_id", input.arenaId);
+
+    if (error) return { error: error.message };
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro ao remover inimigo." };
   }
 }
 

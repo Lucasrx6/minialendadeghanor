@@ -17,7 +17,8 @@
       "Bash(echo \"Exit code: $?\")",
       "Bash(GRAPH_DIR=\"C:/Users/Arklok/OneDrive/Documentos/alendadeghanor\" npx vite --host 127.0.0.1)",
       "Bash(start /B cmd /C \"set GRAPH_DIR=C:/Users/Arklok/OneDrive/Documentos/alendadeghanor && npx vite --host 127.0.0.1 > C:/Users/Arklok/AppData/Local/Temp/vite-dashboard.log 2>&1\")",
-      "Bash(echo \"PID: $!\")"
+      "Bash(echo \"PID: $!\")",
+      "Bash(npx tsc *)"
     ]
   }
 }

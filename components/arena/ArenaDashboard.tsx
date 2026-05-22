@@ -8,11 +8,13 @@ import { closeArena, dmAddNpcToArena } from "@/app/actions/arena";
 import { ArenaTokenShare } from "@/components/arena/ArenaTokenShare";
 import { ArenaPlayerCard } from "@/components/arena/ArenaPlayerCard";
 import { DmActionDrawer } from "@/components/arena/DmActionDrawer";
+import { ArenaEnemyPanel } from "@/components/arena/ArenaEnemyPanel";
 import { Button } from "@/components/ui/button";
-import type { ArenaWithParticipants, ArenaParticipant } from "@/app/actions/arena";
+import type { ArenaWithParticipants, ArenaParticipant, ArenaEnemy } from "@/app/actions/arena";
 
 export function ArenaDashboard({ arena: initial }: { arena: ArenaWithParticipants }) {
   const [participants, setParticipants] = useState<ArenaParticipant[]>(initial.participants);
+  const [enemies, setEnemies] = useState<ArenaEnemy[]>(initial.enemies);
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set());
   const [activeParticipant, setActiveParticipant] = useState<ArenaParticipant | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -20,7 +22,7 @@ export function ArenaDashboard({ arena: initial }: { arena: ArenaWithParticipant
   const [npcError, setNpcError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Supabase Realtime subscription
+  // Realtime: participantes + inimigos
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
@@ -43,7 +45,6 @@ export function ArenaDashboard({ arena: initial }: { arena: ArenaWithParticipant
                   : p
               )
             );
-            // Flash visual no card atualizado
             setFlashIds((prev) => {
               const next = new Set(prev);
               next.add(updated.id);
@@ -56,14 +57,12 @@ export function ArenaDashboard({ arena: initial }: { arena: ArenaWithParticipant
                 return next;
               });
             }, 800);
-            // Atualiza o drawer se estiver aberto para este participante
             setActiveParticipant((prev) =>
               prev?.id === updated.id
                 ? { ...prev, hp_current: updated.hp_current, mp_current: updated.mp_current }
                 : prev
             );
           } else if (payload.eventType === "INSERT") {
-            // Novo jogador entrou — recarrega dados completos (precisa do join com characters)
             router.refresh();
           } else if (payload.eventType === "DELETE") {
             const deleted = payload.old as { id: string };
@@ -72,15 +71,45 @@ export function ArenaDashboard({ arena: initial }: { arena: ArenaWithParticipant
           }
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "arena_enemies",
+          filter: `arena_id=eq.${initial.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === "UPDATE") {
+            const updated = payload.new as ArenaEnemy;
+            setEnemies((prev) =>
+              prev.map((e) => (e.id === updated.id ? { ...e, ...updated } : e))
+            );
+          } else if (payload.eventType === "INSERT") {
+            const inserted = payload.new as ArenaEnemy;
+            setEnemies((prev) => {
+              if (prev.some((e) => e.id === inserted.id)) return prev;
+              return [...prev, inserted];
+            });
+          } else if (payload.eventType === "DELETE") {
+            const deleted = payload.old as { id: string };
+            setEnemies((prev) => prev.filter((e) => e.id !== deleted.id));
+          }
+        }
+      )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [initial.id, router]);
 
-  // Sincroniza participants com refresh do server
+  // Sincroniza ao fazer refresh do servidor
   useEffect(() => {
     setParticipants(initial.participants);
   }, [initial.participants]);
+
+  useEffect(() => {
+    setEnemies(initial.enemies);
+  }, [initial.enemies]);
 
   function handleClose() {
     if (!window.confirm("Encerrar a arena? Os jogadores serão desconectados.")) return;
@@ -153,6 +182,9 @@ export function ArenaDashboard({ arena: initial }: { arena: ArenaWithParticipant
         </div>
       </div>
 
+      {/* Inimigos */}
+      <ArenaEnemyPanel arenaId={initial.id} initialEnemies={enemies} />
+
       {/* Contador de participantes */}
       <div className="flex items-center gap-2 text-sm font-bold text-stone-600">
         <Users size={16} />
@@ -161,7 +193,7 @@ export function ArenaDashboard({ arena: initial }: { arena: ArenaWithParticipant
           : `${participants.length} jogador${participants.length !== 1 ? "es" : ""} na arena`}
       </div>
 
-      {/* Grid de cards */}
+      {/* Grid de cards de jogadores */}
       {participants.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-amber-900/20 py-12 text-center">
           <p className="text-sm text-stone-500">
@@ -181,7 +213,7 @@ export function ArenaDashboard({ arena: initial }: { arena: ArenaWithParticipant
         </div>
       )}
 
-      {/* Gaveta de ações */}
+      {/* Gaveta de ações do jogador */}
       <DmActionDrawer
         participant={activeParticipant}
         arenaId={initial.id}
