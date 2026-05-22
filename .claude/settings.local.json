@@ -20,7 +20,8 @@
       "Bash(echo \"PID: $!\")",
       "Bash(npx tsc *)",
       "Bash(Get-ChildItem -Path . -Recurse -Directory)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(xargs grep -l \"character.name\\\\|raceById\")"
     ]
   }
 }

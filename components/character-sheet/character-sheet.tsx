@@ -572,10 +572,10 @@ export function CharacterSheet({
       {activeTab === "sheet" && <>
       {/* Hero card — 2 colunas: retrato | info+botões */}
       <Card className="p-4 sm:p-5">
-        <div className="grid gap-5 lg:grid-cols-[minmax(180px,260px)_minmax(0,1fr)] lg:items-start">
+        <div className="grid gap-5 md:grid-cols-[minmax(160px,200px)_minmax(0,1fr)] md:items-start">
 
           {/* Coluna esquerda: retrato responsivo, sem corte agressivo */}
-          <div className="mx-auto w-full max-w-[240px] lg:mx-0 lg:max-w-[260px]">
+          <div className="mx-auto w-full max-w-[200px] md:mx-0 md:max-w-none">
             <div className="relative aspect-[4/5] max-h-[50vh] overflow-hidden rounded-2xl border border-amber-900/20 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950/80 shadow-inner">
               {portraitUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -629,21 +629,23 @@ export function CharacterSheet({
           {/* Coluna direita: nome, info e ações */}
           <div className="flex min-w-0 flex-col gap-5">
             <div>
-              <h1 className="text-2xl font-black leading-tight text-stone-950 sm:text-4xl">{character.name}</h1>
-              <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-stone-600 sm:text-base">
-                <RaceIcon raceId={character.race} size={14} className="shrink-0 opacity-70" />
-                {raceById[character.race as keyof typeof raceById]?.name}
-                {" · "}
-                {classDisplay}
-                {" · "}
-                <span className="text-amber-800">Nível {level}</span>
-                {" · "}
+              <h1 className="text-2xl font-black leading-tight text-stone-950 sm:text-3xl">{character.name}</h1>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm font-semibold text-stone-600">
+                <span className="flex items-center gap-1">
+                  <RaceIcon raceId={character.race} size={13} className="shrink-0 opacity-70" />
+                  {raceById[character.race as keyof typeof raceById]?.name}
+                </span>
+                <span className="select-none text-stone-300">·</span>
+                <span className="whitespace-nowrap">{classDisplay}</span>
+                <span className="select-none text-stone-300">·</span>
+                <span className="whitespace-nowrap text-amber-800">Nível {level}</span>
+                <span className="select-none text-stone-300">·</span>
                 <em className="text-stone-500">{TIER_LABELS[tier]}</em>
-              </p>
+              </div>
               {character.concept && <p className="mt-2 italic text-amber-900">{character.concept}</p>}
             </div>
 
-            <div className="grid gap-2 print:hidden sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-2 print:hidden grid-cols-2 md:grid-cols-3">
               <Button variant="secondary" className="justify-center" onClick={() => router.push(`/characters/${character.id}/edit`)}>
                 <Edit size={16} /> Editar
               </Button>
@@ -664,7 +666,7 @@ export function CharacterSheet({
               </Button>
               <Button
                 variant="danger"
-                className="justify-center sm:col-span-2 xl:col-span-1"
+                className="justify-center col-span-2 md:col-span-1"
                 disabled={isPending}
                 onClick={() => startTransition(async () => {
                   await deleteCharacter(character.id);
@@ -699,7 +701,7 @@ export function CharacterSheet({
       </div>
 
       {/* Stats de combate */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <VitalTracker
           label="PV" icon={<Heart size={16} />}
           current={hpCurrent} max={character.hp_max}
