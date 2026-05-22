@@ -463,17 +463,22 @@ export function RollDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col"
+      className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6"
       style={{ background: "rgba(5,5,10,0.90)" }}
-      role="dialog" aria-modal="true" aria-label="Rolagem de dados"
+      onClick={(e) => { if (e.target === e.currentTarget) requestClose(); }}
     >
+      {/* ── Modal container: full-screen no mobile, janela centralizada no desktop ── */}
+      <div
+        className="relative flex-1 sm:flex-none w-full sm:max-w-[460px] sm:rounded-2xl sm:border sm:border-stone-800 overflow-hidden flex flex-col"
+        role="dialog" aria-modal="true" aria-label="Rolagem de dados"
+      >
       {/* ── Canvas 3D ── */}
       <div
         id={CONTAINER_ID}
         ref={containerRef}
-        className="flex-1 relative"
+        className="flex-1 sm:flex-none sm:h-72 relative"
         style={{
-          minHeight: 200,
+          minHeight: 160,
           background: currentSkin.table,
           boxShadow: "inset 0 -60px 80px rgba(0,0,0,0.3)",
           filter: currentSkin.diceFilter,
@@ -617,6 +622,7 @@ export function RollDialog({
             </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
