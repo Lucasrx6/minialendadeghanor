@@ -277,6 +277,7 @@ export function ArenaEnemyPanel({ arenaId, initialEnemies }: Props) {
   const [showModal, setShowModal] = useState(false);
   const [rollConfig, setRollConfig] = useState<RollConfig | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   function handleUpdated(id: string, patch: Partial<ArenaEnemy>) {
     setEnemies((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
@@ -288,6 +289,8 @@ export function ArenaEnemyPanel({ arenaId, initialEnemies }: Props) {
 
   async function handleAdd(template: EnemyTemplate) {
     setIsAdding(true);
+    setAddError(null);
+    setShowModal(false);
     const res = await dmAddEnemy({
       arenaId,
       templateId: template.id,
@@ -300,6 +303,8 @@ export function ArenaEnemyPanel({ arenaId, initialEnemies }: Props) {
     setIsAdding(false);
     if ("ok" in res) {
       setEnemies((prev) => [...prev, res.enemy]);
+    } else {
+      setAddError(res.error);
     }
   }
 
@@ -330,6 +335,17 @@ export function ArenaEnemyPanel({ arenaId, initialEnemies }: Props) {
           <Plus size={12} /> Adicionar
         </button>
       </div>
+
+      {addError && (
+        <div className="mb-3 rounded-xl border border-red-800/40 bg-red-950/30 px-3 py-2 text-xs font-bold text-red-300">
+          ⚠ {addError}
+          {addError.toLowerCase().includes("exist") || addError.toLowerCase().includes("relation") ? (
+            <span className="block mt-0.5 font-normal text-red-400">
+              Execute a migration <code>supabase/migrate_arena_enemies.sql</code> no Supabase Dashboard.
+            </span>
+          ) : null}
+        </div>
+      )}
 
       {/* Enemy grid */}
       {enemies.length === 0 ? (
