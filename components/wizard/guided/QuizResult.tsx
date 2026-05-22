@@ -15,6 +15,7 @@ import {
   type Power,
 } from "@/lib/ghanor/powers";
 import { Shield, ChevronDown, ChevronRight, Lock } from "lucide-react";
+import { BackstoryGenerator } from "@/components/wizard/BackstoryGenerator";
 import { cn } from "@/lib/utils";
 import type { GeneratedCharacter, Answer, RaceChoices } from "@/lib/ghanor/quiz-engine";
 import type { ClassId } from "@/lib/ghanor/types";
@@ -37,6 +38,7 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
   const [selectedOriginIndex, setSelectedOriginIndex] = useState(0);
   const [selectedSpells, setSelectedSpells] = useState<string[]>([]);
   const [selectedPower, setSelectedPower] = useState("");
+  const [history, setHistory] = useState("");
 
   const selectedClass = computed.suggestedClasses[selectedClassIndex] as ClassId;
   const selectedOrigin = computed.suggestedOrigins[selectedOriginIndex];
@@ -87,6 +89,7 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
           spells: selectedSpells,
           powers: selectedPower ? [selectedPower] : [],
           equipment: computed.weapons.map((w) => ({ id: w, name: w, type: "weapon" })),
+          history: history.trim() || undefined,
         });
         router.push(`/characters`);
       } catch (err: unknown) {
@@ -306,6 +309,19 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
           </div>
         </Card>
       )}
+
+      {/* Backstory Generator */}
+      <div className="mb-8">
+        <BackstoryGenerator
+          race={race}
+          classId={selectedClass}
+          origin={selectedOrigin}
+          concept={computed.concept}
+          characterName={touches.name}
+          history={history}
+          onChange={setHistory}
+        />
+      </div>
 
       {/* Save */}
       <div className="flex flex-col items-center gap-4 text-center">

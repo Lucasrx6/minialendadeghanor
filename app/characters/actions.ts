@@ -228,6 +228,7 @@ export async function saveGuidedCharacter(input: {
   age?: number;
   appearance?: string;
   objective?: string;
+  history?: string;
   race: string;
   raceChoices: any;
   origin: string;
@@ -302,6 +303,7 @@ export async function saveGuidedCharacter(input: {
       age: input.age,
       appearance: input.appearance,
       objective: input.objective,
+      history: input.history,
       creation_mode: "guided",
       quiz_answers: input.answers,
     })
