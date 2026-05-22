@@ -23,6 +23,8 @@ export function BackstoryGenerator({ race, classId, origin, concept, characterNa
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generated, setGenerated] = useState(false);
+  const [regenCount, setRegenCount] = useState(0);
+  const REGEN_LIMIT = 2;
 
   const raceName = raceById[race as keyof typeof raceById]?.name ?? race;
   const className = classById[classId as keyof typeof classById]?.name ?? classId;
@@ -44,6 +46,7 @@ export function BackstoryGenerator({ race, classId, origin, concept, characterNa
       setError(result.error);
     } else {
       onChange(result.history);
+      if (generated) setRegenCount((n) => n + 1);
       setGenerated(true);
     }
   }
@@ -112,15 +115,22 @@ export function BackstoryGenerator({ race, classId, origin, concept, characterNa
           )}
         </button>
       ) : (
-        <button
-          type="button"
-          onClick={handleGenerate}
-          disabled={loading}
-          className="flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-amber-700 transition disabled:opacity-50"
-        >
-          <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-          {loading ? "Regenerando..." : "Regerar"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleGenerate}
+            disabled={loading || regenCount >= REGEN_LIMIT}
+            className="flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-amber-700 transition disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+            {loading ? "Regenerando..." : "Regerar"}
+          </button>
+          <span className="text-[11px] text-stone-400">
+            {regenCount >= REGEN_LIMIT
+              ? "Limite de regerações atingido"
+              : `${regenCount}/${REGEN_LIMIT} regerações usadas`}
+          </span>
+        </div>
       )}
 
       {error && (
