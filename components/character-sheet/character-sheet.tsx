@@ -701,7 +701,7 @@ export function CharacterSheet({
       </div>
 
       {/* Stats de combate */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <VitalTracker
           label="PV" icon={<Heart size={16} />}
           current={hpCurrent} max={character.hp_max}
@@ -716,7 +716,7 @@ export function CharacterSheet({
           barClass="bg-blue-400"
           onAdjust={adjustMp} onSetDirect={setMpDirect}
         />
-        <div title={defBreakdown}>
+        <div className="col-span-2 sm:col-span-1" title={defBreakdown}>
           <Fact
             label={equippedArmor || equippedShield ? "Defesa ⚙" : "Defesa"}
             value={equippedArmor || equippedShield ? dynamicDefense : character.defense}
@@ -728,8 +728,25 @@ export function CharacterSheet({
             <p className="text-xs text-center text-red-500 mt-1 font-bold">Pen. {armorPenalty}</p>
           )}
         </div>
-        <Fact label="Deslocamento" value={`${character.movement_m}m`} icon={<Wind size={20} />} colorClass="bg-emerald-950/20 text-emerald-700 border-emerald-900/20" valueClass="text-emerald-700" />
-        <Fact label="Tamanho" value={character.size} icon={<Ruler size={20} />} colorClass="bg-amber-950/20 text-amber-900 border-amber-900/20" valueClass="text-amber-900" />
+      </div>
+
+      {/* Stats secundários: deslocamento + tamanho */}
+      <div className="flex items-center gap-6 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5">
+        <span className="flex items-center gap-2">
+          <Wind size={15} className="shrink-0 text-emerald-600" />
+          <span>
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">Deslocamento</span>
+            <span className="font-black text-stone-800">{character.movement_m}m</span>
+          </span>
+        </span>
+        <span className="h-8 w-px bg-stone-200" />
+        <span className="flex items-center gap-2">
+          <Ruler size={15} className="shrink-0 text-amber-600" />
+          <span>
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">Tamanho</span>
+            <span className="font-black capitalize text-stone-800">{character.size}</span>
+          </span>
+        </span>
       </div>
 
       {/* Botões de descanso e nova cena */}
@@ -1011,7 +1028,7 @@ function VitalTracker({
         <div className="flex items-center justify-between gap-1">
           <button
             onClick={() => onAdjust(-5)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-black hover:bg-white/20 active:scale-95 transition cursor-pointer"
+            className="hidden sm:flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-black hover:bg-white/20 active:scale-95 transition cursor-pointer"
             title="-5"
           >−5</button>
           <button
@@ -1052,7 +1069,7 @@ function VitalTracker({
           >+</button>
           <button
             onClick={() => onAdjust(+5)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-black hover:bg-white/20 active:scale-95 transition cursor-pointer"
+            className="hidden sm:flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-black hover:bg-white/20 active:scale-95 transition cursor-pointer"
             title="+5"
           >+5</button>
         </div>
