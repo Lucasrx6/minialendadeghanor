@@ -17,6 +17,7 @@ import { ConsumeEffect, getConsumeType, type ConsumeType } from "@/components/ch
 import { AddItemModal } from "@/components/inventory/add-item-modal";
 import { Button } from "@/components/ui/button";
 import { ItemIcon } from "@/components/ui/item-icon";
+import { ItemImage } from "@/components/ui/ItemImage";
 import { Input, Textarea } from "@/components/ui/input";
 import { dmEditInventoryItem, dmDeleteInventoryItem } from "@/app/actions/dm";
 
@@ -555,7 +556,7 @@ function InventoryCard({
     >
       {/* Card face */}
       <button
-        className="relative flex flex-col items-center gap-1.5 px-2 pt-5 pb-3 text-center focus:outline-none"
+        className="relative flex flex-col items-center gap-1.5 px-2 pt-6 pb-3 text-center focus:outline-none"
         style={{ background: `linear-gradient(160deg, ${theme.gradFrom} 0%, ${theme.gradTo} 100%)` }}
         onClick={() => setOpen(v => !v)}
       >
@@ -574,16 +575,22 @@ function InventoryCard({
           </span>
         )}
 
-        {/* Icon */}
-        <div
-          className="mt-1 flex h-10 w-10 items-center justify-center rounded-full"
-          style={{ background: `${theme.border}20`, border: `1.5px solid ${theme.border}50` }}
-        >
-          {item?.slug
-            ? <ItemIcon slug={item.slug} category={item?.category} size={22} />
-            : <FallbackIcon size={20} style={{ color: theme.iconClr }} />
-          }
-        </div>
+        {/* Image / Icon */}
+        {item?.slug ? (
+          <ItemImage
+            slug={item.slug}
+            name={name}
+            borderColor={theme.border}
+            iconFallback={<FallbackIcon size={20} style={{ color: theme.iconClr }} />}
+          />
+        ) : (
+          <div
+            className="mt-1 flex h-11 w-11 items-center justify-center rounded-full"
+            style={{ background: `${theme.border}20`, border: `1.5px solid ${theme.border}50` }}
+          >
+            <FallbackIcon size={20} style={{ color: theme.iconClr }} />
+          </div>
+        )}
 
         {/* Name */}
         <p className="text-[11px] font-black leading-tight line-clamp-2 px-1 text-stone-100">
