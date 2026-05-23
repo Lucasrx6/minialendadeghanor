@@ -1,21 +1,21 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, RotateCcw, Palette } from "lucide-react";
 import { HitEffect, type HitEffectType } from "@/components/dice/HitEffect";
+import { DiceBox3D, type DiceBox3DHandle, type DiceResult } from "@/components/dice/DiceBox3D";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 const DICE_TYPES = [4, 6, 8, 10, 12, 20] as const;
 type DieType = (typeof DICE_TYPES)[number];
-type DicePalette = Record<DieType, { bg: string; border: string; text: string }>;
 
 type DiceSkin = {
   id: string;
   name: string;
   swatch: string;
-  palette: DicePalette;
+  themeColor: string;
   table: string;
 };
 
@@ -24,14 +24,7 @@ const SKINS: DiceSkin[] = [
     id: "classico",
     name: "Clássico",
     swatch: "#d97706",
-    palette: {
-      4:  { bg: "#7c2d12", border: "#ea580c", text: "#fed7aa" },
-      6:  { bg: "#1e3a5f", border: "#3b82f6", text: "#bfdbfe" },
-      8:  { bg: "#14532d", border: "#22c55e", text: "#bbf7d0" },
-      10: { bg: "#4a1d96", border: "#a855f7", text: "#e9d5ff" },
-      12: { bg: "#881337", border: "#f43f5e", text: "#fecdd3" },
-      20: { bg: "#78350f", border: "#d97706", text: "#fef3c7" },
-    },
+    themeColor: "#b45309",
     table: [
       "radial-gradient(ellipse at 50% 115%, rgba(160,90,20,0.22) 0%, transparent 55%)",
       "radial-gradient(ellipse at 50% 60%, rgba(60,38,18,0.55) 0%, transparent 80%)",
@@ -42,14 +35,7 @@ const SKINS: DiceSkin[] = [
     id: "ouro",
     name: "Ouro Real",
     swatch: "#fbbf24",
-    palette: {
-      4:  { bg: "#451a03", border: "#d97706", text: "#fde68a" },
-      6:  { bg: "#3d1f00", border: "#f59e0b", text: "#fef3c7" },
-      8:  { bg: "#522b0e", border: "#fbbf24", text: "#fefce8" },
-      10: { bg: "#78350f", border: "#fb923c", text: "#ffedd5" },
-      12: { bg: "#5c2d0a", border: "#f97316", text: "#fff7ed" },
-      20: { bg: "#1c0a00", border: "#fcd34d", text: "#fffbeb" },
-    },
+    themeColor: "#d97706",
     table: [
       "radial-gradient(ellipse at 50% 100%, rgba(200,140,20,0.28) 0%, transparent 60%)",
       "linear-gradient(180deg, #0a0500 0%, #150d02 40%, #1e1302 70%, #0a0500 100%)",
@@ -59,14 +45,7 @@ const SKINS: DiceSkin[] = [
     id: "sangue",
     name: "Sangue",
     swatch: "#ef4444",
-    palette: {
-      4:  { bg: "#3f0000", border: "#dc2626", text: "#fecaca" },
-      6:  { bg: "#450a0a", border: "#ef4444", text: "#fee2e2" },
-      8:  { bg: "#4c0519", border: "#f43f5e", text: "#ffe4e6" },
-      10: { bg: "#500724", border: "#e11d48", text: "#fce7f3" },
-      12: { bg: "#3f0011", border: "#fb7185", text: "#fff1f2" },
-      20: { bg: "#7f1d1d", border: "#f87171", text: "#fff5f5" },
-    },
+    themeColor: "#dc2626",
     table: [
       "radial-gradient(ellipse at 50% 100%, rgba(185,28,28,0.22) 0%, transparent 60%)",
       "linear-gradient(180deg, #080000 0%, #140202 40%, #1c0303 70%, #080000 100%)",
@@ -76,14 +55,7 @@ const SKINS: DiceSkin[] = [
     id: "gelo",
     name: "Gelo",
     swatch: "#38bdf8",
-    palette: {
-      4:  { bg: "#0c1a2e", border: "#38bdf8", text: "#e0f2fe" },
-      6:  { bg: "#0a1929", border: "#7dd3fc", text: "#bae6fd" },
-      8:  { bg: "#042f4b", border: "#0ea5e9", text: "#e0f2fe" },
-      10: { bg: "#0f2a44", border: "#60a5fa", text: "#dbeafe" },
-      12: { bg: "#0c1a2e", border: "#93c5fd", text: "#eff6ff" },
-      20: { bg: "#0a1a3f", border: "#bae6fd", text: "#f0f9ff" },
-    },
+    themeColor: "#0284c7",
     table: [
       "radial-gradient(ellipse at 50% 100%, rgba(14,165,233,0.18) 0%, transparent 60%)",
       "linear-gradient(180deg, #020507 0%, #030c14 40%, #041420 70%, #020507 100%)",
@@ -93,14 +65,7 @@ const SKINS: DiceSkin[] = [
     id: "floresta",
     name: "Floresta",
     swatch: "#22c55e",
-    palette: {
-      4:  { bg: "#052e16", border: "#22c55e", text: "#bbf7d0" },
-      6:  { bg: "#14532d", border: "#4ade80", text: "#dcfce7" },
-      8:  { bg: "#052e16", border: "#16a34a", text: "#bbf7d0" },
-      10: { bg: "#1a2e05", border: "#84cc16", text: "#ecfccb" },
-      12: { bg: "#2d1b0a", border: "#a3e635", text: "#f7fee7" },
-      20: { bg: "#064e3b", border: "#6ee7b7", text: "#d1fae5" },
-    },
+    themeColor: "#15803d",
     table: [
       "radial-gradient(ellipse at 50% 100%, rgba(22,163,74,0.18) 0%, transparent 60%)",
       "linear-gradient(180deg, #030a05 0%, #061008 40%, #081508 70%, #030a05 100%)",
@@ -110,14 +75,7 @@ const SKINS: DiceSkin[] = [
     id: "arcano",
     name: "Arcano",
     swatch: "#a855f7",
-    palette: {
-      4:  { bg: "#2e1065", border: "#8b5cf6", text: "#ede9fe" },
-      6:  { bg: "#3b0764", border: "#a855f7", text: "#f3e8ff" },
-      8:  { bg: "#1e1b4b", border: "#818cf8", text: "#e0e7ff" },
-      10: { bg: "#2e1065", border: "#c084fc", text: "#faf5ff" },
-      12: { bg: "#4a044e", border: "#d946ef", text: "#fdf4ff" },
-      20: { bg: "#18181b", border: "#e879f9", text: "#fce7f3" },
-    },
+    themeColor: "#7c3aed",
     table: [
       "radial-gradient(ellipse at 50% 100%, rgba(139,92,246,0.22) 0%, transparent 60%)",
       "linear-gradient(180deg, #030205 0%, #070412 40%, #0c051e 70%, #030205 100%)",
@@ -127,14 +85,7 @@ const SKINS: DiceSkin[] = [
     id: "sombra",
     name: "Sombra",
     swatch: "#94a3b8",
-    palette: {
-      4:  { bg: "#09090b", border: "#6b7280", text: "#d1d5db" },
-      6:  { bg: "#111827", border: "#9ca3af", text: "#e5e7eb" },
-      8:  { bg: "#0f0f23", border: "#6366f1", text: "#e0e7ff" },
-      10: { bg: "#0c0c1a", border: "#818cf8", text: "#e0e7ff" },
-      12: { bg: "#09090b", border: "#4b5563", text: "#d1d5db" },
-      20: { bg: "#0a0a14", border: "#e2e8f0", text: "#f8fafc" },
-    },
+    themeColor: "#475569",
     table: [
       "radial-gradient(ellipse at 50% 100%, rgba(99,102,241,0.12) 0%, transparent 60%)",
       "linear-gradient(180deg, #020202 0%, #050508 40%, #080810 70%, #020202 100%)",
@@ -142,31 +93,17 @@ const SKINS: DiceSkin[] = [
   },
 ];
 
+// Cores fixas dos botões de dado (independente de skin)
+const DIE_BTN: Record<DieType, { bg: string; border: string; text: string }> = {
+  4:  { bg: "#7c2d12", border: "#ea580c", text: "#fed7aa" },
+  6:  { bg: "#1e3a5f", border: "#3b82f6", text: "#bfdbfe" },
+  8:  { bg: "#14532d", border: "#22c55e", text: "#bbf7d0" },
+  10: { bg: "#4a1d96", border: "#a855f7", text: "#e9d5ff" },
+  12: { bg: "#881337", border: "#f43f5e", text: "#fecdd3" },
+  20: { bg: "#78350f", border: "#d97706", text: "#fef3c7" },
+};
+
 const SKIN_STORAGE_KEY = "dice-skin-id";
-const ROLL_MS = 750;
-const SHUFFLE_MS = 80;
-
-const DICE_KEYFRAMES = `
-@keyframes diceTumble {
-  0%   { transform: perspective(160px) rotateX(0deg)   rotateY(0deg)   rotateZ(0deg); }
-  20%  { transform: perspective(160px) rotateX(155deg) rotateY(75deg)  rotateZ(40deg); }
-  40%  { transform: perspective(160px) rotateX(85deg)  rotateY(210deg) rotateZ(160deg); }
-  60%  { transform: perspective(160px) rotateX(260deg) rotateY(130deg) rotateZ(75deg); }
-  80%  { transform: perspective(160px) rotateX(320deg) rotateY(290deg) rotateZ(200deg); }
-  100% { transform: perspective(160px) rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
-}
-@keyframes diceLand {
-  0%   { transform: perspective(160px) rotateX(28deg) rotateY(22deg) rotateZ(10deg) scale(1.12); }
-  50%  { transform: perspective(160px) rotateX(4deg)  rotateY(-3deg) rotateZ(-1deg) scale(1.02); }
-  75%  { transform: perspective(160px) rotateX(11deg) rotateY(-8deg) rotateZ(1deg)  scale(1); }
-  100% { transform: perspective(160px) rotateX(8deg)  rotateY(-6deg) rotateZ(0deg)  scale(1); }
-}
-`;
-
-let _nextEntryId = 0;
-function rand(die: DieType): number { return Math.floor(Math.random() * die) + 1; }
-
-type RollEntry = { id: number; die: DieType; result: number; isRolling: boolean };
 
 type Props = {
   open: boolean;
@@ -178,7 +115,7 @@ type Props = {
   hitEffect?: HitEffectType;
 };
 
-// ─── Ícone SVG do dado ────────────────────────────────────────────────────────
+// ─── Ícone SVG do dado (usado nos botões) ─────────────────────────────────────
 
 function DieIcon({
   die, fill, stroke, textColor,
@@ -250,68 +187,6 @@ function DieIcon({
   }
 }
 
-// ─── Dado 3D ──────────────────────────────────────────────────────────────────
-
-type DiePhase = "rolling" | "landing" | "settled";
-
-function Die3D({ entry, colors }: { entry: RollEntry; colors: DicePalette }) {
-  const c = colors[entry.die];
-  const [display, setDisplay] = useState(() => rand(entry.die));
-  const [phase, setPhase] = useState<DiePhase>(() => entry.isRolling ? "rolling" : "settled");
-  const prevRollingRef = useRef(entry.isRolling);
-
-  useEffect(() => {
-    const wasRolling = prevRollingRef.current;
-    prevRollingRef.current = entry.isRolling;
-
-    if (entry.isRolling) {
-      setPhase("rolling");
-      const iv = setInterval(() => setDisplay(rand(entry.die)), SHUFFLE_MS);
-      return () => clearInterval(iv);
-    } else {
-      setDisplay(entry.result);
-      if (wasRolling) {
-        setPhase("landing");
-        const t = setTimeout(() => setPhase("settled"), 480);
-        return () => clearTimeout(t);
-      }
-    }
-  }, [entry.isRolling, entry.result, entry.die]);
-
-  const glowing = phase === "rolling";
-
-  return (
-    <div
-      className="flex flex-col items-center justify-center rounded-xl select-none"
-      style={{
-        width: 64,
-        height: 64,
-        background: c.bg,
-        border: `2px solid ${glowing ? c.border : c.border + "aa"}`,
-        boxShadow: glowing
-          ? `0 0 22px ${c.border}80, 0 0 8px ${c.border}50`
-          : `4px 7px 16px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.07)`,
-        transform: phase === "settled"
-          ? "perspective(160px) rotateX(8deg) rotateY(-6deg)"
-          : undefined,
-        animation: phase === "rolling"
-          ? "diceTumble 0.45s linear infinite"
-          : phase === "landing"
-          ? "diceLand 0.48s ease-out forwards"
-          : undefined,
-        transition: phase === "settled" ? "box-shadow 0.3s ease" : undefined,
-      }}
-    >
-      <span className="text-2xl font-black leading-none" style={{ color: c.text }}>
-        {display}
-      </span>
-      <span className="text-[10px] font-semibold opacity-40 mt-0.5" style={{ color: c.text }}>
-        d{entry.die}
-      </span>
-    </div>
-  );
-}
-
 // ─── Seletor de skin ──────────────────────────────────────────────────────────
 
 function SkinPicker({ skins, currentId, onSelect }: {
@@ -355,10 +230,12 @@ export function RollDialog({
   preModifier = 0, preModifierBreakdown,
   preCounts, hitEffect,
 }: Props) {
-  const [entries, setEntries] = useState<RollEntry[]>([]);
+  const [diceResults, setDiceResults] = useState<DiceResult[]>([]);
+  const [isRolling, setIsRolling] = useState(false);
   const [showSkins, setShowSkins] = useState(false);
   const [playingEffect, setPlayingEffect] = useState(false);
   const hasAutoRolledRef = useRef(false);
+  const diceBoxRef = useRef<DiceBox3DHandle>(null);
 
   const [skinId, setSkinId] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -368,61 +245,65 @@ export function RollDialog({
   });
 
   const currentSkin = SKINS.find((s) => s.id === skinId) ?? SKINS[0];
-  const COLORS = currentSkin.palette;
 
-  const isRolling = entries.some((e) => e.isRolling);
-  const settledEntries = entries.filter((e) => !e.isRolling);
-  const naturalSum = settledEntries.reduce((s, e) => s + e.result, 0);
+  const naturalSum = diceResults.reduce((s, d) => s + d.value, 0);
   const finalTotal = naturalSum + preModifier;
-  const isCrit   = !isRolling && entries.length > 0 && entries.some((e) => e.die === 20 && e.result === 20);
-  const isFumble = !isRolling && entries.length === 1 && entries[0].die === 20 && entries[0].result === 1;
+  const isCrit   = !isRolling && diceResults.length > 0 && diceResults.some((d) => d.sides === 20 && d.value === 20);
+  const isFumble = !isRolling && diceResults.length === 1 && diceResults[0].sides === 20 && diceResults[0].value === 1;
+
+  function handleRollComplete(results: DiceResult[]) {
+    setDiceResults(results);
+    setIsRolling(false);
+  }
+
+  function handleRollStart() {
+    setIsRolling(true);
+  }
+
+  function addDie(die: DieType) {
+    setIsRolling(true);
+    diceBoxRef.current?.addDie(die);
+  }
 
   function selectSkin(id: string) {
     setSkinId(id);
     localStorage.setItem(SKIN_STORAGE_KEY, id);
+    const skin = SKINS.find((s) => s.id === id) ?? SKINS[0];
+    diceBoxRef.current?.updateThemeColor(skin.themeColor);
+  }
+
+  function handleClear() {
+    setDiceResults([]);
+    setIsRolling(false);
+    diceBoxRef.current?.clear();
+    const random = SKINS[Math.floor(Math.random() * SKINS.length)];
+    selectSkin(random.id);
   }
 
   function requestClose() {
-    if (hitEffect && settledEntries.length > 0 && !playingEffect) {
+    if (hitEffect && diceResults.length > 0 && !playingEffect) {
       setPlayingEffect(true);
     } else {
       onClose();
     }
   }
 
-  const addDie = useCallback((die: DieType) => {
-    const id = _nextEntryId++;
-    const result = rand(die);
-    setEntries((prev) => [...prev, { id, die, result, isRolling: true }]);
-    setTimeout(() => {
-      setEntries((prev) => prev.map((e) => e.id === id ? { ...e, isRolling: false } : e));
-    }, ROLL_MS);
-  }, []);
-
-  function handleClear() {
-    setEntries([]);
-    setSkinId(SKINS[Math.floor(Math.random() * SKINS.length)].id);
-  }
-
-  // Injeta keyframes CSS uma única vez
-  useEffect(() => {
-    if (document.getElementById("dice-kf")) return;
-    const s = document.createElement("style");
-    s.id = "dice-kf";
-    s.textContent = DICE_KEYFRAMES;
-    document.head.appendChild(s);
-  }, []);
-
-  // Reset + auto-roll na abertura
+  // Reset + auto-roll ao abrir
   useEffect(() => {
     if (!open) {
-      setEntries([]);
+      diceBoxRef.current?.clear();
+      setDiceResults([]);
+      setIsRolling(false);
       setPlayingEffect(false);
       setShowSkins(false);
       hasAutoRolledRef.current = false;
       return;
     }
-    setSkinId(SKINS[Math.floor(Math.random() * SKINS.length)].id);
+
+    // Skin aleatória ao abrir
+    const random = SKINS[Math.floor(Math.random() * SKINS.length)];
+    setSkinId(random.id);
+    diceBoxRef.current?.updateThemeColor(random.themeColor);
 
     if (preCounts && !hasAutoRolledRef.current) {
       hasAutoRolledRef.current = true;
@@ -431,48 +312,69 @@ export function RollDialog({
         const die = Number(dieStr) as DieType;
         for (let i = 0; i < (count ?? 0); i++) {
           const d = delay;
-          setTimeout(() => addDie(die), d);
+          setTimeout(() => diceBoxRef.current?.addDie(die), d);
           delay += 110;
         }
       }
+      if (delay > 80) setIsRolling(true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // Esc para fechar
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (open && e.key === "Escape") requestClose(); };
+    const handler = (e: KeyboardEvent) => {
+      if (open && e.key === "Escape") requestClose();
+    };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, settledEntries.length, hitEffect, playingEffect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, diceResults.length, hitEffect, playingEffect]);
 
-  if (!open || typeof document === "undefined") return null;
+  // Sem SSR
+  if (typeof document === "undefined") return null;
 
-  const modal = (
+  // Portal sempre montado para manter DiceBox3D vivo (sem re-inicialização a cada abertura)
+  return createPortal(
     <>
-      {playingEffect && hitEffect && <HitEffect type={hitEffect} onDone={onClose} />}
+      {playingEffect && hitEffect && open && (
+        <HitEffect type={hitEffect} onDone={onClose} />
+      )}
 
-      {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
-        style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(6px)" }}
-        onClick={requestClose}
+        aria-modal={open}
+        aria-hidden={!open}
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 50,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1rem",
+          background: open ? "rgba(0,0,0,0.80)" : "transparent",
+          backdropFilter: open ? "blur(6px)" : "none",
+          // Não use opacity/visibility para não bloquear o canvas quando escondido
+          pointerEvents: open ? "auto" : "none",
+        }}
+        onClick={open ? requestClose : undefined}
       >
-        {/* Modal */}
+        {/* Modal card */}
         <div
-          className="relative w-full rounded-2xl overflow-hidden flex flex-col shadow-2xl"
+          className="relative w-full rounded-2xl flex flex-col shadow-2xl"
           style={{
             maxWidth: 580,
             maxHeight: "90vh",
             background: currentSkin.table,
             border: "1.5px solid rgba(255,255,255,0.07)",
             boxShadow: "0 32px 96px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.04)",
+            // Quando fechado: sem interação, mas mantém dimensões para DiceBox3D
+            visibility: open ? "visible" : "hidden",
           }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Cabeçalho */}
-          <div className="flex items-start justify-between px-5 pt-5 pb-4 shrink-0">
+          <div className="flex items-start justify-between px-5 pt-5 pb-3 shrink-0">
             <div className="min-w-0">
               {preLabel && (
                 <p className="font-black text-amber-50 text-lg leading-tight">{preLabel}</p>
@@ -495,39 +397,79 @@ export function RollDialog({
             </button>
           </div>
 
-          {/* Bandeja de dados */}
-          <div className="flex-1 flex flex-col items-center justify-center px-5 py-3 min-h-[160px]">
-            {entries.length === 0 ? (
+          {/* Canvas 3D — sempre montado */}
+          <div
+            style={{
+              height: 230,
+              position: "relative",
+              flexShrink: 0,
+              overflow: "hidden",
+              borderTop: "1px solid rgba(255,255,255,0.04)",
+              borderBottom: "1px solid rgba(255,255,255,0.04)",
+            }}
+          >
+            <DiceBox3D
+              ref={diceBoxRef}
+              onRollStart={handleRollStart}
+              onRollComplete={handleRollComplete}
+              themeColor={currentSkin.themeColor}
+            />
+          </div>
+
+          {/* Resultados */}
+          <div className="flex-1 flex flex-col items-center justify-center px-5 py-3 min-h-[80px]">
+            {!isRolling && diceResults.length === 0 && (
               <p className="text-stone-500 text-sm">Escolha um dado abaixo para rolar</p>
-            ) : (
-              <div className="flex flex-wrap gap-2.5 justify-center">
-                {entries.map((entry) => (
-                  <Die3D key={entry.id} entry={entry} colors={COLORS} />
-                ))}
-              </div>
             )}
 
-            {/* Total */}
-            {settledEntries.length > 0 && (
-              <div className="mt-5 text-center">
-                {preModifier !== 0 ? (
-                  <>
-                    <p className="text-[11px] text-stone-500 leading-none mb-0.5">
-                      {naturalSum} {preModifier >= 0 ? "+" : ""}{preModifier}
-                    </p>
-                    <p className="text-5xl font-black text-amber-400 leading-none">{finalTotal}</p>
-                  </>
-                ) : (
-                  <p className="text-5xl font-black text-amber-400 leading-none">{naturalSum}</p>
+            {isRolling && diceResults.length === 0 && (
+              <p className="text-stone-500 text-sm animate-pulse">Rolando…</p>
+            )}
+
+            {diceResults.length > 0 && (
+              <>
+                {/* Tags dos dados individuais */}
+                <div className="flex flex-wrap gap-1.5 justify-center mb-3">
+                  {diceResults.map((r, i) => {
+                    const c = DIE_BTN[r.sides as DieType] ?? DIE_BTN[20];
+                    return (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-bold"
+                        style={{
+                          background: c.bg + "55",
+                          border: `1px solid ${c.border}66`,
+                          color: c.text,
+                        }}
+                      >
+                        <span className="opacity-60">d{r.sides}</span>
+                        <span>{r.value}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+
+                {/* Total */}
+                <div className="text-center">
+                  {preModifier !== 0 ? (
+                    <>
+                      <p className="text-[11px] text-stone-500 leading-none mb-0.5">
+                        {naturalSum} {preModifier >= 0 ? "+" : ""}{preModifier}
+                      </p>
+                      <p className="text-5xl font-black text-amber-400 leading-none">{finalTotal}</p>
+                    </>
+                  ) : (
+                    <p className="text-5xl font-black text-amber-400 leading-none">{naturalSum}</p>
+                  )}
+                </div>
+
+                {/* Crítico / Falha */}
+                {(isCrit || isFumble) && (
+                  <p className={`mt-2.5 text-sm font-black tracking-widest ${isCrit ? "text-amber-400" : "text-red-400"}`}>
+                    {isCrit ? "⚡ ACERTO CRÍTICO!" : "💀 FALHA CRÍTICA!"}
+                  </p>
                 )}
-              </div>
-            )}
-
-            {/* Crítico / Falha */}
-            {(isCrit || isFumble) && (
-              <p className={`mt-2.5 text-sm font-black tracking-widest ${isCrit ? "text-amber-400" : "text-red-400"}`}>
-                {isCrit ? "⚡ ACERTO CRÍTICO!" : "💀 FALHA CRÍTICA!"}
-              </p>
+              </>
             )}
           </div>
 
@@ -544,7 +486,7 @@ export function RollDialog({
             {/* Botões de dados */}
             <div className="grid grid-cols-6 gap-2 mb-3">
               {DICE_TYPES.map((die) => {
-                const c = COLORS[die];
+                const c = DIE_BTN[die];
                 return (
                   <button
                     key={die}
@@ -568,7 +510,7 @@ export function RollDialog({
             <div className="flex items-center gap-2">
               <button
                 onClick={handleClear}
-                disabled={entries.length === 0}
+                disabled={diceResults.length === 0 && !isRolling}
                 className="rounded-xl p-2.5 bg-stone-900/80 border border-stone-700 text-stone-400 hover:text-white hover:bg-stone-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
                 title="Limpar mesa"
               >
@@ -590,7 +532,7 @@ export function RollDialog({
               <p className="flex-1 text-center text-xs text-stone-500">
                 {isRolling
                   ? "Rolando…"
-                  : entries.length === 0
+                  : diceResults.length === 0
                   ? "Escolha um dado"
                   : "Clique para adicionar mais"}
               </p>
@@ -605,8 +547,7 @@ export function RollDialog({
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
-
-  return createPortal(modal, document.body);
 }
