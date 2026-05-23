@@ -143,8 +143,25 @@ const SKINS: DiceSkin[] = [
 ];
 
 const SKIN_STORAGE_KEY = "dice-skin-id";
-const ROLL_MS = 680;
-const SHUFFLE_MS = 55;
+const ROLL_MS = 750;
+const SHUFFLE_MS = 80;
+
+const DICE_KEYFRAMES = `
+@keyframes diceTumble {
+  0%   { transform: perspective(160px) rotateX(0deg)   rotateY(0deg)   rotateZ(0deg); }
+  20%  { transform: perspective(160px) rotateX(155deg) rotateY(75deg)  rotateZ(40deg); }
+  40%  { transform: perspective(160px) rotateX(85deg)  rotateY(210deg) rotateZ(160deg); }
+  60%  { transform: perspective(160px) rotateX(260deg) rotateY(130deg) rotateZ(75deg); }
+  80%  { transform: perspective(160px) rotateX(320deg) rotateY(290deg) rotateZ(200deg); }
+  100% { transform: perspective(160px) rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+}
+@keyframes diceLand {
+  0%   { transform: perspective(160px) rotateX(28deg) rotateY(22deg) rotateZ(10deg) scale(1.12); }
+  50%  { transform: perspective(160px) rotateX(4deg)  rotateY(-3deg) rotateZ(-1deg) scale(1.02); }
+  75%  { transform: perspective(160px) rotateX(11deg) rotateY(-8deg) rotateZ(1deg)  scale(1); }
+  100% { transform: perspective(160px) rotateX(8deg)  rotateY(-6deg) rotateZ(0deg)  scale(1); }
+}
+`;
 
 let _nextEntryId = 0;
 function rand(die: DieType): number { return Math.floor(Math.random() * die) + 1; }
@@ -233,20 +250,35 @@ function DieIcon({
   }
 }
 
-// ─── Dado animado ─────────────────────────────────────────────────────────────
+// ─── Dado 3D ──────────────────────────────────────────────────────────────────
 
-function AnimatedDie({ entry, colors }: { entry: RollEntry; colors: DicePalette }) {
+type DiePhase = "rolling" | "landing" | "settled";
+
+function Die3D({ entry, colors }: { entry: RollEntry; colors: DicePalette }) {
   const c = colors[entry.die];
   const [display, setDisplay] = useState(() => rand(entry.die));
+  const [phase, setPhase] = useState<DiePhase>(() => entry.isRolling ? "rolling" : "settled");
+  const prevRollingRef = useRef(entry.isRolling);
 
   useEffect(() => {
-    if (!entry.isRolling) {
+    const wasRolling = prevRollingRef.current;
+    prevRollingRef.current = entry.isRolling;
+
+    if (entry.isRolling) {
+      setPhase("rolling");
+      const iv = setInterval(() => setDisplay(rand(entry.die)), SHUFFLE_MS);
+      return () => clearInterval(iv);
+    } else {
       setDisplay(entry.result);
-      return;
+      if (wasRolling) {
+        setPhase("landing");
+        const t = setTimeout(() => setPhase("settled"), 480);
+        return () => clearTimeout(t);
+      }
     }
-    const iv = setInterval(() => setDisplay(rand(entry.die)), SHUFFLE_MS);
-    return () => clearInterval(iv);
   }, [entry.isRolling, entry.result, entry.die]);
+
+  const glowing = phase === "rolling";
 
   return (
     <div
@@ -255,11 +287,19 @@ function AnimatedDie({ entry, colors }: { entry: RollEntry; colors: DicePalette 
         width: 64,
         height: 64,
         background: c.bg,
-        border: `2px solid ${entry.isRolling ? c.border : c.border + "99"}`,
-        boxShadow: entry.isRolling
-          ? `0 0 22px ${c.border}80, 0 0 8px ${c.border}50, inset 0 0 10px rgba(0,0,0,0.3)`
-          : `0 2px 10px rgba(0,0,0,0.6)`,
-        transition: "box-shadow 0.45s ease, border-color 0.3s ease",
+        border: `2px solid ${glowing ? c.border : c.border + "aa"}`,
+        boxShadow: glowing
+          ? `0 0 22px ${c.border}80, 0 0 8px ${c.border}50`
+          : `4px 7px 16px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.07)`,
+        transform: phase === "settled"
+          ? "perspective(160px) rotateX(8deg) rotateY(-6deg)"
+          : undefined,
+        animation: phase === "rolling"
+          ? "diceTumble 0.45s linear infinite"
+          : phase === "landing"
+          ? "diceLand 0.48s ease-out forwards"
+          : undefined,
+        transition: phase === "settled" ? "box-shadow 0.3s ease" : undefined,
       }}
     >
       <span className="text-2xl font-black leading-none" style={{ color: c.text }}>
@@ -364,6 +404,15 @@ export function RollDialog({
     setSkinId(SKINS[Math.floor(Math.random() * SKINS.length)].id);
   }
 
+  // Injeta keyframes CSS uma única vez
+  useEffect(() => {
+    if (document.getElementById("dice-kf")) return;
+    const s = document.createElement("style");
+    s.id = "dice-kf";
+    s.textContent = DICE_KEYFRAMES;
+    document.head.appendChild(s);
+  }, []);
+
   // Reset + auto-roll na abertura
   useEffect(() => {
     if (!open) {
@@ -453,7 +502,7 @@ export function RollDialog({
             ) : (
               <div className="flex flex-wrap gap-2.5 justify-center">
                 {entries.map((entry) => (
-                  <AnimatedDie key={entry.id} entry={entry} colors={COLORS} />
+                  <Die3D key={entry.id} entry={entry} colors={COLORS} />
                 ))}
               </div>
             )}
