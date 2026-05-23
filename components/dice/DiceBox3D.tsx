@@ -46,7 +46,7 @@ export const DiceBox3D = forwardRef<DiceBox3DHandle, Props>(
             startingHeight: 8,
             spinForce: 4,
             throwForce: 3,
-            scale: 16,
+            scale: 12,
             gravity: 1,
             friction: 0.8,
             restitution: 0,

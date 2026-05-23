@@ -400,7 +400,7 @@ export function RollDialog({
           {/* Canvas 3D — sempre montado */}
           <div
             style={{
-              height: 600,
+              height: 400,
               position: "relative",
               flexShrink: 0,
               overflow: "hidden",
