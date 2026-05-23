@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Swords, Dices, Crosshair, ChevronDown, ChevronRight } from "lucide-react";
+import { ItemImage } from "@/components/ui/ItemImage";
 import { RollDialog } from "@/components/dice/RollDialog";
 import { type HitEffectType } from "@/components/dice/HitEffect";
 import { hasWeaponProficiency } from "@/lib/ghanor/inventory";
@@ -121,7 +122,7 @@ function WeaponCard({
     >
       {/* Card face */}
       <button
-        className="relative flex flex-col items-center gap-2 px-2 pt-5 pb-3 text-center focus:outline-none"
+        className="relative flex flex-col items-center gap-2 px-2 pt-6 pb-3 text-center focus:outline-none"
         style={{ background: `linear-gradient(160deg, ${theme.gradFrom} 0%, ${theme.gradTo} 100%)` }}
         onClick={() => setOpen((v) => !v)}
       >
@@ -133,10 +134,16 @@ function WeaponCard({
           {ranged ? "Distância" : "C/C"}
         </span>
 
-        {ranged
-          ? <Crosshair size={32} style={{ color: theme.iconClr, filter: `drop-shadow(0 2px 8px ${theme.border}90)` }} />
-          : <Swords   size={32} style={{ color: theme.iconClr, filter: `drop-shadow(0 2px 8px ${theme.border}90)` }} />
-        }
+        <ItemImage
+          slug={item.slug}
+          name={displayName}
+          borderColor={theme.border}
+          iconFallback={
+            ranged
+              ? <Crosshair size={28} style={{ color: theme.iconClr, filter: `drop-shadow(0 2px 8px ${theme.border}90)` }} />
+              : <Swords    size={28} style={{ color: theme.iconClr, filter: `drop-shadow(0 2px 8px ${theme.border}90)` }} />
+          }
+        />
 
         <p className="text-[11px] font-black leading-tight line-clamp-2 px-1 text-stone-100">
           {displayName}
