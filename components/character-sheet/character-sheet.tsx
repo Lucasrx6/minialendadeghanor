@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Edit, FileText, Sparkles, Trash2, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package, ScrollText, Store, Wand2, Check, Upload } from "lucide-react";
+import { Edit, FileText, Sparkles, Trash2, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package, ScrollText, Store, Wand2, Check, Upload, LayoutGrid } from "lucide-react";
 import { deleteCharacter } from "@/app/characters/actions";
 import { dmEditCharacterStats, dmEditCharacterSkills } from "@/app/actions/dm";
 import { uploadPortrait } from "@/app/actions/portrait";
@@ -28,6 +28,22 @@ import { PortraitConfirmDialog } from "@/components/character-sheet/portrait-con
 import { ArenaBanner } from "@/components/arena/ArenaBanner";
 import type { CharacterBuild, Attribute } from "@/lib/ghanor/types";
 import type { Companion } from "@/lib/ghanor/animals";
+
+type InvRow = {
+  id: string;
+  location: string;
+  improvements: number;
+  is_arcanium: boolean;
+  custom_label: string | null;
+  items: {
+    slug: string; name: string; category: string;
+    armor_defense_bonus: number | null; armor_penalty: number | null; armor_category: string | null;
+    weapon_damage_dice: string | null; weapon_critical: string | null;
+    weapon_range: string | null; weapon_damage_type: string | null;
+    weapon_proficiency: "simples" | "marcial" | "exotica" | null;
+    weapon_grip: string | null; weapon_abilities: string[];
+  } | null;
+};
 
 type CharacterRow = {
   id: string;
@@ -114,7 +130,7 @@ export function CharacterSheet({
   catalog?: Array<{ slug: string; name: string; category: string; price_pc: number; spaces: number; description: string | null; weapon_damage_dice: string | null; weapon_critical: string | null; armor_defense_bonus: number | null; is_stackable: boolean }>;
   companions?: Companion[];
 }) {
-  const [activeTab, setActiveTab] = useState<"sheet" | "inventory" | "companions">("sheet");
+  const [activeTab, setActiveTab] = useState<"sheet" | "inventory" | "companions" | "full">("sheet");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isDmSaving, startDmSave] = useTransition();
@@ -223,21 +239,6 @@ export function CharacterSheet({
   };
 
   // ── Itens equipados extraídos do inventário ──────────────────
-  type InvRow = {
-    id: string;
-    location: string;
-    improvements: number;
-    is_arcanium: boolean;
-    custom_label: string | null;
-    items: {
-      slug: string; name: string; category: string;
-      armor_defense_bonus: number | null; armor_penalty: number | null; armor_category: string | null;
-      weapon_damage_dice: string | null; weapon_critical: string | null;
-      weapon_range: string | null; weapon_damage_type: string | null;
-      weapon_proficiency: "simples" | "marcial" | "exotica" | null;
-      weapon_grip: string | null; weapon_abilities: string[];
-    } | null;
-  };
   const typedInventory = (inventory as InvRow[]);
   const equippedItems = typedInventory.filter(i => i.location === "equipped" || i.location === "worn");
   const equippedArmor = equippedItems.find(i => i.items?.category === "armadura");
@@ -541,6 +542,12 @@ export function CharacterSheet({
             </span>
           )}
         </button>
+        <button
+          onClick={() => setActiveTab("full")}
+          className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-bold transition cursor-pointer ${activeTab === "full" ? "bg-amber-800 text-amber-50 shadow" : "text-stone-600 hover:bg-stone-200/70 active:bg-stone-200"}`}
+        >
+          <LayoutGrid size={18} /> Completa
+        </button>
       </div>
 
       {/* Inventory tab */}
@@ -565,6 +572,44 @@ export function CharacterSheet({
           companions={companions}
           moneyPc={(character as Record<string, unknown>).money_pc as number ?? 0}
           isDmMode={isDmMode}
+        />
+      )}
+
+      {/* Full sheet tab */}
+      {activeTab === "full" && (
+        <FullSheetTab
+          character={character}
+          level={level}
+          attrs={attrs}
+          hpCurrent={hpCurrent}
+          mpCurrent={mpCurrent}
+          adjustHp={adjustHp}
+          adjustMp={adjustMp}
+          setHpDirect={setHpDirect}
+          setMpDirect={setMpDirect}
+          dynamicDefense={dynamicDefense}
+          armorPenalty={armorPenalty}
+          defBreakdown={defBreakdown}
+          equippedArmor={equippedArmor}
+          equippedShield={equippedShield}
+          equippedWeapons={equippedWeapons}
+          typedInventory={typedInventory}
+          portraitUrl={portraitUrl}
+          build={build}
+          fightBonus={fightBonus}
+          aimBonus={aimBonus}
+          activeEffects={activeEffects}
+          onRemoveEffect={removeEffect}
+          restKey={restKey}
+          isDmMode={isDmMode}
+          openAttrRoll={openAttrRoll}
+          openSkillRoll={openSkillRoll}
+          onRestShort={handleRestShort}
+          onRestLong={handleRestLong}
+          onNewScene={handleNewScene}
+          classDisplay={classDisplay}
+          onAddEffect={addEffect}
+          tier={tier}
         />
       )}
 
@@ -886,20 +931,6 @@ export function CharacterSheet({
         </div>
       </Card>
 
-      {/* FAB de dados */}
-      <button
-        onClick={() => setRollConfig({ label: "", preModifier: 0 })}
-        className="fixed bottom-5 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-xl print:hidden transition active:scale-95 sm:bottom-6 sm:right-6"
-        style={{
-          marginBottom: "var(--safe-bottom)",
-          background: "linear-gradient(135deg, #78350f, #b45309)",
-        }}
-        title="Rolar dado"
-        aria-label="Abrir rolagem de dado"
-      >
-        <Dices size={24} className="text-amber-50" />
-      </button>
-
       {/* Jornada (histórico de evoluções) */}
       {levelUpHistory.length > 0 && (
         <JourneySection history={levelUpHistory} />
@@ -918,8 +949,23 @@ export function CharacterSheet({
           onCancel={() => setShowPortraitConfirm(false)}
         />
       )}
+      </>}
 
-      {/* Modal de rolagem */}
+      {/* FAB de dados — visível em todas as abas */}
+      <button
+        onClick={() => setRollConfig({ label: "", preModifier: 0 })}
+        className="fixed bottom-5 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-xl print:hidden transition active:scale-95 sm:bottom-6 sm:right-6"
+        style={{
+          marginBottom: "var(--safe-bottom)",
+          background: "linear-gradient(135deg, #78350f, #b45309)",
+        }}
+        title="Rolar dado"
+        aria-label="Abrir rolagem de dado"
+      >
+        <Dices size={24} className="text-amber-50" />
+      </button>
+
+      {/* Modal de rolagem — visível em todas as abas */}
       {rollConfig && (
         <RollDialog
           open={!!rollConfig}
@@ -955,8 +1001,348 @@ export function CharacterSheet({
           </button>
         </div>
       )}
-      </>}
     </div>
+  );
+}
+
+type FullSheetTabProps = {
+  character: CharacterRow;
+  level: number;
+  attrs: Record<string, number>;
+  hpCurrent: number;
+  mpCurrent: number;
+  adjustHp: (delta: number) => void;
+  adjustMp: (delta: number) => void;
+  setHpDirect: (val: number) => void;
+  setMpDirect: (val: number) => void;
+  dynamicDefense: number;
+  armorPenalty: number;
+  defBreakdown: string;
+  equippedArmor: InvRow | undefined;
+  equippedShield: InvRow | undefined;
+  equippedWeapons: InvRow[];
+  typedInventory: InvRow[];
+  portraitUrl: string | null;
+  build: CharacterBuild;
+  fightBonus: number;
+  aimBonus: number;
+  activeEffects: ActiveEffect[];
+  onRemoveEffect: (id: string) => void;
+  restKey: number;
+  isDmMode: boolean;
+  openAttrRoll: (attr: string) => void;
+  openSkillRoll: (skillId: string) => void;
+  onRestShort: () => void;
+  onRestLong: () => void;
+  onNewScene: () => void;
+  classDisplay: string;
+  onAddEffect: (effect: ActiveEffect) => void;
+  tier: Tier;
+};
+
+function FullSheetTab({
+  character, level, attrs, hpCurrent, mpCurrent,
+  adjustHp, adjustMp, setHpDirect, setMpDirect,
+  dynamicDefense, armorPenalty, defBreakdown,
+  equippedArmor, equippedShield, equippedWeapons, typedInventory,
+  portraitUrl, build, fightBonus, aimBonus,
+  activeEffects, onRemoveEffect, restKey, isDmMode,
+  openAttrRoll, openSkillRoll,
+  onRestShort, onRestLong, onNewScene,
+  classDisplay, onAddEffect, tier,
+}: FullSheetTabProps) {
+  const classAbility = classById[character.class as keyof typeof classById]?.firstLevelAbility;
+  const raceAbilities = raceById[character.race as keyof typeof raceById]?.abilities ?? [];
+  const equippedAll = typedInventory.filter(i => (i.location === "equipped" || i.location === "worn") && i.items);
+  const carriedItems = typedInventory.filter(i => i.location === "carried" && i.items);
+
+  return (
+    <>
+      {/* Aviso mobile */}
+      <div className="lg:hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        A Ficha Completa é otimizada para desktop. Em telas menores, use a aba <strong>Ficha</strong>.
+      </div>
+
+      {/* Layout 3 colunas */}
+      <div className="hidden lg:grid lg:grid-cols-[220px_1fr_1fr] gap-3 h-[calc(100vh-200px)]">
+
+        {/* ── COLUNA ESQUERDA ─────────────────────── */}
+        <div className="flex flex-col gap-2.5 overflow-y-auto min-h-0 pr-1">
+
+          {/* Retrato */}
+          <div
+            className="relative shrink-0 overflow-hidden rounded-xl border border-amber-900/20 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950/80 shadow-inner"
+            style={{ height: 140 }}
+          >
+            {portraitUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={portraitUrl} alt={character.name} className="h-full w-full object-contain p-1" />
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <ClassIcon classId={character.class} size={64} className="opacity-70" />
+              </div>
+            )}
+          </div>
+
+          {/* Identidade */}
+          <div className="shrink-0 rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1.5">
+            <p className="font-black text-sm text-stone-900 truncate">{character.name}</p>
+            <p className="text-xs text-stone-500 truncate">{classDisplay} · {TIER_LABELS[tier]}</p>
+            {character.concept && <p className="text-[11px] italic text-amber-700 truncate">{character.concept}</p>}
+          </div>
+
+          {/* PV */}
+          <div className="shrink-0">
+            <VitalTracker
+              label="PV" icon={<Heart size={14} />}
+              current={hpCurrent} max={character.hp_max}
+              colorClass="bg-red-950 text-red-100 border-red-900"
+              barClass="bg-red-500"
+              onAdjust={adjustHp} onSetDirect={setHpDirect}
+            />
+          </div>
+
+          {/* PM */}
+          <div className="shrink-0">
+            <VitalTracker
+              label="PM" icon={<Sparkles size={14} />}
+              current={mpCurrent} max={character.mp_max}
+              colorClass="bg-blue-950 text-blue-100 border-blue-900"
+              barClass="bg-blue-400"
+              onAdjust={adjustMp} onSetDirect={setMpDirect}
+            />
+          </div>
+
+          {/* Defesa + Deslocamento */}
+          <div className="shrink-0 grid grid-cols-2 gap-2" title={defBreakdown}>
+            <Fact
+              label={equippedArmor || equippedShield ? "Defesa ⚙" : "Defesa"}
+              value={equippedArmor || equippedShield ? dynamicDefense : character.defense}
+              icon={<Shield size={15} />}
+              colorClass="bg-slate-900 text-slate-200 border-slate-700"
+              valueClass="text-white"
+            />
+            <Fact
+              label="Desl."
+              value={`${character.movement_m}m`}
+              icon={<Wind size={15} />}
+              colorClass="bg-emerald-950 text-emerald-100 border-emerald-900"
+              valueClass="text-white"
+            />
+          </div>
+          {armorPenalty < 0 && (
+            <p className="shrink-0 -mt-1 text-center text-xs font-bold text-red-500">Pen. armadura {armorPenalty}</p>
+          )}
+
+          {/* Atributos */}
+          <div className="shrink-0 grid grid-cols-3 gap-1.5">
+            {(["str", "dex", "con", "int", "wis", "cha"] as Attribute[]).map((attr) => {
+              const val = attrs[attr];
+              return (
+                <button
+                  key={attr}
+                  onClick={() => openAttrRoll(attr)}
+                  className="group relative rounded-lg border border-amber-900/20 bg-amber-50 p-2 text-center shadow-sm transition hover:border-amber-500 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  title={`Rolar ${ATTR_LABELS[attr]}`}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-stone-500">{ATTR_LABELS[attr].slice(0, 3)}</p>
+                  <p className="text-lg font-black text-stone-950">{val >= 0 ? `+${val}` : val}</p>
+                  <Dices size={9} className="absolute right-1 top-1 text-amber-400 opacity-0 transition group-hover:opacity-100" />
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Botões de descanso */}
+          <div className="shrink-0 flex flex-col gap-1">
+            <button
+              onClick={onRestShort}
+              className="rounded-lg border border-blue-200 bg-blue-50 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 active:bg-blue-200"
+              title={`Descanso Curto: recupera ${level * 2} PM`}
+            >
+              Desc. Curto (+{level * 2} PM)
+            </button>
+            <button
+              onClick={onRestLong}
+              className="rounded-lg border border-emerald-200 bg-emerald-50 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 active:bg-emerald-200"
+            >
+              Desc. Longo (total)
+            </button>
+            <button
+              onClick={onNewScene}
+              className="rounded-lg border border-amber-200 bg-amber-50 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 active:bg-amber-200"
+            >
+              Nova Cena
+            </button>
+          </div>
+        </div>
+
+        {/* ── COLUNA CENTRAL ──────────────────────── */}
+        <div className="flex flex-col gap-2.5 overflow-y-auto min-h-0 pr-1">
+
+          {/* Perícias */}
+          <Card>
+            <SectionTitle>Perícias</SectionTitle>
+            {(character.trained_skills ?? []).length === 0 ? (
+              <p className="mt-2 text-sm text-stone-400">Nenhuma perícia treinada.</p>
+            ) : (
+              <div className="mt-2 space-y-0.5">
+                {(character.trained_skills ?? []).map((skillId) => {
+                  const skill = skillById[skillId];
+                  const bonus = calculateSkillBonus(build, skillId);
+                  const penalty = getArmorPenaltyForSkill(skillId, armorPenalty, {
+                    characterClass: character.class,
+                    equippedArmor: equippedArmor?.items ? {
+                      armor_defense_bonus: equippedArmor.items.armor_defense_bonus ?? 0,
+                      armor_penalty: equippedArmor.items.armor_penalty ?? 0,
+                      armor_category: equippedArmor.items.armor_category,
+                    } : undefined,
+                    equippedShield: equippedShield?.items ? {
+                      armor_defense_bonus: equippedShield.items.armor_defense_bonus ?? 0,
+                      armor_penalty: equippedShield.items.armor_penalty ?? 0,
+                    } : undefined,
+                  });
+                  const total = bonus + penalty;
+                  return (
+                    <button
+                      key={skillId}
+                      onClick={() => openSkillRoll(skillId)}
+                      className="group flex w-full items-center justify-between rounded-md bg-white/70 px-2.5 py-1.5 text-sm transition hover:bg-amber-50 hover:shadow-sm"
+                    >
+                      <span className="text-left font-medium">{skill?.name ?? skillId}</span>
+                      <span className={`flex items-center gap-1 font-bold ${penalty < 0 ? "text-red-600" : "text-amber-900"}`}>
+                        {total >= 0 ? "+" : ""}{total}
+                        {penalty < 0 && <span className="text-[10px] text-red-400">(pen.)</span>}
+                        <Dices size={11} className="text-amber-400 opacity-0 transition group-hover:opacity-100" />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+
+          {/* Habilidades passivas */}
+          {(classAbility || raceAbilities.length > 0) && (
+            <Card>
+              <SectionTitle>Habilidades Passivas</SectionTitle>
+              <div className="mt-2 space-y-2 text-sm text-stone-700">
+                {classAbility && (
+                  <div>
+                    <p className="mb-0.5 text-[11px] font-bold uppercase tracking-wider text-stone-400">
+                      {classById[character.class as keyof typeof classById]?.name ?? character.class}
+                    </p>
+                    <p className="leading-snug">{classAbility}</p>
+                  </div>
+                )}
+                {raceAbilities.length > 0 && (
+                  <div>
+                    <p className="mb-0.5 text-[11px] font-bold uppercase tracking-wider text-stone-400">
+                      {raceById[character.race as keyof typeof raceById]?.name ?? character.race}
+                    </p>
+                    <p className="leading-snug">{raceAbilities.join("; ")}</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {/* Efeitos ativos */}
+          {activeEffects.length > 0 && (
+            <ActiveEffectsCard effects={activeEffects} onRemove={onRemoveEffect} />
+          )}
+
+          {/* Itens equipados (compacto) */}
+          {equippedAll.length > 0 && (
+            <Card>
+              <SectionTitle>Equipado</SectionTitle>
+              <div className="mt-2 space-y-0.5">
+                {equippedAll.map(inv => {
+                  const item = inv.items!;
+                  const loc = inv.location === "worn" ? "vestido" : "empunhado";
+                  return (
+                    <div key={inv.id} className="flex items-center justify-between rounded-md bg-white/70 px-2.5 py-1.5 text-sm">
+                      <span className="truncate font-medium">{inv.custom_label ?? item.name}</span>
+                      <span className="ml-2 shrink-0 rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold capitalize text-stone-500">{loc}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
+        </div>
+
+        {/* ── COLUNA DIREITA ───────────────────────── */}
+        <div className="flex flex-col gap-2.5 overflow-y-auto min-h-0 pr-1">
+
+          {/* Ataques */}
+          <Card>
+            <SectionTitle>Ataques</SectionTitle>
+            <div className="mt-2">
+              <AttacksSection
+                weapons={equippedWeapons.map(w => ({
+                  inventoryId: w.id,
+                  item: w.items as Parameters<typeof AttacksSection>[0]["weapons"][0]["item"],
+                  improvements: w.improvements,
+                  is_arcanium: w.is_arcanium,
+                  custom_label: w.custom_label,
+                }))}
+                strMod={attrs.str}
+                dexMod={attrs.dex}
+                level={level}
+                characterClass={character.class}
+                fightBonus={fightBonus}
+                aimBonus={aimBonus}
+              />
+            </div>
+          </Card>
+
+          {/* Magias e Poderes */}
+          {((character.powers?.length ?? 0) > 0 || (character.spells?.length ?? 0) > 0 || isDmMode) && (
+            <Card>
+              <SectionTitle>Magias e Poderes</SectionTitle>
+              <div className="mt-2">
+                <SpellsSection
+                  spells={character.spells ?? []}
+                  powers={character.powers ?? []}
+                  isDmMode={isDmMode}
+                  characterId={character.id}
+                  mpCurrent={mpCurrent}
+                  onUseMp={(amount) => adjustMp(-amount)}
+                  onAddEffect={onAddEffect}
+                  restKey={restKey}
+                  attrs={{
+                    str: character.attr_str,
+                    dex: character.attr_dex,
+                    con: character.attr_con,
+                    int: character.attr_int,
+                    wis: character.attr_wis,
+                    cha: character.attr_cha,
+                  }}
+                />
+              </div>
+            </Card>
+          )}
+
+          {/* Inventário carregado */}
+          {carriedItems.length > 0 && (
+            <Card>
+              <SectionTitle>Inventário</SectionTitle>
+              <div className="mt-2 space-y-0.5">
+                {carriedItems.map(inv => {
+                  const item = inv.items!;
+                  return (
+                    <div key={inv.id} className="flex items-center rounded-md bg-white/70 px-2.5 py-1.5 text-sm">
+                      <span className="truncate font-medium">{inv.custom_label ?? item.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 

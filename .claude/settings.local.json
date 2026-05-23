@@ -21,7 +21,8 @@
       "Bash(npx tsc *)",
       "Bash(Get-ChildItem -Path . -Recurse -Directory)",
       "Bash(Select-Object FullName)",
-      "Bash(xargs grep -l \"character.name\\\\|raceById\")"
+      "Bash(xargs grep -l \"character.name\\\\|raceById\")",
+      "Bash(npm run *)"
     ]
   }
 }
