@@ -46,7 +46,7 @@ export const DiceBox3D = forwardRef<DiceBox3DHandle, Props>(
             startingHeight: 8,
             spinForce: 4,
             throwForce: 3,
-            scale: 12,
+            scale: 14,
             gravity: 1,
             friction: 0.8,
             restitution: 0,
@@ -59,6 +59,25 @@ export const DiceBox3D = forwardRef<DiceBox3DHandle, Props>(
           });
 
           await box.init();
+          if (cancelled) return;
+
+          // O dice-box cria o canvas sem dimensões explícitas (padrão 300×150).
+          // Forçamos o canvas a preencher o container para que o mundo de física
+          // seja calculado com as dimensões corretas.
+          const container = document.getElementById(containerId.current);
+          const canvas = container?.querySelector("canvas");
+          if (canvas && container) {
+            canvas.style.position = "absolute";
+            canvas.style.top = "0";
+            canvas.style.left = "0";
+            canvas.style.width = "100%";
+            canvas.style.height = "100%";
+            // Aguarda o browser recalcular o layout
+            await new Promise<void>((r) => requestAnimationFrame(() => r()));
+            // Dispara o handler de resize interno do dice-box
+            window.dispatchEvent(new Event("resize"));
+            await new Promise<void>((r) => setTimeout(r, 50));
+          }
           if (cancelled) return;
 
           box.onRollComplete = (results: any[]) => {
