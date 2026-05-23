@@ -650,7 +650,7 @@ export function CharacterSheet({
         <div className="grid gap-4 md:grid-cols-[minmax(140px,180px)_minmax(0,1fr)] md:items-start">
 
           {/* Coluna esquerda: retrato limpo */}
-          <div className="mx-auto w-full max-w-[180px] md:mx-0 md:max-w-none">
+          <div className="mx-auto w-full max-w-[240px] md:mx-0 md:max-w-none">
             <div className="relative aspect-[4/5] max-h-[45vh] overflow-hidden rounded-2xl border border-amber-900/20 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950/80 shadow-inner">
               {portraitUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
