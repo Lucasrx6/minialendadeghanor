@@ -467,24 +467,29 @@ export function RollDialog({
       style={{ background: "rgba(5,5,10,0.90)" }}
       onClick={(e) => { if (e.target === e.currentTarget) requestClose(); }}
     >
-      {/* ── Modal container: full-screen no mobile, janela centralizada no desktop ── */}
+      {/* ── Modal container — sem overflow-hidden para não quebrar WebGL ── */}
       <div
-        className="relative flex-1 sm:flex-none w-full sm:max-w-[460px] sm:rounded-2xl sm:border sm:border-stone-800 overflow-hidden flex flex-col"
+        className="relative flex-1 sm:flex-none w-full sm:max-w-[460px] sm:rounded-2xl sm:border sm:border-stone-800 flex flex-col"
         role="dialog" aria-modal="true" aria-label="Rolagem de dados"
       >
       {/* ── Canvas 3D ── */}
       <div
         id={CONTAINER_ID}
         ref={containerRef}
-        className="flex-1 sm:flex-none sm:h-72 relative"
-        style={{
-          minHeight: 160,
-          background: currentSkin.table,
-          boxShadow: "inset 0 -60px 80px rgba(0,0,0,0.3)",
-          filter: currentSkin.diceFilter,
-          transition: "filter 0.4s ease",
-        }}
-      />
+        className="flex-1 sm:flex-none sm:h-72 relative sm:rounded-t-2xl"
+        style={{ minHeight: 160 }}
+      >
+        {/* Fundo separado do canvas WebGL — filter aqui não interfere no WebGL */}
+        <div
+          className="absolute inset-0 sm:rounded-t-2xl pointer-events-none"
+          style={{
+            background: currentSkin.table,
+            boxShadow: "inset 0 -60px 80px rgba(0,0,0,0.3)",
+            filter: currentSkin.diceFilter,
+            transition: "filter 0.4s ease",
+          }}
+        />
+      </div>
 
       {/* ── Animação de dano (cobre o canvas quando fechar é acionado) ── */}
       {playingEffect && hitEffect && (
@@ -516,7 +521,7 @@ export function RollDialog({
       </div>
 
       {/* ── Painel inferior ── */}
-      <div className="bg-stone-950 border-t border-stone-800 shrink-0">
+      <div className="bg-stone-950 border-t border-stone-800 shrink-0 sm:rounded-b-2xl">
 
         {/* Skin picker — expande acima do painel */}
         {showSkins && (
