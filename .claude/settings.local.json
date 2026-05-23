@@ -22,7 +22,10 @@
       "Bash(Get-ChildItem -Path . -Recurse -Directory)",
       "Bash(Select-Object FullName)",
       "Bash(xargs grep -l \"character.name\\\\|raceById\")",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(dir \"c:\\\\Users\\\\Arklok\\\\OneDrive\\\\Documentos\\\\alendadeghanor\\\\app\\\\characters\" /s /b)",
+      "Bash(findstr \"page.tsx\")",
+      "Bash(dir \"c:\\\\Users\\\\Arklok\\\\OneDrive\\\\Documentos\\\\alendadeghanor\\\\app\\\\characters\\\\[id]\" /b)"
     ]
   }
 }

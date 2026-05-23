@@ -6,7 +6,6 @@ import { getInventory, getMoneyTransactions } from "@/app/actions/inventory";
 import { getCompanions } from "@/app/actions/companions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PageContainer } from "@/components/layout/page-container";
-import { PageHeader } from "@/components/layout/page-header";
 
 export default async function CharacterPage({
   params,
@@ -41,7 +40,6 @@ export default async function CharacterPage({
   return (
     <main className="min-h-dvh bg-[radial-gradient(circle_at_top,#f5c86a_0,#f6ead0_35%,#efe1bd_100%)]">
       <PageContainer className="pb-20">
-        <PageHeader title="Ficha" backHref="/characters" backLabel="Heróis" />
         <CharacterSheet
           character={character}
           levelUpHistory={levelUpHistory}

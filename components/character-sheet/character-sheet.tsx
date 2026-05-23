@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Edit, FileText, Sparkles, Trash2, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package, ScrollText, Store, Wand2, Check, Upload, LayoutGrid } from "lucide-react";
+import { Edit, FileText, Sparkles, Trash2, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package, ScrollText, Store, Wand2, Check, Upload, LayoutGrid, ArrowLeft } from "lucide-react";
 import { deleteCharacter } from "@/app/characters/actions";
 import { dmEditCharacterStats, dmEditCharacterSkills } from "@/app/actions/dm";
 import { uploadPortrait } from "@/app/actions/portrait";
@@ -23,7 +23,6 @@ import { AttacksSection } from "@/components/character-sheet/attacks-section";
 import { SpellsSection, type ActiveEffect } from "@/components/character-sheet/spells-section";
 import { computeDefenseWithEquipment, getArmorPenaltyForSkill, WORN_LIMIT } from "@/lib/ghanor/inventory";
 import { useDmMode } from "@/lib/hooks/use-dm-mode";
-import { DmModeBanner } from "@/components/inventory/dm-mode-banner";
 import { PortraitConfirmDialog } from "@/components/character-sheet/portrait-confirm-dialog";
 import { ArenaBanner } from "@/components/arena/ArenaBanner";
 import type { CharacterBuild, Attribute } from "@/lib/ghanor/types";
@@ -378,10 +377,72 @@ export function CharacterSheet({
     ? formatClassLevels(character.class_levels)
     : `${classById[character.class as keyof typeof classById]?.name ?? character.class} ${level}`;
 
+  const tabCls = (tab: "sheet" | "inventory" | "companions" | "full") =>
+    `flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+      activeTab === tab
+        ? "bg-amber-800 text-amber-50 shadow-sm"
+        : "text-stone-600 hover:bg-stone-200/70 active:bg-stone-200"
+    }`;
+
   return (
     <div className="space-y-6 print:bg-white">
+      {/* ── Barra superior compacta ── */}
+      <div className="flex items-center gap-1.5 rounded-xl bg-stone-100 p-1 print:hidden">
+        <button
+          onClick={() => router.push("/characters")}
+          className="flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-900 hover:bg-stone-200/70 active:bg-stone-200 transition cursor-pointer"
+          title="Voltar para Heróis"
+        >
+          <ArrowLeft size={14} />
+          <span className="hidden sm:inline">Heróis</span>
+        </button>
+
+        <span className="h-4 w-px shrink-0 bg-stone-300" />
+
+        <div className="flex flex-1 gap-0.5 overflow-x-auto min-w-0">
+          <button onClick={() => setActiveTab("sheet")} className={tabCls("sheet")}>
+            <ScrollText size={14} />
+            <span className="hidden sm:inline">Ficha</span>
+          </button>
+          <button onClick={() => setActiveTab("inventory")} className={tabCls("inventory")}>
+            <Package size={14} />
+            <span className="hidden sm:inline">Inventário</span>
+          </button>
+          <button onClick={() => setActiveTab("companions")} className={tabCls("companions")}>
+            <span>🐾</span>
+            <span className="hidden sm:inline">Parceiros</span>
+            {companions.filter(c => c.is_alive).length > 0 && (
+              <span className={`rounded-full px-1.5 text-[10px] ${activeTab === "companions" ? "bg-amber-600" : "bg-stone-300 text-stone-600"}`}>
+                {companions.filter(c => c.is_alive).length}
+              </span>
+            )}
+          </button>
+          <button onClick={() => setActiveTab("full")} className={tabCls("full")}>
+            <LayoutGrid size={14} />
+            <span className="hidden sm:inline">Completa</span>
+          </button>
+        </div>
+
+        {dmHydrated && (
+          <>
+            <span className="h-4 w-px shrink-0 bg-stone-300" />
+            <button
+              onClick={toggleDm}
+              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+                isDmMode
+                  ? "bg-indigo-700 text-indigo-50"
+                  : "text-stone-500 hover:bg-indigo-50 hover:text-indigo-700"
+              }`}
+              title={isDmMode ? "Desativar Modo Narrador" : "Ativar Modo Narrador"}
+            >
+              <Wand2 size={12} />
+              <span className="hidden sm:inline">Narrador</span>
+            </button>
+          </>
+        )}
+      </div>
+
       <ArenaBanner characterId={character.id} />
-      {dmHydrated && <DmModeBanner active={isDmMode} onToggle={toggleDm} />}
 
       {/* ── Painel de edição do Narrador ── */}
       {isDmMode && (
@@ -517,38 +578,6 @@ export function CharacterSheet({
         </Card>
       )}
 
-      {/* Tab nav */}
-      <div className="flex gap-1 bg-stone-100 rounded-xl p-1 print:hidden">
-        <button
-          onClick={() => setActiveTab("sheet")}
-          className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-bold transition cursor-pointer ${activeTab === "sheet" ? "bg-amber-800 text-amber-50 shadow" : "text-stone-600 hover:bg-stone-200/70 active:bg-stone-200"}`}
-        >
-          <ScrollText size={18} /> Ficha
-        </button>
-        <button
-          onClick={() => setActiveTab("inventory")}
-          className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-bold transition cursor-pointer ${activeTab === "inventory" ? "bg-amber-800 text-amber-50 shadow" : "text-stone-600 hover:bg-stone-200/70 active:bg-stone-200"}`}
-        >
-          <Package size={18} /> Inventário
-        </button>
-        <button
-          onClick={() => setActiveTab("companions")}
-          className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-bold transition cursor-pointer ${activeTab === "companions" ? "bg-amber-800 text-amber-50 shadow" : "text-stone-600 hover:bg-stone-200/70 active:bg-stone-200"}`}
-        >
-          🐾 Parceiros
-          {companions.filter(c => c.is_alive).length > 0 && (
-            <span className={`rounded-full px-1.5 text-[10px] ${activeTab === "companions" ? "bg-amber-600" : "bg-stone-300 text-stone-600"}`}>
-              {companions.filter(c => c.is_alive).length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab("full")}
-          className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-bold transition cursor-pointer ${activeTab === "full" ? "bg-amber-800 text-amber-50 shadow" : "text-stone-600 hover:bg-stone-200/70 active:bg-stone-200"}`}
-        >
-          <LayoutGrid size={18} /> Completa
-        </button>
-      </div>
 
       {/* Inventory tab */}
       {activeTab === "inventory" && (
