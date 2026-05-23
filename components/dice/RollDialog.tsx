@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { X, RotateCcw, Palette } from "lucide-react";
 import { HitEffect, type HitEffectType } from "@/components/dice/HitEffect";
 
@@ -16,7 +16,6 @@ type DiceSkin = {
   swatch: string;
   palette: DicePalette;
   table: string;
-  diceFilter: string;
 };
 
 const SKINS: DiceSkin[] = [
@@ -24,8 +23,6 @@ const SKINS: DiceSkin[] = [
     id: "classico",
     name: "Clássico",
     swatch: "#d97706",
-    // Textura padrão é verde (~120°). Rotaciona -70° → laranja/âmbar
-    diceFilter: "hue-rotate(-70deg) saturate(1.5)",
     palette: {
       4:  { bg: "#7c2d12", border: "#ea580c", text: "#fed7aa" },
       6:  { bg: "#1e3a5f", border: "#3b82f6", text: "#bfdbfe" },
@@ -44,8 +41,6 @@ const SKINS: DiceSkin[] = [
     id: "ouro",
     name: "Ouro Real",
     swatch: "#fbbf24",
-    // -60° + saturate alto → ouro brilhante
-    diceFilter: "hue-rotate(-60deg) saturate(2) brightness(1.15)",
     palette: {
       4:  { bg: "#451a03", border: "#d97706", text: "#fde68a" },
       6:  { bg: "#3d1f00", border: "#f59e0b", text: "#fef3c7" },
@@ -63,8 +58,6 @@ const SKINS: DiceSkin[] = [
     id: "sangue",
     name: "Sangue",
     swatch: "#ef4444",
-    // -120° → vermelho puro
-    diceFilter: "hue-rotate(-120deg) saturate(1.7)",
     palette: {
       4:  { bg: "#3f0000", border: "#dc2626", text: "#fecaca" },
       6:  { bg: "#450a0a", border: "#ef4444", text: "#fee2e2" },
@@ -82,8 +75,6 @@ const SKINS: DiceSkin[] = [
     id: "gelo",
     name: "Gelo",
     swatch: "#38bdf8",
-    // +120° → azul gelo
-    diceFilter: "hue-rotate(120deg) saturate(1.3) brightness(1.05)",
     palette: {
       4:  { bg: "#0c1a2e", border: "#38bdf8", text: "#e0f2fe" },
       6:  { bg: "#0a1929", border: "#7dd3fc", text: "#bae6fd" },
@@ -101,8 +92,6 @@ const SKINS: DiceSkin[] = [
     id: "floresta",
     name: "Floresta",
     swatch: "#22c55e",
-    // Mantém verde nativo, só enriquece saturação
-    diceFilter: "saturate(1.6) brightness(0.95)",
     palette: {
       4:  { bg: "#052e16", border: "#22c55e", text: "#bbf7d0" },
       6:  { bg: "#14532d", border: "#4ade80", text: "#dcfce7" },
@@ -120,8 +109,6 @@ const SKINS: DiceSkin[] = [
     id: "arcano",
     name: "Arcano",
     swatch: "#a855f7",
-    // +160° → roxo/violeta
-    diceFilter: "hue-rotate(160deg) saturate(1.6)",
     palette: {
       4:  { bg: "#2e1065", border: "#8b5cf6", text: "#ede9fe" },
       6:  { bg: "#3b0764", border: "#a855f7", text: "#f3e8ff" },
@@ -139,8 +126,6 @@ const SKINS: DiceSkin[] = [
     id: "sombra",
     name: "Sombra",
     swatch: "#94a3b8",
-    // Dessatura quase completamente → cinza escuro
-    diceFilter: "saturate(0.12) brightness(0.65)",
     palette: {
       4:  { bg: "#09090b", border: "#6b7280", text: "#d1d5db" },
       6:  { bg: "#111827", border: "#9ca3af", text: "#e5e7eb" },
@@ -157,8 +142,13 @@ const SKINS: DiceSkin[] = [
 ];
 
 const SKIN_STORAGE_KEY = "dice-skin-id";
+const ROLL_MS = 680;
+const SHUFFLE_MS = 55;
 
-type RollEntry = { die: DieType; result: number };
+let _nextEntryId = 0;
+function rand(die: DieType): number { return Math.floor(Math.random() * die) + 1; }
+
+type RollEntry = { id: number; die: DieType; result: number; isRolling: boolean };
 
 type Props = {
   open: boolean;
@@ -170,24 +160,14 @@ type Props = {
   hitEffect?: HitEffectType;
 };
 
-const CONTAINER_ID = "dice-box-scene";
-
 // ─── Ícone SVG do dado ────────────────────────────────────────────────────────
 
 function DieIcon({
-  die, fill, stroke, textColor, disabled,
+  die, fill, stroke, textColor,
 }: {
-  die: DieType; fill: string; stroke: string; textColor: string; disabled: boolean;
+  die: DieType; fill: string; stroke: string; textColor: string;
 }) {
-  const detailColor = disabled ? "#4b5563" : textColor;
-
-  const poly = {
-    fill, stroke,
-    strokeWidth: 3.5,
-    strokeLinejoin: "round" as const,
-    strokeLinecap: "round" as const,
-  };
-
+  const poly = { fill, stroke, strokeWidth: 3.5, strokeLinejoin: "round" as const, strokeLinecap: "round" as const };
   const num = (x: number, y: number, size: number) => (
     <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
       fontSize={size} fontWeight="900"
@@ -196,11 +176,9 @@ function DieIcon({
       {die}
     </text>
   );
-
   const detail = (d: string) => (
-    <path d={d} stroke={detailColor} strokeWidth={1.5} fill="none" opacity={0.25} strokeLinecap="round" />
+    <path d={d} stroke={textColor} strokeWidth={1.5} fill="none" opacity={0.2} strokeLinecap="round" />
   );
-
   switch (die) {
     case 4:
       return (
@@ -254,24 +232,53 @@ function DieIcon({
   }
 }
 
-// ─── Seletor de Skin ──────────────────────────────────────────────────────────
+// ─── Dado animado ─────────────────────────────────────────────────────────────
 
-function SkinPicker({
-  skins,
-  currentId,
-  onSelect,
-}: {
-  skins: DiceSkin[];
-  currentId: string;
-  onSelect: (id: string) => void;
-}) {
+function AnimatedDie({ entry, colors }: { entry: RollEntry; colors: DicePalette }) {
+  const c = colors[entry.die];
+  const [display, setDisplay] = useState(() => rand(entry.die));
+
+  useEffect(() => {
+    if (!entry.isRolling) {
+      setDisplay(entry.result);
+      return;
+    }
+    const iv = setInterval(() => setDisplay(rand(entry.die)), SHUFFLE_MS);
+    return () => clearInterval(iv);
+  }, [entry.isRolling, entry.result, entry.die]);
+
   return (
     <div
-      className="flex items-center gap-2 px-3 py-2.5 border-t border-stone-800 bg-stone-900/60"
+      className="flex flex-col items-center justify-center rounded-xl select-none"
+      style={{
+        width: 64,
+        height: 64,
+        background: c.bg,
+        border: `2px solid ${entry.isRolling ? c.border : c.border + "99"}`,
+        boxShadow: entry.isRolling
+          ? `0 0 22px ${c.border}80, 0 0 8px ${c.border}50, inset 0 0 10px rgba(0,0,0,0.3)`
+          : `0 2px 10px rgba(0,0,0,0.6)`,
+        transition: "box-shadow 0.45s ease, border-color 0.3s ease",
+      }}
     >
-      <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500 shrink-0 mr-1">
-        Skin
+      <span className="text-2xl font-black leading-none" style={{ color: c.text }}>
+        {display}
       </span>
+      <span className="text-[10px] font-semibold opacity-40 mt-0.5" style={{ color: c.text }}>
+        d{entry.die}
+      </span>
+    </div>
+  );
+}
+
+// ─── Seletor de skin ──────────────────────────────────────────────────────────
+
+function SkinPicker({ skins, currentId, onSelect }: {
+  skins: DiceSkin[]; currentId: string; onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-2.5 border-t border-white/[0.06] bg-black/20">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500 shrink-0 mr-1">Skin</span>
       {skins.map((skin) => {
         const active = skin.id === currentId;
         return (
@@ -281,20 +288,15 @@ function SkinPicker({
             onClick={() => onSelect(skin.id)}
             className="relative shrink-0 rounded-full transition-transform active:scale-90"
             style={{
-              width: 26,
-              height: 26,
+              width: 26, height: 26,
               background: skin.swatch,
-              boxShadow: active
-                ? `0 0 0 2px #1c1917, 0 0 0 4px ${skin.swatch}`
-                : "none",
+              boxShadow: active ? `0 0 0 2px #0a0a0a, 0 0 0 4px ${skin.swatch}` : "none",
               border: active ? `2px solid ${skin.swatch}` : "2px solid transparent",
             }}
           >
             {active && (
-              <span
-                className="absolute inset-0 flex items-center justify-center text-[10px] font-black"
-                style={{ color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}
-              >
+              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black"
+                style={{ color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>
                 ✓
               </span>
             )}
@@ -305,24 +307,17 @@ function SkinPicker({
   );
 }
 
-// ─── Componente ───────────────────────────────────────────────────────────────
+// ─── Componente principal ─────────────────────────────────────────────────────
 
 export function RollDialog({
   open, onClose, preLabel,
   preModifier = 0, preModifierBreakdown,
-  preCounts: _preCounts, hitEffect,
+  preCounts, hitEffect,
 }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const diceBoxRef = useRef<any>(null);
-  const hasRolledRef = useRef(false);
-
-  const [ready, setReady]           = useState(false);
-  const [isRolling, setIsRolling]   = useState(false);
-  const [results, setResults]       = useState<RollEntry[]>([]);
-  const [initError, setInitError]   = useState<string | null>(null);
+  const [entries, setEntries] = useState<RollEntry[]>([]);
+  const [showSkins, setShowSkins] = useState(false);
   const [playingEffect, setPlayingEffect] = useState(false);
-  const [showSkins, setShowSkins]   = useState(false);
+  const hasAutoRolledRef = useRef(false);
 
   const [skinId, setSkinId] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -334,91 +329,63 @@ export function RollDialog({
   const currentSkin = SKINS.find((s) => s.id === skinId) ?? SKINS[0];
   const COLORS = currentSkin.palette;
 
+  const isRolling = entries.some((e) => e.isRolling);
+  const settledEntries = entries.filter((e) => !e.isRolling);
+  const naturalSum = settledEntries.reduce((s, e) => s + e.result, 0);
+  const finalTotal = naturalSum + preModifier;
+  const isCrit   = !isRolling && entries.length > 0 && entries.some((e) => e.die === 20 && e.result === 20);
+  const isFumble = !isRolling && entries.length === 1 && entries[0].die === 20 && entries[0].result === 1;
+
   function selectSkin(id: string) {
     setSkinId(id);
     localStorage.setItem(SKIN_STORAGE_KEY, id);
   }
 
-  const naturalSum = results.reduce((s, r) => s + r.result, 0);
-  const finalTotal = naturalSum + preModifier;
-
-  // ── Fechar (com efeito opcional) ────────────────────────────────────────────
-
   function requestClose() {
-    if (hitEffect && results.length > 0 && !playingEffect) {
+    if (hitEffect && settledEntries.length > 0 && !playingEffect) {
       setPlayingEffect(true);
     } else {
       onClose();
     }
   }
 
-  // ── Init / cleanup ──────────────────────────────────────────────────────────
+  const addDie = useCallback((die: DieType) => {
+    const id = _nextEntryId++;
+    const result = rand(die);
+    setEntries((prev) => [...prev, { id, die, result, isRolling: true }]);
+    setTimeout(() => {
+      setEntries((prev) => prev.map((e) => e.id === id ? { ...e, isRolling: false } : e));
+    }, ROLL_MS);
+  }, []);
 
+  function handleClear() {
+    setEntries([]);
+    setSkinId(SKINS[Math.floor(Math.random() * SKINS.length)].id);
+  }
+
+  // Reset + auto-roll na abertura
   useEffect(() => {
     if (!open) {
-      if (diceBoxRef.current) {
-        try { diceBoxRef.current.clear(); } catch { /* ignore */ }
-        diceBoxRef.current = null;
-      }
-      setReady(false);
-      setIsRolling(false);
-      setResults([]);
-      setInitError(null);
+      setEntries([]);
       setPlayingEffect(false);
       setShowSkins(false);
-      hasRolledRef.current = false;
+      hasAutoRolledRef.current = false;
       return;
     }
-    // Sorteia uma skin aleatória a cada abertura
     setSkinId(SKINS[Math.floor(Math.random() * SKINS.length)].id);
 
-    let cancelled = false;
-
-    const run = async () => {
-      await new Promise<void>((r) => setTimeout(r, 150));
-      if (cancelled || !containerRef.current) return;
-
-      try {
-        // Carrega direto do /public — evita problema de imports circulares no webpack
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mod = await (Function('return import("/dice-box/dice-box.es.js")')() as Promise<any>);
-        const DiceBox = mod.default;
-        if (cancelled) return;
-
-        const db = new DiceBox({
-          container: `#${CONTAINER_ID}`,
-          assetPath: "/dice-box/",
-          theme: "default",
-          offscreen: false,
-          gravity: 2, mass: 1, friction: 0.8, restitution: 0.4,
-          angularDamping: 0.4, linearDamping: 0.4,
-          spinForce: 5, throwForce: 4, startingHeight: 8, scale: 6,
-          id: "dice-box-canvas-el",
-        });
-
-        await db.init();
-        if (cancelled) return;
-
-        const canvas = document.getElementById("dice-box-canvas-el") as HTMLCanvasElement | null;
-        if (canvas) { canvas.style.width = "100%"; canvas.style.height = "100%"; }
-
-        db.onRollComplete = (allResults: Array<{ sides: number; value: number }>) => {
-          setResults(allResults.map((r) => ({ die: r.sides as DieType, result: r.value })));
-          setIsRolling(false);
-        };
-
-        diceBoxRef.current = db;
-        setReady(true);
-      } catch (err) {
-        if (!cancelled) {
-          console.error("[DiceBox] init error:", err);
-          setInitError(err instanceof Error ? err.message : String(err));
+    if (preCounts && !hasAutoRolledRef.current) {
+      hasAutoRolledRef.current = true;
+      let delay = 80;
+      for (const [dieStr, count] of Object.entries(preCounts)) {
+        const die = Number(dieStr) as DieType;
+        for (let i = 0; i < (count ?? 0); i++) {
+          const d = delay;
+          setTimeout(() => addDie(die), d);
+          delay += 110;
         }
       }
-    };
-
-    run();
-    return () => { cancelled = true; };
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -428,162 +395,120 @@ export function RollDialog({
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, results, hitEffect, playingEffect]);
-
-  // ── Ações ───────────────────────────────────────────────────────────────────
-
-  function addDie(die: DieType) {
-    const db = diceBoxRef.current;
-    if (!db || !ready) return;
-    setIsRolling(true);
-    if (!hasRolledRef.current) {
-      hasRolledRef.current = true;
-      db.roll(`1d${die}`);
-    } else {
-      db.add(`1d${die}`);
-    }
-  }
-
-  function handleClear() {
-    const db = diceBoxRef.current;
-    if (!db) return;
-    db.clear();
-    setResults([]);
-    hasRolledRef.current = false;
-    setIsRolling(false);
-    setSkinId(SKINS[Math.floor(Math.random() * SKINS.length)].id);
-  }
-
-  // ── Render ──────────────────────────────────────────────────────────────────
+  }, [open, settledEntries.length, hitEffect, playingEffect]);
 
   if (!open) return null;
 
-  const isCrit   = results.length >= 1 && results.some(r => r.die === 20 && r.result === 20);
-  const isFumble = results.length === 1 && results[0].die === 20 && results[0].result === 1;
-
   return (
-    <div
-      className="fixed inset-0 z-50"
-      role="dialog" aria-modal="true" aria-label="Rolagem de dados"
-    >
-      {/* ── Canvas 3D ocupa a tela toda — necessário para o DiceBox funcionar corretamente ── */}
+    <>
+      {playingEffect && hitEffect && <HitEffect type={hitEffect} onDone={onClose} />}
+
+      {/* Backdrop */}
       <div
-        id={CONTAINER_ID}
-        ref={containerRef}
-        className="absolute inset-0 cursor-pointer"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+        style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(6px)" }}
         onClick={requestClose}
       >
-        {/* Fundo separado do canvas WebGL para que o filter não quebre o WebGL */}
+        {/* Modal */}
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="relative w-full rounded-2xl overflow-hidden flex flex-col shadow-2xl"
           style={{
+            maxWidth: 580,
+            maxHeight: "90vh",
             background: currentSkin.table,
-            boxShadow: "inset 0 -120px 160px rgba(0,0,0,0.5)",
-            filter: currentSkin.diceFilter,
-            transition: "filter 0.4s ease",
+            border: "1.5px solid rgba(255,255,255,0.07)",
+            boxShadow: "0 32px 96px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.04)",
           }}
-        />
-      </div>
-
-      {/* ── Animação de dano ── */}
-      {playingEffect && hitEffect && (
-        <HitEffect type={hitEffect} onDone={onClose} />
-      )}
-
-      {/* ── Cabeçalho flutuante (topo) ── */}
-      <div className="absolute top-0 left-0 right-0 flex items-start justify-between px-5 pt-5 pointer-events-none z-10">
-        <div className="pointer-events-auto">
-          {preLabel && (
-            <p className="font-black text-amber-50 text-xl drop-shadow-lg">{preLabel}</p>
-          )}
-          {preModifier !== 0 && preModifierBreakdown && (
-            <p className="text-xs text-stone-400 mt-0.5 drop-shadow">
-              {preModifierBreakdown}{" "}={" "}
-              <span className="text-amber-400 font-bold">
-                {preModifier >= 0 ? "+" : ""}{preModifier}
-              </span>
-            </p>
-          )}
-        </div>
-        <button
-          onClick={requestClose}
-          className="pointer-events-auto rounded-full p-2 bg-stone-900/70 text-stone-400 hover:text-white hover:bg-stone-800 transition"
-          aria-label="Fechar"
-        >
-          <X size={20} />
-        </button>
-      </div>
-
-      {/* ── Painel de controles — ancorado no fundo, centralizado no desktop ── */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-center pointer-events-none">
-        <div
-          className="pointer-events-auto w-full sm:max-w-[560px] sm:mb-6 sm:rounded-2xl sm:border sm:border-stone-700 overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Skin picker */}
-          {showSkins && (
-            <SkinPicker skins={SKINS} currentId={skinId} onSelect={(id) => { selectSkin(id); }} />
-          )}
-
-          <div className="bg-stone-950 border-t border-stone-800 px-4 pt-3 pb-safe pb-5">
-
-            {/* Resultados */}
-            {results.length > 0 && (
-              <div className="flex items-center gap-1.5 flex-wrap mb-3">
-                {results.map((r, i) => (
-                  <span key={i}
-                    className="inline-flex flex-col items-center justify-center rounded-lg w-11 h-11 shrink-0 animate-in fade-in zoom-in duration-200"
-                    style={{ background: COLORS[r.die].bg, border: `1.5px solid ${COLORS[r.die].border}` }}
-                  >
-                    <span className="font-black text-sm leading-none" style={{ color: COLORS[r.die].text }}>
-                      {r.result}
-                    </span>
-                    <span className="text-[9px] opacity-50" style={{ color: COLORS[r.die].text }}>d{r.die}</span>
+          {/* Cabeçalho */}
+          <div className="flex items-start justify-between px-5 pt-5 pb-4 shrink-0">
+            <div className="min-w-0">
+              {preLabel && (
+                <p className="font-black text-amber-50 text-lg leading-tight">{preLabel}</p>
+              )}
+              {preModifier !== 0 && preModifierBreakdown && (
+                <p className="text-xs text-stone-400 mt-0.5">
+                  {preModifierBreakdown} ={" "}
+                  <span className="font-bold text-amber-400">
+                    {preModifier >= 0 ? "+" : ""}{preModifier}
                   </span>
+                </p>
+              )}
+            </div>
+            <button
+              onClick={requestClose}
+              className="ml-4 shrink-0 rounded-full p-2 bg-black/30 text-stone-400 hover:text-white hover:bg-black/50 transition"
+              aria-label="Fechar"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Bandeja de dados */}
+          <div className="flex-1 flex flex-col items-center justify-center px-5 py-3 min-h-[160px]">
+            {entries.length === 0 ? (
+              <p className="text-stone-500 text-sm">Escolha um dado abaixo para rolar</p>
+            ) : (
+              <div className="flex flex-wrap gap-2.5 justify-center">
+                {entries.map((entry) => (
+                  <AnimatedDie key={entry.id} entry={entry} colors={COLORS} />
                 ))}
-                <div className="ml-auto text-right shrink-0">
-                  {preModifier !== 0 ? (
-                    <>
-                      <p className="text-[10px] text-stone-500 leading-none">
-                        {naturalSum} {preModifier >= 0 ? "+" : ""}{preModifier}
-                      </p>
-                      <p className="text-4xl font-black text-amber-400 leading-tight">{finalTotal}</p>
-                    </>
-                  ) : (
-                    <p className="text-4xl font-black text-amber-400">{naturalSum}</p>
-                  )}
-                </div>
               </div>
             )}
 
-            {/* Crítico / falha */}
-            {!isRolling && results.length > 0 && (isCrit || isFumble) && (
-              <p className={`text-sm font-black text-center mb-2 tracking-widest ${isCrit ? "text-amber-400" : "text-red-400"}`}>
+            {/* Total */}
+            {settledEntries.length > 0 && (
+              <div className="mt-5 text-center">
+                {preModifier !== 0 ? (
+                  <>
+                    <p className="text-[11px] text-stone-500 leading-none mb-0.5">
+                      {naturalSum} {preModifier >= 0 ? "+" : ""}{preModifier}
+                    </p>
+                    <p className="text-5xl font-black text-amber-400 leading-none">{finalTotal}</p>
+                  </>
+                ) : (
+                  <p className="text-5xl font-black text-amber-400 leading-none">{naturalSum}</p>
+                )}
+              </div>
+            )}
+
+            {/* Crítico / Falha */}
+            {(isCrit || isFumble) && (
+              <p className={`mt-2.5 text-sm font-black tracking-widest ${isCrit ? "text-amber-400" : "text-red-400"}`}>
                 {isCrit ? "⚡ ACERTO CRÍTICO!" : "💀 FALHA CRÍTICA!"}
               </p>
             )}
+          </div>
 
+          {/* Skin picker (recolhível) */}
+          {showSkins && (
+            <SkinPicker skins={SKINS} currentId={skinId} onSelect={selectSkin} />
+          )}
+
+          {/* Controles inferiores */}
+          <div
+            className="shrink-0 px-4 pt-3 pb-5 border-t"
+            style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(0,0,0,0.35)" }}
+          >
             {/* Botões de dados */}
             <div className="grid grid-cols-6 gap-2 mb-3">
               {DICE_TYPES.map((die) => {
                 const c = COLORS[die];
-                const disabled = !ready || !!initError;
                 return (
-                  <button key={die} onClick={() => addDie(die)} disabled={disabled}
+                  <button
+                    key={die}
+                    onClick={() => addDie(die)}
                     title={`Rolar 1d${die}`}
                     className="flex items-center justify-center rounded-xl transition active:scale-90 hover:brightness-125 focus-visible:outline-none"
                     style={{
-                      aspectRatio: "1", padding: "8px",
-                      background: disabled ? "#1f2937" : c.bg + "33",
-                      border: `2px solid ${disabled ? "#374151" : c.border}`,
+                      aspectRatio: "1",
+                      padding: "9px",
+                      background: c.bg + "44",
+                      border: `2px solid ${c.border}`,
                     }}
                   >
-                    <DieIcon die={die}
-                      fill={disabled ? "#374151" : c.bg}
-                      stroke={disabled ? "#4b5563" : c.border}
-                      textColor={disabled ? "#6b7280" : c.text}
-                      disabled={disabled}
-                    />
+                    <DieIcon die={die} fill={c.bg} stroke={c.border} textColor={c.text} />
                   </button>
                 );
               })}
@@ -591,35 +516,38 @@ export function RollDialog({
 
             {/* Rodapé */}
             <div className="flex items-center gap-2">
-              <button onClick={handleClear} disabled={results.length === 0 && !isRolling}
-                className="rounded-xl p-2.5 bg-stone-900 border border-stone-800 text-stone-400 hover:text-white hover:bg-stone-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
-                title="Limpar mesa" aria-label="Limpar dados"
+              <button
+                onClick={handleClear}
+                disabled={entries.length === 0}
+                className="rounded-xl p-2.5 bg-stone-900/80 border border-stone-700 text-stone-400 hover:text-white hover:bg-stone-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                title="Limpar mesa"
               >
-                <RotateCcw size={16} />
+                <RotateCcw size={15} />
               </button>
 
               <button
                 onClick={() => setShowSkins((v) => !v)}
                 title="Trocar skin dos dados"
-                className="rounded-xl p-2.5 bg-stone-900 border border-stone-800 text-stone-400 hover:text-white hover:bg-stone-800 transition"
+                className="rounded-xl p-2.5 bg-stone-900/80 border border-stone-700 text-stone-400 hover:text-white hover:bg-stone-800 transition"
                 style={{
                   borderColor: showSkins ? currentSkin.swatch + "88" : undefined,
                   color: showSkins ? currentSkin.swatch : undefined,
                 }}
               >
-                <Palette size={16} />
+                <Palette size={15} />
               </button>
 
-              <p className="flex-1 text-center text-xs text-stone-600">
-                {initError ? `Erro: ${initError}`
-                  : !ready        ? "Carregando…"
-                  : isRolling     ? "Rolando…"
-                  : results.length === 0 ? "Toque em um dado para rolar"
-                  : "Toque para adicionar mais dados"}
+              <p className="flex-1 text-center text-xs text-stone-500">
+                {isRolling
+                  ? "Rolando…"
+                  : entries.length === 0
+                  ? "Escolha um dado"
+                  : "Clique para adicionar mais"}
               </p>
 
-              <button onClick={requestClose}
-                className="rounded-xl px-4 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-sm transition"
+              <button
+                onClick={requestClose}
+                className="rounded-xl px-4 py-2.5 bg-stone-800/90 hover:bg-stone-700 text-stone-300 font-bold text-sm transition border border-stone-700"
               >
                 Fechar
               </button>
@@ -627,6 +555,6 @@ export function RollDialog({
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
