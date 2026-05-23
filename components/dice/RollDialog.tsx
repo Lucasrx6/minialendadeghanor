@@ -463,40 +463,34 @@ export function RollDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:p-6"
-      style={{ background: "rgba(5,5,10,0.90)" }}
-      onClick={(e) => { if (e.target === e.currentTarget) requestClose(); }}
+      className="fixed inset-0 z-50"
+      role="dialog" aria-modal="true" aria-label="Rolagem de dados"
     >
-      {/* ── Modal container — sem overflow-hidden para não quebrar WebGL ── */}
-      <div
-        className="relative flex-1 sm:flex-none w-full sm:max-w-[460px] sm:rounded-2xl sm:border sm:border-stone-800 flex flex-col"
-        role="dialog" aria-modal="true" aria-label="Rolagem de dados"
-      >
-      {/* ── Canvas 3D ── */}
+      {/* ── Canvas 3D ocupa a tela toda — necessário para o DiceBox funcionar corretamente ── */}
       <div
         id={CONTAINER_ID}
         ref={containerRef}
-        className="flex-1 sm:flex-none sm:h-72 relative sm:rounded-t-2xl"
-        style={{ minHeight: 160 }}
+        className="absolute inset-0 cursor-pointer"
+        onClick={requestClose}
       >
-        {/* Fundo separado do canvas WebGL — filter aqui não interfere no WebGL */}
+        {/* Fundo separado do canvas WebGL para que o filter não quebre o WebGL */}
         <div
-          className="absolute inset-0 sm:rounded-t-2xl pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
             background: currentSkin.table,
-            boxShadow: "inset 0 -60px 80px rgba(0,0,0,0.3)",
+            boxShadow: "inset 0 -120px 160px rgba(0,0,0,0.5)",
             filter: currentSkin.diceFilter,
             transition: "filter 0.4s ease",
           }}
         />
       </div>
 
-      {/* ── Animação de dano (cobre o canvas quando fechar é acionado) ── */}
+      {/* ── Animação de dano ── */}
       {playingEffect && hitEffect && (
         <HitEffect type={hitEffect} onDone={onClose} />
       )}
 
-      {/* Cabeçalho flutuante */}
+      {/* ── Cabeçalho flutuante (topo) ── */}
       <div className="absolute top-0 left-0 right-0 flex items-start justify-between px-5 pt-5 pointer-events-none z-10">
         <div className="pointer-events-auto">
           {preLabel && (
@@ -520,114 +514,118 @@ export function RollDialog({
         </button>
       </div>
 
-      {/* ── Painel inferior ── */}
-      <div className="bg-stone-950 border-t border-stone-800 shrink-0 sm:rounded-b-2xl">
+      {/* ── Painel de controles — ancorado no fundo, centralizado no desktop ── */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto w-full sm:max-w-[560px] sm:mb-6 sm:rounded-2xl sm:border sm:border-stone-700 overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Skin picker */}
+          {showSkins && (
+            <SkinPicker skins={SKINS} currentId={skinId} onSelect={(id) => { selectSkin(id); }} />
+          )}
 
-        {/* Skin picker — expande acima do painel */}
-        {showSkins && (
-          <SkinPicker skins={SKINS} currentId={skinId} onSelect={(id) => { selectSkin(id); }} />
-        )}
+          <div className="bg-stone-950 border-t border-stone-800 px-4 pt-3 pb-safe pb-5">
 
-        <div className="px-4 pt-3 pb-safe pb-5">
-          {/* Resultados */}
-          {results.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap mb-3">
-              {results.map((r, i) => (
-                <span key={i}
-                  className="inline-flex flex-col items-center justify-center rounded-lg w-10 h-10 shrink-0 animate-in fade-in zoom-in duration-200"
-                  style={{ background: COLORS[r.die].bg, border: `1.5px solid ${COLORS[r.die].border}` }}
-                >
-                  <span className="font-black text-sm leading-none" style={{ color: COLORS[r.die].text }}>
-                    {r.result}
+            {/* Resultados */}
+            {results.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                {results.map((r, i) => (
+                  <span key={i}
+                    className="inline-flex flex-col items-center justify-center rounded-lg w-11 h-11 shrink-0 animate-in fade-in zoom-in duration-200"
+                    style={{ background: COLORS[r.die].bg, border: `1.5px solid ${COLORS[r.die].border}` }}
+                  >
+                    <span className="font-black text-sm leading-none" style={{ color: COLORS[r.die].text }}>
+                      {r.result}
+                    </span>
+                    <span className="text-[9px] opacity-50" style={{ color: COLORS[r.die].text }}>d{r.die}</span>
                   </span>
-                  <span className="text-[9px] opacity-50" style={{ color: COLORS[r.die].text }}>d{r.die}</span>
-                </span>
-              ))}
-              <div className="ml-auto text-right shrink-0">
-                {preModifier !== 0 ? (
-                  <>
-                    <p className="text-[10px] text-stone-500 leading-none">
-                      {naturalSum} {preModifier >= 0 ? "+" : ""}{preModifier}
-                    </p>
-                    <p className="text-3xl font-black text-amber-400 leading-tight">{finalTotal}</p>
-                  </>
-                ) : (
-                  <p className="text-3xl font-black text-amber-400">{naturalSum}</p>
-                )}
+                ))}
+                <div className="ml-auto text-right shrink-0">
+                  {preModifier !== 0 ? (
+                    <>
+                      <p className="text-[10px] text-stone-500 leading-none">
+                        {naturalSum} {preModifier >= 0 ? "+" : ""}{preModifier}
+                      </p>
+                      <p className="text-4xl font-black text-amber-400 leading-tight">{finalTotal}</p>
+                    </>
+                  ) : (
+                    <p className="text-4xl font-black text-amber-400">{naturalSum}</p>
+                  )}
+                </div>
               </div>
+            )}
+
+            {/* Crítico / falha */}
+            {!isRolling && results.length > 0 && (isCrit || isFumble) && (
+              <p className={`text-sm font-black text-center mb-2 tracking-widest ${isCrit ? "text-amber-400" : "text-red-400"}`}>
+                {isCrit ? "⚡ ACERTO CRÍTICO!" : "💀 FALHA CRÍTICA!"}
+              </p>
+            )}
+
+            {/* Botões de dados */}
+            <div className="grid grid-cols-6 gap-2 mb-3">
+              {DICE_TYPES.map((die) => {
+                const c = COLORS[die];
+                const disabled = !ready || !!initError;
+                return (
+                  <button key={die} onClick={() => addDie(die)} disabled={disabled}
+                    title={`Rolar 1d${die}`}
+                    className="flex items-center justify-center rounded-xl transition active:scale-90 hover:brightness-125 focus-visible:outline-none"
+                    style={{
+                      aspectRatio: "1", padding: "8px",
+                      background: disabled ? "#1f2937" : c.bg + "33",
+                      border: `2px solid ${disabled ? "#374151" : c.border}`,
+                    }}
+                  >
+                    <DieIcon die={die}
+                      fill={disabled ? "#374151" : c.bg}
+                      stroke={disabled ? "#4b5563" : c.border}
+                      textColor={disabled ? "#6b7280" : c.text}
+                      disabled={disabled}
+                    />
+                  </button>
+                );
+              })}
             </div>
-          )}
 
-          {/* Crítico / falha */}
-          {!isRolling && results.length > 0 && (isCrit || isFumble) && (
-            <p className={`text-xs font-black text-center mb-2 tracking-widest ${isCrit ? "text-amber-400" : "text-red-400"}`}>
-              {isCrit ? "⚡ ACERTO CRÍTICO!" : "💀 FALHA CRÍTICA!"}
-            </p>
-          )}
+            {/* Rodapé */}
+            <div className="flex items-center gap-2">
+              <button onClick={handleClear} disabled={results.length === 0 && !isRolling}
+                className="rounded-xl p-2.5 bg-stone-900 border border-stone-800 text-stone-400 hover:text-white hover:bg-stone-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                title="Limpar mesa" aria-label="Limpar dados"
+              >
+                <RotateCcw size={16} />
+              </button>
 
-          {/* Botões de dados — ícones SVG */}
-          <div className="grid grid-cols-6 gap-2 mb-3">
-            {DICE_TYPES.map((die) => {
-              const c = COLORS[die];
-              const disabled = !ready || !!initError;
-              return (
-                <button key={die} onClick={() => addDie(die)} disabled={disabled}
-                  title={`Rolar 1d${die}`}
-                  className="flex items-center justify-center rounded-xl transition active:scale-90 hover:brightness-125 focus-visible:outline-none"
-                  style={{
-                    aspectRatio: "1", padding: "6px",
-                    background: disabled ? "#1f2937" : c.bg + "33",
-                    border: `2px solid ${disabled ? "#374151" : c.border}`,
-                  }}
-                >
-                  <DieIcon die={die}
-                    fill={disabled ? "#374151" : c.bg}
-                    stroke={disabled ? "#4b5563" : c.border}
-                    textColor={disabled ? "#6b7280" : c.text}
-                    disabled={disabled}
-                  />
-                </button>
-              );
-            })}
-          </div>
+              <button
+                onClick={() => setShowSkins((v) => !v)}
+                title="Trocar skin dos dados"
+                className="rounded-xl p-2.5 bg-stone-900 border border-stone-800 text-stone-400 hover:text-white hover:bg-stone-800 transition"
+                style={{
+                  borderColor: showSkins ? currentSkin.swatch + "88" : undefined,
+                  color: showSkins ? currentSkin.swatch : undefined,
+                }}
+              >
+                <Palette size={16} />
+              </button>
 
-          {/* Rodapé */}
-          <div className="flex items-center gap-2">
-            <button onClick={handleClear} disabled={results.length === 0 && !isRolling}
-              className="rounded-xl p-2.5 bg-stone-900 border border-stone-800 text-stone-400 hover:text-white hover:bg-stone-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
-              title="Limpar mesa" aria-label="Limpar dados"
-            >
-              <RotateCcw size={16} />
-            </button>
+              <p className="flex-1 text-center text-xs text-stone-600">
+                {initError ? `Erro: ${initError}`
+                  : !ready        ? "Carregando…"
+                  : isRolling     ? "Rolando…"
+                  : results.length === 0 ? "Toque em um dado para rolar"
+                  : "Toque para adicionar mais dados"}
+              </p>
 
-            <button
-              onClick={() => setShowSkins((v) => !v)}
-              title="Trocar skin dos dados"
-              className="rounded-xl p-2.5 bg-stone-900 border border-stone-800 text-stone-400 hover:text-white hover:bg-stone-800 transition"
-              style={{
-                borderColor: showSkins ? currentSkin.swatch + "88" : undefined,
-                color: showSkins ? currentSkin.swatch : undefined,
-              }}
-            >
-              <Palette size={16} />
-            </button>
-
-            <p className="flex-1 text-center text-xs text-stone-600">
-              {initError ? `Erro: ${initError}`
-                : !ready        ? "Carregando…"
-                : isRolling     ? "Rolando…"
-                : results.length === 0 ? "Toque em um dado para rolar"
-                : "Toque para adicionar mais dados"}
-            </p>
-
-            <button onClick={requestClose}
-              className="rounded-xl px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-sm transition"
-            >
-              Fechar
-            </button>
+              <button onClick={requestClose}
+                className="rounded-xl px-4 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-sm transition"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </div>
   );
