@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { X, RotateCcw, Palette } from "lucide-react";
 import { HitEffect, type HitEffectType } from "@/components/dice/HitEffect";
 
@@ -397,9 +398,9 @@ export function RollDialog({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, settledEntries.length, hitEffect, playingEffect]);
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
-  return (
+  const modal = (
     <>
       {playingEffect && hitEffect && <HitEffect type={hitEffect} onDone={onClose} />}
 
@@ -557,4 +558,6 @@ export function RollDialog({
       </div>
     </>
   );
+
+  return createPortal(modal, document.body);
 }
