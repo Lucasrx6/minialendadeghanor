@@ -207,7 +207,18 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
     });
   }
 
-  const CONSUMABLE_CATS = new Set(["bens_comuns", "alquimico_preparado", "alquimia_mistica", "alquimico_veneno", "municao"]);
+  function handleUse(entry: InvEntry) {
+    const name = itemName(entry);
+    startTransition(async () => {
+      const result = await consumeItem(entry.id);
+      if ("error" in result) { showToast(result.error); return; }
+      showToast(entry.items?.is_stackable ? `1× ${name} usado.` : `${name} usado e descartado.`);
+    });
+  }
+
+  const CONSUMABLE_CATS = new Set(["bens_comuns", "alquimico_preparado", "alquimia_mistica", "alquimico_veneno", "municao", "equipamento_aventura", "ferramenta"]);
+  // Items that can be "used/discarded" even when non-stackable
+  const USE_CATS = new Set(["equipamento_aventura", "ferramenta", "bens_comuns", "alquimico_preparado", "alquimia_mistica", "alquimico_veneno", "municao"]);
 
   const tabs = [
     { key: "equipped", label: "Equipado", count: equipped.length + worn.length },
@@ -345,6 +356,7 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
               const canWear = !isCosmetic && (isCustom || isDmMode || (entry.items?.can_be_worn ?? false));
               const cat = entry.items?.category ?? (entry.custom_data?.category as string) ?? "";
               const canConsume = (entry.items?.is_stackable ?? false) && CONSUMABLE_CATS.has(cat);
+              const canUse = USE_CATS.has(cat);
               return (
                 <InventoryCard
                   key={entry.id}
@@ -358,6 +370,7 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
                   onSell={() => setSellConfirm(entry.id)}
                   onQty={(d) => handleQty(entry.id, d, entry.quantity)}
                   onConsume={canConsume ? () => handleConsume(entry) : undefined}
+                  onUse={canUse && !canConsume ? () => handleUse(entry) : undefined}
                 />
               );
             })
@@ -495,7 +508,7 @@ export function InventoryTab({ characterId, strMod, level, moneyPc, inventory, t
 
 function InventoryCard({
   entry, badge, isPending, isDmMode, characterId,
-  onHold, onWear, onRetrieve, onUnequip, onStore, onSell, onQty, onConsume,
+  onHold, onWear, onRetrieve, onUnequip, onStore, onSell, onQty, onConsume, onUse,
 }: {
   entry: InvEntry;
   badge?: string;
@@ -510,6 +523,7 @@ function InventoryCard({
   onSell?: () => void;
   onQty?: (delta: number) => void;
   onConsume?: () => void;
+  onUse?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [dmLabel, setDmLabel] = useState(entry.custom_label ?? "");
@@ -520,6 +534,7 @@ function InventoryCard({
   const [dmSaving, startDmSave] = useTransition();
   const [dmSaved, setDmSaved] = useState(false);
   const [dmConfirmDelete, setDmConfirmDelete] = useState(false);
+  const [useConfirm, setUseConfirm] = useState(false);
 
   const item = entry.items;
   const name = itemName(entry);
@@ -741,6 +756,33 @@ function InventoryCard({
               >
                 Consumir
               </button>
+            )}
+            {onUse && !useConfirm && (
+              <button
+                onClick={() => entry.items?.is_stackable ? onUse() : setUseConfirm(true)}
+                disabled={isPending}
+                className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-emerald-900/40 text-emerald-400 border border-emerald-700/30 hover:bg-emerald-900/60 transition disabled:opacity-50"
+              >
+                {entry.items?.is_stackable ? "Usar (1×)" : "Usar / Descartar"}
+              </button>
+            )}
+            {onUse && useConfirm && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-emerald-400 font-semibold">Descartar item?</span>
+                <button
+                  onClick={() => { setUseConfirm(false); onUse(); }}
+                  disabled={isPending}
+                  className="rounded-lg bg-emerald-700 px-2 py-1 text-[11px] font-bold text-white hover:bg-emerald-600 transition disabled:opacity-50"
+                >
+                  Sim
+                </button>
+                <button
+                  onClick={() => setUseConfirm(false)}
+                  className="rounded-lg bg-stone-700 px-2 py-1 text-[11px] font-bold text-stone-200 hover:bg-stone-600 transition"
+                >
+                  Não
+                </button>
+              </div>
             )}
             {onSell && !isDmMode && (
               <button
