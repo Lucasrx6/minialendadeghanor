@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Edit, FileText, Sparkles, Trash2, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package, ScrollText, Store, Wand2, Check, Upload, LayoutGrid, ArrowLeft } from "lucide-react";
+import { Edit, FileText, Sparkles, Trash2, Heart, Shield, Wind, Ruler, Dices, TrendingUp, X, Package, ScrollText, Store, Wand2, Check, Upload, LayoutGrid, ArrowLeft, MoreHorizontal } from "lucide-react";
 import { deleteCharacter } from "@/app/characters/actions";
 import { dmEditCharacterStats, dmEditCharacterSkills } from "@/app/actions/dm";
 import { uploadPortrait } from "@/app/actions/portrait";
@@ -137,6 +137,7 @@ export function CharacterSheet({
   const [portraitMessage, setPortraitMessage] = useState<string>();
   const [showPortraitConfirm, setShowPortraitConfirm] = useState(false);
   const [rollConfig, setRollConfig] = useState<RollConfig | null>(null);
+  const [showMenu, setShowMenu] = useState(false);
   const [showToast, setShowToast] = useState(!!justLeveledUpTo);
   const { isActive: isDmMode, toggle: toggleDm, hydrated: dmHydrated } = useDmMode(character.id);
   const [dmPatch, setDmPatch] = useState<DmPatch>({});
@@ -644,13 +645,13 @@ export function CharacterSheet({
 
       {/* Sheet tab */}
       {activeTab === "sheet" && <>
-      {/* Hero card — 2 colunas: retrato | info+botões */}
+      {/* Hero card — 2 colunas: retrato | identidade */}
       <Card className="p-4 sm:p-5">
-        <div className="grid gap-5 md:grid-cols-[minmax(160px,200px)_minmax(0,1fr)] md:items-start">
+        <div className="grid gap-4 md:grid-cols-[minmax(140px,180px)_minmax(0,1fr)] md:items-start">
 
-          {/* Coluna esquerda: retrato responsivo, sem corte agressivo */}
-          <div className="mx-auto w-full max-w-[200px] md:mx-0 md:max-w-none">
-            <div className="relative aspect-[4/5] max-h-[50vh] overflow-hidden rounded-2xl border border-amber-900/20 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950/80 shadow-inner">
+          {/* Coluna esquerda: retrato + stats overlay */}
+          <div className="mx-auto w-full max-w-[180px] md:mx-0 md:max-w-none">
+            <div className="relative aspect-[4/5] max-h-[45vh] overflow-hidden rounded-2xl border border-amber-900/20 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950/80 shadow-inner">
               {portraitUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -660,7 +661,7 @@ export function CharacterSheet({
                 />
               ) : (
                 <div className="flex h-full items-center justify-center">
-                  <ClassIcon classId={character.class} size={120} className="opacity-70" />
+                  <ClassIcon classId={character.class} size={100} className="opacity-70" />
                 </div>
               )}
               {isPending && (
@@ -668,87 +669,99 @@ export function CharacterSheet({
                   <Sparkles size={32} className="text-amber-300 animate-pulse" />
                 </div>
               )}
+
+              {/* PV / PM / Defesa */}
+              <div className="absolute inset-x-0 bottom-0 flex justify-around bg-gradient-to-t from-stone-950/90 via-stone-950/60 to-transparent px-1 pb-2 pt-8">
+                <div className="text-center">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-red-300">PV</p>
+                  <p className="text-sm font-black leading-none text-white">
+                    {hpCurrent}<span className="text-[10px] text-stone-400">/{character.hp_max}</span>
+                  </p>
+                </div>
+                <div className="w-px self-stretch bg-white/15" />
+                <div className="text-center">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-blue-300">PM</p>
+                  <p className="text-sm font-black leading-none text-white">
+                    {mpCurrent}<span className="text-[10px] text-stone-400">/{character.mp_max}</span>
+                  </p>
+                </div>
+                <div className="w-px self-stretch bg-white/15" />
+                <div className="text-center">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-300">DEF</p>
+                  <p className="text-sm font-black leading-none text-white">
+                    {equippedArmor || equippedShield ? dynamicDefense : character.defense}
+                  </p>
+                </div>
+              </div>
             </div>
 
-            {/* Botões de retrato abaixo da imagem */}
-            <div className="mt-3 grid grid-cols-2 gap-2 print:hidden">
-              <Button
-                variant="secondary"
-                className="justify-center text-sm"
-                disabled={isPending}
-                onClick={() => setShowPortraitConfirm(true)}
-                title="Gerar retrato com IA"
-              >
-                <Sparkles size={15} /> IA
+            {/* Botões de retrato */}
+            <div className="mt-2 grid grid-cols-2 gap-1.5 print:hidden">
+              <Button variant="secondary" className="justify-center text-xs" disabled={isPending} onClick={() => setShowPortraitConfirm(true)} title="Gerar retrato com IA">
+                <Sparkles size={13} /> IA
               </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePortraitFileChange}
-              />
-              <Button
-                variant="secondary"
-                className="justify-center text-sm"
-                disabled={isPending}
-                onClick={() => fileInputRef.current?.click()}
-                title="Enviar foto"
-              >
-                <Upload size={15} /> Foto
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePortraitFileChange} />
+              <Button variant="secondary" className="justify-center text-xs" disabled={isPending} onClick={() => fileInputRef.current?.click()} title="Enviar foto">
+                <Upload size={13} /> Foto
               </Button>
             </div>
           </div>
 
-          {/* Coluna direita: nome, info e ações */}
-          <div className="flex min-w-0 flex-col gap-5">
-            <div>
-              <h1 className="text-2xl font-black leading-tight text-stone-950 sm:text-3xl">{character.name}</h1>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm font-semibold text-stone-600">
-                <span className="flex items-center gap-1">
-                  <RaceIcon raceId={character.race} size={13} className="shrink-0 opacity-70" />
-                  {raceById[character.race as keyof typeof raceById]?.name}
-                </span>
-                <span className="select-none text-stone-300">·</span>
-                <span className="whitespace-nowrap">{classDisplay}</span>
-                <span className="select-none text-stone-300">·</span>
-                <span className="whitespace-nowrap text-amber-800">Nível {level}</span>
-                <span className="select-none text-stone-300">·</span>
-                <em className="text-stone-500">{TIER_LABELS[tier]}</em>
+          {/* Coluna direita: identidade + menu */}
+          <div className="flex min-w-0 flex-col gap-3">
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl font-black leading-tight text-stone-950 sm:text-3xl">{character.name}</h1>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm font-semibold text-stone-600">
+                  <span className="flex items-center gap-1">
+                    <RaceIcon raceId={character.race} size={13} className="shrink-0 opacity-70" />
+                    {raceById[character.race as keyof typeof raceById]?.name}
+                  </span>
+                  <span className="select-none text-stone-300">·</span>
+                  <span className="whitespace-nowrap">{classDisplay}</span>
+                  <span className="select-none text-stone-300">·</span>
+                  <span className="whitespace-nowrap text-amber-800">Nível {level}</span>
+                  <span className="select-none text-stone-300">·</span>
+                  <em className="text-stone-500">{TIER_LABELS[tier]}</em>
+                </div>
+                {character.concept && <p className="mt-2 italic text-amber-900">{character.concept}</p>}
               </div>
-              {character.concept && <p className="mt-2 italic text-amber-900">{character.concept}</p>}
-            </div>
 
-            <div className="grid gap-2 print:hidden grid-cols-2 md:grid-cols-3">
-              <Button variant="secondary" className="justify-center" onClick={() => router.push(`/characters/${character.id}/edit`)}>
-                <Edit size={16} /> Editar
-              </Button>
-              <Button variant="secondary" className="justify-center" onClick={() => window.print()}>
-                <FileText size={16} /> PDF
-              </Button>
-              <Button variant="secondary" className="justify-center" onClick={() => router.push(`/characters/${character.id}/shop`)}>
-                <Store size={16} /> Loja
-              </Button>
-              <Button
-                variant="secondary"
-                className="justify-center"
-                onClick={() => router.push(`/characters/${character.id}/levelup`)}
-                disabled={level >= 20}
-                title={level >= 20 ? "Nível máximo atingido" : ""}
-              >
-                <TrendingUp size={16} /> Nível
-              </Button>
-              <Button
-                variant="danger"
-                className="justify-center col-span-2 md:col-span-1"
-                disabled={isPending}
-                onClick={() => startTransition(async () => {
-                  await deleteCharacter(character.id);
-                  router.push("/characters");
-                })}
-              >
-                <Trash2 size={16} /> Excluir
-              </Button>
+              {/* Menu de opções */}
+              <div className="relative shrink-0 print:hidden">
+                <button
+                  onClick={() => setShowMenu(v => !v)}
+                  className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm font-bold text-stone-600 transition hover:bg-stone-100 active:bg-stone-200"
+                  title="Opções do personagem"
+                >
+                  <MoreHorizontal size={16} />
+                  <span className="hidden sm:inline">Opções</span>
+                </button>
+
+                {showMenu && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+                    <div className="absolute right-0 top-full z-20 mt-1 min-w-[200px] overflow-hidden rounded-xl border border-stone-200 bg-white shadow-xl">
+                      <button onClick={() => { router.push(`/characters/${character.id}/edit`); setShowMenu(false); }} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-stone-700 transition hover:bg-stone-50">
+                        <Edit size={15} /> Editar personagem
+                      </button>
+                      <button onClick={() => { router.push(`/characters/${character.id}/levelup`); setShowMenu(false); }} disabled={level >= 20} title={level >= 20 ? "Nível máximo atingido" : ""} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-stone-700 transition hover:bg-stone-50 disabled:opacity-40">
+                        <TrendingUp size={15} /> Subir de nível
+                      </button>
+                      <button onClick={() => { router.push(`/characters/${character.id}/shop`); setShowMenu(false); }} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-stone-700 transition hover:bg-stone-50">
+                        <Store size={15} /> Loja
+                      </button>
+                      <button onClick={() => { window.print(); setShowMenu(false); }} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-stone-700 transition hover:bg-stone-50">
+                        <FileText size={15} /> Exportar PDF
+                      </button>
+                      <div className="border-t border-stone-100" />
+                      <button disabled={isPending} onClick={() => { startTransition(async () => { await deleteCharacter(character.id); router.push("/characters"); }); setShowMenu(false); }} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 transition hover:bg-red-50 disabled:opacity-40">
+                        <Trash2 size={15} /> Excluir personagem
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             {portraitMessage && <p className="text-sm font-semibold text-red-800">{portraitMessage}</p>}
           </div>
@@ -1093,10 +1106,10 @@ function FullSheetTab({
       </div>
 
       {/* Layout 3 colunas */}
-      <div className="hidden lg:grid lg:grid-cols-[220px_1fr_1fr] gap-3 h-[calc(100vh-200px)]">
+      <div className="hidden lg:grid lg:grid-cols-[220px_1fr_1fr] gap-3 items-start">
 
         {/* ── COLUNA ESQUERDA ─────────────────────── */}
-        <div className="flex flex-col gap-2.5 overflow-y-auto min-h-0 pr-1">
+        <div className="flex flex-col gap-2.5 overflow-y-auto min-h-0 pr-1 max-h-[calc(100vh-160px)]">
 
           {/* Retrato */}
           <div
@@ -1207,7 +1220,7 @@ function FullSheetTab({
         </div>
 
         {/* ── COLUNA CENTRAL ──────────────────────── */}
-        <div className="flex flex-col gap-2.5 overflow-y-auto min-h-0 pr-1">
+        <div className="flex flex-col gap-2.5 overflow-y-auto min-h-0 pr-1 max-h-[calc(100vh-160px)]">
 
           {/* Perícias */}
           <Card>
@@ -1302,7 +1315,7 @@ function FullSheetTab({
         </div>
 
         {/* ── COLUNA DIREITA ───────────────────────── */}
-        <div className="flex flex-col gap-2.5 overflow-y-auto min-h-0 pr-1">
+        <div className="flex flex-col gap-2.5 overflow-y-auto min-h-0 pr-1 max-h-[calc(100vh-160px)]">
 
           {/* Ataques */}
           <Card>
