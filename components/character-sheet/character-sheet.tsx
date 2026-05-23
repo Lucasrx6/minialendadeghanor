@@ -645,11 +645,11 @@ export function CharacterSheet({
 
       {/* Sheet tab */}
       {activeTab === "sheet" && <>
-      {/* Hero card — 2 colunas: retrato | identidade */}
+      {/* Hero card — 2 colunas: retrato | identidade + vitais */}
       <Card className="p-4 sm:p-5">
         <div className="grid gap-4 md:grid-cols-[minmax(140px,180px)_minmax(0,1fr)] md:items-start">
 
-          {/* Coluna esquerda: retrato + stats overlay */}
+          {/* Coluna esquerda: retrato limpo */}
           <div className="mx-auto w-full max-w-[180px] md:mx-0 md:max-w-none">
             <div className="relative aspect-[4/5] max-h-[45vh] overflow-hidden rounded-2xl border border-amber-900/20 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950/80 shadow-inner">
               {portraitUrl ? (
@@ -669,46 +669,13 @@ export function CharacterSheet({
                   <Sparkles size={32} className="text-amber-300 animate-pulse" />
                 </div>
               )}
-
-              {/* PV / PM / Defesa */}
-              <div className="absolute inset-x-0 bottom-0 flex justify-around bg-gradient-to-t from-stone-950/90 via-stone-950/60 to-transparent px-1 pb-2 pt-8">
-                <div className="text-center">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-red-300">PV</p>
-                  <p className="text-sm font-black leading-none text-white">
-                    {hpCurrent}<span className="text-[10px] text-stone-400">/{character.hp_max}</span>
-                  </p>
-                </div>
-                <div className="w-px self-stretch bg-white/15" />
-                <div className="text-center">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-blue-300">PM</p>
-                  <p className="text-sm font-black leading-none text-white">
-                    {mpCurrent}<span className="text-[10px] text-stone-400">/{character.mp_max}</span>
-                  </p>
-                </div>
-                <div className="w-px self-stretch bg-white/15" />
-                <div className="text-center">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-300">DEF</p>
-                  <p className="text-sm font-black leading-none text-white">
-                    {equippedArmor || equippedShield ? dynamicDefense : character.defense}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Botões de retrato */}
-            <div className="mt-2 grid grid-cols-2 gap-1.5 print:hidden">
-              <Button variant="secondary" className="justify-center text-xs" disabled={isPending} onClick={() => setShowPortraitConfirm(true)} title="Gerar retrato com IA">
-                <Sparkles size={13} /> IA
-              </Button>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePortraitFileChange} />
-              <Button variant="secondary" className="justify-center text-xs" disabled={isPending} onClick={() => fileInputRef.current?.click()} title="Enviar foto">
-                <Upload size={13} /> Foto
-              </Button>
             </div>
           </div>
 
-          {/* Coluna direita: identidade + menu */}
+          {/* Coluna direita: identidade + vitais */}
           <div className="flex min-w-0 flex-col gap-3">
+
+            {/* Nome + menu opções */}
             <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
                 <h1 className="text-2xl font-black leading-tight text-stone-950 sm:text-3xl">{character.name}</h1>
@@ -727,7 +694,7 @@ export function CharacterSheet({
                 {character.concept && <p className="mt-2 italic text-amber-900">{character.concept}</p>}
               </div>
 
-              {/* Menu de opções */}
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePortraitFileChange} />
               <div className="relative shrink-0 print:hidden">
                 <button
                   onClick={() => setShowMenu(v => !v)}
@@ -741,7 +708,14 @@ export function CharacterSheet({
                 {showMenu && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-                    <div className="absolute right-0 top-full z-20 mt-1 min-w-[200px] overflow-hidden rounded-xl border border-stone-200 bg-white shadow-xl">
+                    <div className="absolute right-0 top-full z-20 mt-1 min-w-[210px] overflow-hidden rounded-xl border border-stone-200 bg-white shadow-xl">
+                      <button disabled={isPending} onClick={() => { setShowPortraitConfirm(true); setShowMenu(false); }} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-stone-700 transition hover:bg-stone-50 disabled:opacity-40">
+                        <Sparkles size={15} /> Gerar retrato (IA)
+                      </button>
+                      <button disabled={isPending} onClick={() => { fileInputRef.current?.click(); setShowMenu(false); }} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-stone-700 transition hover:bg-stone-50 disabled:opacity-40">
+                        <Upload size={15} /> Enviar foto
+                      </button>
+                      <div className="border-t border-stone-100" />
                       <button onClick={() => { router.push(`/characters/${character.id}/edit`); setShowMenu(false); }} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-stone-700 transition hover:bg-stone-50">
                         <Edit size={15} /> Editar personagem
                       </button>
@@ -763,7 +737,57 @@ export function CharacterSheet({
                 )}
               </div>
             </div>
+
             {portraitMessage && <p className="text-sm font-semibold text-red-800">{portraitMessage}</p>}
+
+            {/* PV */}
+            <VitalTracker
+              label="PV" icon={<Heart size={16} />}
+              current={hpCurrent} max={character.hp_max}
+              colorClass="bg-red-950 text-red-100 border-red-900"
+              barClass="bg-red-500"
+              onAdjust={adjustHp} onSetDirect={setHpDirect}
+            />
+
+            {/* PM */}
+            <VitalTracker
+              label="PM" icon={<Sparkles size={16} />}
+              current={mpCurrent} max={character.mp_max}
+              colorClass="bg-blue-950 text-blue-100 border-blue-900"
+              barClass="bg-blue-400"
+              onAdjust={adjustMp} onSetDirect={setMpDirect}
+            />
+
+            {/* Defesa + Deslocamento + Tamanho */}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" title={defBreakdown}>
+              <Fact
+                label={equippedArmor || equippedShield ? "Defesa ⚙" : "Defesa"}
+                value={equippedArmor || equippedShield ? dynamicDefense : character.defense}
+                icon={<Shield size={20} />}
+                colorClass="bg-slate-900 text-slate-200 border-slate-700"
+                valueClass="text-white"
+              />
+              <div className="col-span-1 sm:col-span-2 flex items-center gap-4 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5">
+                <span className="flex items-center gap-2">
+                  <Wind size={15} className="shrink-0 text-emerald-600" />
+                  <span>
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">Deslocamento</span>
+                    <span className="font-black text-stone-800">{character.movement_m}m</span>
+                  </span>
+                </span>
+                <span className="h-8 w-px bg-stone-200" />
+                <span className="flex items-center gap-2">
+                  <Ruler size={15} className="shrink-0 text-amber-600" />
+                  <span>
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">Tamanho</span>
+                    <span className="font-black capitalize text-stone-800">{character.size}</span>
+                  </span>
+                </span>
+              </div>
+            </div>
+            {armorPenalty < 0 && (
+              <p className="text-xs text-center text-red-500 font-bold">Pen. {armorPenalty}</p>
+            )}
           </div>
         </div>
       </Card>
@@ -785,55 +809,6 @@ export function CharacterSheet({
             </button>
           );
         })}
-      </div>
-
-      {/* Stats de combate */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <VitalTracker
-          label="PV" icon={<Heart size={16} />}
-          current={hpCurrent} max={character.hp_max}
-          colorClass="bg-red-950 text-red-100 border-red-900"
-          barClass="bg-red-500"
-          onAdjust={adjustHp} onSetDirect={setHpDirect}
-        />
-        <VitalTracker
-          label="PM" icon={<Sparkles size={16} />}
-          current={mpCurrent} max={character.mp_max}
-          colorClass="bg-blue-950 text-blue-100 border-blue-900"
-          barClass="bg-blue-400"
-          onAdjust={adjustMp} onSetDirect={setMpDirect}
-        />
-        <div className="col-span-2 sm:col-span-1" title={defBreakdown}>
-          <Fact
-            label={equippedArmor || equippedShield ? "Defesa ⚙" : "Defesa"}
-            value={equippedArmor || equippedShield ? dynamicDefense : character.defense}
-            icon={<Shield size={20} />}
-            colorClass="bg-slate-900 text-slate-200 border-slate-700"
-            valueClass="text-white"
-          />
-          {armorPenalty < 0 && (
-            <p className="text-xs text-center text-red-500 mt-1 font-bold">Pen. {armorPenalty}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Stats secundários: deslocamento + tamanho */}
-      <div className="flex items-center gap-6 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5">
-        <span className="flex items-center gap-2">
-          <Wind size={15} className="shrink-0 text-emerald-600" />
-          <span>
-            <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">Deslocamento</span>
-            <span className="font-black text-stone-800">{character.movement_m}m</span>
-          </span>
-        </span>
-        <span className="h-8 w-px bg-stone-200" />
-        <span className="flex items-center gap-2">
-          <Ruler size={15} className="shrink-0 text-amber-600" />
-          <span>
-            <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">Tamanho</span>
-            <span className="font-black capitalize text-stone-800">{character.size}</span>
-          </span>
-        </span>
       </div>
 
       {/* Botões de descanso e nova cena */}
