@@ -38,7 +38,7 @@ export const QUESTIONS: Question[] = [
     options: [
       { id: 'a', label: "Explodi na hora. Falei o que tinha que falar. Depois passa, mas naquele momento eu não engulo.", payload: { attrs: { str: 2, con: 1 }, classes: { barbaro: 3, soldado: 1 }, skills: { intimidacao: 1, luta: 1 }, tags: ['rude', 'corajoso'] } },
       { id: 'b', label: "Engoli na frente das pessoas. Depois fui processar sozinho, no banho ou caminhando.", payload: { attrs: { wis: 2, con: 1 }, classes: { clerigo: 1, druida: 2, cavaleiro: 1 }, skills: { vontade: 2 }, tags: ['leal', 'sombrio'] } },
-      { id: 'c', label: "Fui sarcástico. Fiz uma piada bem afiada e a pessoa percebeu que eu estava puto.", payload: { attrs: { cha: 2, int: 1 }, classes: { bardo: 2, ladino: 2, bucaneiro: 1 }, skills: { enganacao: 1, atuacao: 1 }, tags: ['cinico', 'astuto'] } },
+      { id: 'c', label: "Fui sarcástico. Fiz uma piada bem afiada e a pessoa percebeu que eu estava chateado.", payload: { attrs: { cha: 2, int: 1 }, classes: { bardo: 2, ladino: 2, bucaneiro: 1 }, skills: { enganacao: 1, atuacao: 1 }, tags: ['cinico', 'astuto'] } },
       { id: 'd', label: "Não perco a linha fácil. Tirar alguém do sério é um esporte que poucos jogam comigo.", payload: { attrs: { wis: 1, cha: 2 }, classes: { nobre: 3, clerigo: 1 }, skills: { diplomacia: 1, vontade: 1 }, tags: ['refinado', 'idealista'] } },
     ]
   },
