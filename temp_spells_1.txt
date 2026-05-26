@@ -1,0 +1,623 @@
+﻿as Trevas Globo de Invulnerabilidade Heroísmo Missão Divina
+4º CírCulO
+
+Proteção contra Magia Servo Divino Sopro da Salvação Vidência
+
+Círculo da Restauração Conceder Milagres Guardião Divino
+5º CírCulO
+
+Juramento Sagrado Manto Sagrado Visão da Verdade
+
+Aura Divina Intervenção Divina
+
+Invulnerabilidade Segunda Chance
+
+SÃO THEODRIC
+1º CírCulO
+
+Arma Espiritual Arma Mágica Armadura Mágica Bênção Comando Concentração de Combate Detectar Ameaças Escudo da Fé
+2º CírCulO
+
+Infligir Ferimentos Luz Perdição Primor Atlético Proteção Mística Resistência a Energia Visão Mística Vitalidade Fantasma
+
+Amarras Etéreas Círculo da Justiça Dissipar Magia Físico Aprimorado Marca da Obediência Montaria Mística
+3º CírCulO
+
+Oração Purificação Rogar Maldição Salto Dimensional Velocidade Vestimenta da Fé
+
+Banimento Dispersar as Trevas Heroísmo Imobilizar
+
+Missão Divina Potência Divina Proteção contra Magia Servo Divino
+
+4º CírCulO
+Campo Antimagia Conceder Milagres Juramento Sagrado
+5º CírCulO
+Aura Divina Aprisionamento
+
+Libertação Manto Sagrado Visão da Verdade
+Intervenção Divina Invulnerabilidade
+
+maGIas de druIda
+
+1º CírCulO
+Abençoar Alimentos Acalmar Animal Armamento da Natureza Caminhos da Natureza Consagrar Controlar Plantas Criar Elementos Curar Ferimentos Dardo Gélido Escuridão
+
+Explosão de Chamas Luz Névoa Primor Atlético Proteção Mística Queda Suave Resistência a Energia Suporte Ambiental Toque Chocante Visão Mística
+
+2º CírCulO
+Aliado Animal Augúrio Bola de Fogo Cone de Frio Controlar Fogo Controlar Madeira Dissipar Magia Enxame de Pestes
+
+Físico Aprimorado Garras de Rocha Metamorfose Purificação Relâmpago Tempestade Toque Vampírico Voz Divina
+
+3º CírCulO
+
+Chuva Ácida Comunhão com a Natureza Controlar Água Controlar Terra Despertar Consciência Erupção Glacial
+
+Escudo de Chamas Muralha Elemental Pele de Pedra Proteção contra Magia Sopro da Salvação Viagem Arbórea
+
+4º CírCulO
+Círculo da Restauração Conjurar Elemental Controlar o Clima Guardião Divino
+
+Muralha de Ossos Poço Vitriólico Raio Polar Terremoto
+
+5º CírCulO
+
+Aura Divina Barragem Elemental Chuva de Meteoros
+
+Fúria dos Céus Segunda Chance Toque da Morte
+
+maGIas de maGO
+
+MAGIA ABISSAL
+1º CírCulO
+
+Amedrontar Armadura Mágica Aviso Comando Conjurar Monstro Disfarce Ilusório Escuridão Infligir Ferimentos
+
+Perdição Profanar Proteção Mística Raio do Enfraquecimento Resistência a Energia Visão Mística Vitalidade Fantasma Voz Divina
+
+2º CírCulO
+
+Amarras Etéreas Augúrio Campo de Força Conjurar Mortos-Vivos Crânio Voador Desespero Esmagador
+
+Dissipar Magia Marca da Obediência Montaria Mística Rogar Maldição Sussurros Insanos Toque Vampírico
+
+3º CírCulO
+
+Anular a Luz Contato Extraplanar Manto de Sombras Proteção contra Magia
+
+Servo Morto-Vivo Teletransporte Tentáculos de Trevas Voo
+
+4º CírCulO
+
+Assassino Fantasmagórico Desintegrar Forma Etérea
+
+Ligação Sombria Muralha de Ossos Sopro de Dragão
+
+5º CírCulO
+
+Desejo Possessão
+
+Sombra Assassina Toque da Morte
+
+MAGIA ELEMENTAL
+1º CírCulO
+
+Área Escorregadia Arma Mágica Armadura Mágica Aviso Criar Elementos Dardo Gélido Explosão de Chamas Luz
+
+Névoa Proteção Mística Queda Suave Resistência a Energia Suporte Ambiental Toque Chocante Visão Mística Jato Corrosivo
+
+2º CírCulO
+
+Bola de Fogo Campo de Força Cone de Frio Controlar Fogo Dissipar Magia Flecha Ácida
+
+Garras de Rocha Montaria Mística Relâmpago Salto Dimensional Tempestade Velocidade
+
+MAGIA
+
+135
+
+3º CírCulO
+
+Chuva Ácida Controlar Água Controlar Terra Erupção Glacial
+4º CírCulO
+
+Escudo de Chamas Impacto Fulminante Muralha Elemental Voo
+
+Conjurar Elemental Controlar o Clima Poço Vitriólico
+5º CírCulO
+
+Raio Polar Salto Relâmpago Sopro de Dragão
+
+Barragem Elemental Chuva de Meteoros
+
+Fúria dos Céus Invulnerabilidade
+
+MAGIA ERUDITA
+1º CírCulO
+
+Alarme Arma Mágica Armadura Mágica Aviso Comando Compreensão Conjurar Monstro Detectar Ameaças
+2º CírCulO
+
+Luz Orientação Proteção Mística Resistência a Energia Seta Infalível Tranca Arcana Transmutar Objetos Visão Mística
+
+Alterar Tamanho Amarras Etéreas Campo de Força Dissipar Magia Localização Mapear
+3º CírCulO
+
+Metamorfose Refúgio Runa de Proteção Salto Dimensional Servos Invisíveis Velocidade
+
+Âncora Dimensional Convocação Instantânea Globo de Invulnerabilidade Pele de Pedra
+4º CírCulO
+
+Proteção contra Magia Selo de Mana Telecinesia Teletransporte
+
+Campo Antimagia Controlar a Gravidade Desintegrar
+5º CírCulO
+
+Forma Etérea Mão Poderosa Visão da Verdade
+
+Desejo Engenho de Mana
+
+Invulnerabilidade Palavra Primordial
+
+MAGIA ONÍRICA
+1º CírCulO
+
+Adaga Mental Armadura Mágica Aviso Criar Ilusão Disfarce Ilusório Enfeitiçar
+
+Leque Cromático Luz Proteção Mística Resistência a Energia Santuário Sono
+
+136
+
+CAPÍTULO QUATRO
+
+Hipnotismo Imagem Espelhada
+2º CírCulO
+Aparência Perfeita Augúrio Campo de Força Camuflagem Ilusória Círculo da Justiça Dissipar Magia
+3º CírCulO
+Banimento Contato Extraplanar Despertar Consciência Ilusão Lacerante
+4º CírCulO
+Alterar Memória Duplicata Ilusória Explosão Caleidoscópica
+5º CírCulO
+Desejo Legião
+
+Tranquilidade Visão Mística
+Esculpir Sons Invisibilidade Ligação Telepática Mente Aprimorada Salto Dimensional Sussurros Insanos
+Miragem Proteção contra Magia Teletransporte Vidência
+Libertação Premonição Sonho
+Projetar Consciência Réquiem
+
+MAGIA RÚSTICA
+1º CírCulO
+
+Acalmar Animal Área Escorregadia Armadura Mágica Armamento da Natureza Bênção Caminhos da Natureza Controlar Plantas Despedaçar
+2º CírCulO
+
+Luz Névoa Orientação Primor Atlético Proteção Mística Resistência a Energia Suporte Ambiental Visão Mística
+
+Aliado Animal Augúrio Campo de Força Condição Disco Flutuante Dissipar Magia
+3º CírCulO
+
+Enxame de Pestes Físico Aprimorado Localização Mente Aprimorada Servos Invisíveis Toque Vampírico
+
+Banimento Comunhão com a Natureza Contato Extraplanar Dificultar Detecção
+
+Dispersar as Trevas Imobilizar Lendas e Histórias Proteção contra Magia
+
+4º CírCulO
+
+Animar Objetos Companheiro Fiel Cúpula de Repulsão
+5º CírCulO
+
+Libertação Premonição Visão da Verdade
+
+Aprisionamento Desejo
+
+Invulnerabilidade Toque da Morte
+
+Descrições das Magias
+
+abençOar alImenTOs
+DrUiDA, S. ArnAlDo, S. CrySniA, S. otto, 1 (trAnSmUtAção)
+Execução: padrão; Alcance: curto; Alvo: alimento para 1 criatura; Duração: cena.
+Você purifica e abençoa uma porção de comida ou dose de bebida. Isso torna um alimento sujo, estragado ou envenenado próprio para consumo. Além disso, se for consumido até o final da duração, o alimento oferece 5 PV temporários ou 1 PM temporário (além de quaisquer bônus que já oferecesse). Bônus de alimentação duram um dia e cada personagem só pode receber um bônus de alimentação por dia.
+truque: o alimento é purificado (não causa nenhum efeito nocivo se estava estragado ou envenenado), mas não fornece bônus ao ser consumido.
++1 pm: aumenta o número de alvos em +1.
++1 pm: muda a duração para permanente, o alvo para 1 frasco com água e adiciona componente material (pó de prata no valor de 5 PP). Em vez do normal, cria um frasco de água benta.
+aCalmar anImal
+DrUiDA, S. CrySniA, rúStiCA 1 (enCAntAmento)
+Execução: padrão; Alcance: curto; Alvo: 1 animal; Duração: cena; Resistência: Vontade anula.
+O animal fica prestativo em relação a você. Ele não fica sob seu controle, mas percebe suas palavras e ações da maneira mais favorável possível. Você recebe +10 nos testes de Adestramento e Diplomacia que fizer contra o animal.
+Um alvo hostil ou que esteja envolvido em um combate recebe +5 em seu teste de resistência. Se você ou seus aliados tomarem qualquer ação hostil contra o alvo, a magia é dissipada e ele retorna à atitude que tinha antes (ou piorada, de acordo com o mestre). Se tratar bem o alvo, a atitude pode permanecer mesmo após o término da magia.
+
++1 pm: muda o alcance para médio.
++1 pm: muda o alvo para 1 monstro ou espírito com Inteligência 1 ou 2.
++2 pm: aumenta o número de alvos em +1.
++5 pm: muda o alvo para 1 monstro ou espírito. Requer 3º círculo.
+adaGa menTal
+oníriCA 1 (enCAntAmento)
+Execução: padrão; Alcance: curto; Alvo: 1 criatura; Duração: instantânea; Resistência: Vontade parcial.
+Você manifesta e dispara uma adaga imaterial contra a mente do alvo, que sofre 2d6 pontos de dano psíquico e fica atordoado por uma rodada. Se passar no teste de resistência, sofre apenas metade do dano e evita a condição. Uma criatura só pode ficar atordoada por esta magia uma vez por cena.
++1 pm: você lança a magia sem gesticular ou pronunciar palavras (o que permite lançar esta magia de armadura) e a adaga se torna invisível. Se o alvo falhar no teste de resistência, não percebe que você lançou uma magia contra ele.
++2 pm: muda a duração para um dia. Além do normal, você “finca” a adaga na mente do alvo. Enquanto a magia durar, você sabe a direção e localização do alvo, desde que ele esteja no mesmo mundo.
++2 pm: aumenta o dano em +1d6.
+alarme
+bArDo, erUDitA, S. imUen, S. otto 1 (AbJUrAção)
+Execução: padrão; Alcance: curto; Área: esfera com 9m de raio; Duração: 1 dia.
+Você cria uma barreira protetora invisível que detecta qualquer criatura que tocar ou entrar na área protegida. Ao lançar a magia, você pode escolher quais criaturas podem entrar na área sem ativar seus efeitos. Alarme pode emitir um aviso telepático ou sonoro, decidido quando a magia é
+
+lançada. Um aviso telepático alerta apenas você, inclusive acordando-o se estiver dormindo, mas apenas se estiver a até 1km da área protegida. Um aviso sonoro alerta todas as criaturas em alcance longo.
++2 pm: muda o alcance para pessoal. A área é emanada a partir de você.
++5 pm: além do normal, você também percebe qualquer efeito de adivinhação que seja usado dentro da área ou a atravesse. Você pode fazer um teste oposto de Misticismo contra quem usou o efeito; se passar, tem um vislumbre de seu rosto e uma ideia aproximada de sua localização (“três dias de viagem ao norte”, por exemplo).
++9 pm: muda a duração para um dia ou até ser descarregada e a resistência para Vontade anula. Quando um intruso entra na área, você pode descarregar a magia. Se o intruso falhar na resistência, ficará paralisado por 1d4 rodadas. Além disso, pelas próximas 24 horas você e as criaturas escolhidas ganham +10 em testes de Sobrevivência para rastrear o intruso.
+alIadO anImal
+DrUiDA, rúStiCA, S. CrySniA 2 (enCAntAmento)
+Execução: padrão; Alcance: curto; Alvo: 1 animal prestativo; Duração: 1 dia.
+Você cria um vínculo mental com um animal prestativo em relação a você. O Aliado Animal obedece a você no melhor de suas capacidades, mesmo que isso arrisque a vida dele. Ele funciona como um parceiro veterano, de um tipo a sua escolha entre ajudante, combatente, fortão, guardião, montaria ou perseguidor.
++1 pm: muda o alvo para 1 animal Minúsculo e a duração para 1 semana. Em vez do normal, o animal se desloca no melhor de suas capacidades até um local designado por você — em geral, para levar um item, carta ou similar. Quando o animal chega ao destino, fica esperando até o fim da
+
+MAGIA
+
+137
+
+magia, permitindo apenas que uma ou mais criaturas escolhidas por você se aproximem e peguem o que ele estiver carregando.
++7 pm: muda o parceiro para mestre. Requer 3º círculo.
++12 pm: muda o alvo para 2 animais prestativos. Cada animal funciona como um parceiro de um tipo diferente, e você pode receber a ajuda de ambos (mas ainda precisa seguir o limite de parceiros de acordo com o seu nível de personagem). Requer 4º círculo.
+alTerar desTInO
+bArDo, S. imUen 5 (ADiVinhAção)
+Execução: reação; Alcance: pessoal; Alvo: você; Duração: instantânea.
+Sua mente visualiza todas as possibilidades de um evento, permitindo a você escolher o melhor curso de ação. Você pode rolar novamente um teste de resistência com um bônus de +10 ou um inimigo deve rolar novamente um ataque contra você com uma penalidade de –10.
+alTerar memórIa
+bArDo, onírCA, S. imUen 4 (enCAntAmento)
+Execução: padrão; Alcance: toque; Alvo: 1 criatura; Duração: instantânea; Resistência: Vontade anula.
+Você invade a mente do alvo e altera ou apaga suas memórias da última hora.
++2 pm: muda o alcance para pessoal e o alvo para área: cone de 4,5m.
++5 pm: você pode alterar ou apagar as memórias das últimas 24 horas.
+alTerar TamanhO
+erUDitA, S. otto 2 (trAnSmUtAção)
+Execução: padrão; Alcance: curto; Alvo: 1 objeto; Duração: 1 dia.
+Esta magia aumenta ou diminui o tamanho de um item mundano em até três categorias (um objeto Enorme vira Pequeno, por exemplo). Você também pode mudar a consistência do item, deixando-o rígido como pedra ou flexível como seda (isso não altera sua RD ou PV, apenas suas propriedades físicas). Se lançar a magia num objeto de uma criatura involuntária, ela pode fazer um teste de Vontade para anulá-la.
+
++1 pm: aumenta o número de alvos em +1.
++2 pm: muda o alcance para toque e o alvo para 1 criatura. Em vez do normal, o alvo aumenta uma categoria de tamanho (seu equipamento se ajusta ao novo tamanho). O alvo também recebe Força +2. Um alvo involuntário pode fazer um teste de Fortitude para negar o efeito.
++3 pm: muda o alcance para toque e o alvo para 1 criatura. Em vez do normal, o alvo diminui uma categoria de tamanho (seu equipamento se ajusta ao novo tamanho). O alvo também recebe Destreza +2. Um alvo involuntário pode fazer um teste de Fortitude para negar o efeito. Requer 3º círculo.
++7 pm: muda o alcance para toque, o alvo para 1 criatura, a duração para permanente e a resistência para Fortitude anula. Em vez do normal, se falhar na resistência o alvo e seu equipamento têm seu tamanho mudado para Minúsculo. O alvo tem seu valor de Força reduzido a –5 e seus deslocamentos reduzidos a 3m. Requer 4º círculo.
+amarras eTéreas
+AbiSSAl, erUDitA, S. theoDriC 2 (ConVoCAção)
+Execução: padrão; Alcance: médio; Alvo: 1 criatura; Duração: cena; Resistência: Reflexos anula.
+Três laços de energia surgem e se enroscam no alvo, deixando-o agarrado. A vítima pode tentar se livrar, gastando uma ação padrão para fazer um teste de Atletismo. Se passar, destrói um laço, mais um laço adicional para cada 5 pontos pelos quais superou a CD. Os laços também podem ser atacados e destruídos: cada um tem Defesa 10, 10 PV, RD 5 e imunidade a dano mágico. Se todos os laços forem destruídos, a magia é dissipada. Por serem feitos de energia, os laços afetam criaturas incorpóreas.
++2 pm: aumenta o número de alvos em +1.
++2 pm: aumenta o número de laços em um alvo a sua escolha em +1 (bônus máximo limitado pelo círculo máximo de magia que você pode lançar).
++3 pm: em vez do normal, cada laço é destruído automaticamente com um único ataque bem-sucedido; porém,
+
+cada laço destruído libera um choque de energia que causa 1d8+1 pontos de dano de essência na criatura amarrada. Requer 3º círculo.
+amedrOnTar
+AbiSSAl 1 (neCromAnCiA)
+Execução: padrão; Alcance: curto; Alvo: 1 animal ou humanoide; Duração: cena; Resistência: Vontade parcial.
+O alvo é envolvido por energias sombrias e assustadoras. Se falhar na resistência, fica apavorado por 1 rodada, depois abalado. Se passar, fica abalado por 1d4 rodadas.
++2 pm: alvos que falhem na resistência ficam apavorados por 1d4+1 rodadas, em vez de apenas 1.
++2 pm: muda o alvo para 1 criatura.
++5 pm: afeta todos os alvos válidos a sua escolha dentro do alcance.
+anImar ObJeTOs
+rúStiCA, S. otto 4 (trAnSmUtAção)
+Execução: padrão; Alcance: médio; Alvo: até 8 objetos Minúsculos ou Pequenos, 4 objetos Médios, 2 objetos Grandes ou 1 objeto Enorme; Duração: cena.
+Você concede vida a objetos inanimados. Cada objeto se torna um parceiro sob seu controle. O tipo dele é escolhido da lista de tamanho e ele não conta em seu limite de parceiros. Com uma ação de movimento, você pode comandar mentalmente qualquer objeto animado dentro do alcance para que auxilie você ou outra criatura. Outros usos criativos para os objetos ficam a cargo do mestre. Objetos animados são construtos com valores de Força, Destreza e PV de acordo com seu tamanho. Todos os outros atributos são nulos, eles não têm valor de Defesa ou testes de resistência e falham automaticamente em qualquer teste oposto. Diferente de parceiros comuns, um objeto pode ser alvo de um ataque direto.
+Esta magia não afeta itens mágicos, nem objetos que estejam sendo carregados por outra criatura.
++5 pm: muda a duração para permanente e adiciona componente material (prataria no valor de 1.000 PP). Você pode ter um máximo de objetos animados igual à metade do seu nível.
+
+138
+
+CAPÍTULO QUATRO
+
+Estatísticas de objetos animados
+Minúsculo: For –3, Des 4, 5 PV; Assassino ou Combatente Iniciante.
+Pequeno: For –2, Des 2, 10 PV; Combatente ou Guardião Iniciante.
+Médio: For 0, Des 1, 20 PV; Combatente ou Guardião Veterano.
+Grande: For 2, Des 0, 40 PV; Fortão, Guardião ou Montaria (cavalo) Veterano.
+Enorme: For 4, Des –2, 60 PV; Fortão, Guardião ou Montaria (cavalo) Mestre.
+anular a luz
+AbiSSAl, S. imUen 3 (neCromAnCiA)
+Execução: padrão; Alcance: pessoal; Área: esfera com 6m de raio; Duração: ver texto.
+Esta magia cria uma onda de escuridão que causa diversos efeitos. Magias de até 3º círculo na área são dissipadas se você passar num teste de Religião contra a CD de cada uma. Seus aliados na área são protegidos por uma aura sombria e recebem +4 na Defesa até o fim da cena. Inimigos na área ficam enjoados por 1d4 rodadas (apenas uma vez por cena). Anular a Luz anula Dispersar as Trevas (este efeito tem duração instantânea).
++2 pm: aumenta o bônus na Defesa em +1.
++4 pm: muda as magias dissipadas para até 4º círculo. Requer 4º círculo.
++9 pm: muda as magias dissipadas para até 5º círculo. Requer 5º círculo.
+aParênCIa PerfeITa
+bArDo, oníriCA, S. ArnAlDo, S. imUen 2 (ilUSão)
+Execução: padrão; Alcance: pessoal; Alvo: você; Duração: cena.
+Esta magia lhe concede um rosto idealizado, porte físico garboso, voz melodiosa e olhar sedutor. Caso seu Carisma seja 5 ou mais, você recebe +2 neste atributo. Do contrário, ele se torna 5 (isso conta como um bônus). Além disso, você recebe +5 em Diplomacia e Enganação. Quando a magia acaba, quaisquer observadores percebem a mudança e tendem a suspeitar de você. Da mesma maneira, pessoas que o viram sob o efeito da magia sentirão que “algo está errado” ao vê-lo em condições normais. Quando a cena acabar, você pode gastar os PM
+
+da magia novamente como uma ação livre para mantê-la ativa. Este efeito não fornece PV ou PM adicionais.
++1 pm: muda o alcance para toque e o alvo para 1 humanoide.
+aPrIsIOnamenTO
+bArDo, rúStiCA, S. otto, S. theoDriC 5 (AbJUrAção)
+Execução: completa; Alcance: curto; Alvo: 1 criatura; Duração: permanente; Resistência: Vontade anula.
+Você cria uma prisão mágica para aprisionar uma criatura. Se falhar no teste de resistência, o alvo sofre o efeito da magia; se passar, fica imune a esta magia por uma semana. Enquanto estiver aprisionada, a criatura não envelhece e não precisa respirar e alimentar-se. Magias de adivinhação não conseguem localizar ou perceber o alvo. Ao lançar a magia, você escolhe uma das seguintes formas de prisão. O componente material varia, mas todos custam 1.000 PP.
+Acorrentamento: o alvo é preso por correntes firmemente enraizadas no chão, que o mantém no lugar. O alvo fica paralisado e não pode se mover ou ser movido por qualquer meio. Componente Material: uma fina corrente de mitral.
+Contenção Mínima: o alvo diminui para 2 cm de altura e é preso dentro de uma pedra preciosa ou objeto semelhante. Luz passa através da pedra, permitindo que o alvo veja o lado de fora e seja visto, mas nada mais pode passar, nem por meio de teletransporte ou viagem planar. A pedra não pode ser quebrada enquanto o alvo estiver dentro. Componente Material: uma pedra preciosa, como um diamante ou rubi.
+Prisão Dimensional: o alvo é transportado para um semiplano protegido contra teletransporte e viagens planares. Pode ser um labirinto, uma gaiola, uma torre ou qualquer estrutura ou área confinada e pequena a sua escolha. Componente Material: uma representação em miniatura da prisão, feita de jade.
+Sepultamento: o alvo é sepultado nas profundezas da terra, em uma esfera mágica. Nada pode destruir ou atravessar a esfera, nem mesmo teletransporte ou viagens planares. Componente Material: um pequeno orbe de adamante.
+
+Sono Eterno: o alvo adormece e não pode ser acordado. Componente Material: fruta preparada com ervas soníferas raras.
+Quando a magia é lançada, você deve especificar uma condição que fará com que ela termine e solte o alvo. A condição pode ser tão específica ou elaborada quanto você quiser, mas deve ser possível de acontecer. As condições podem se basear no nome, identidade ou santo padroeiro de uma criatura, ou em ações ou qualidades observáveis, mas nunca em estatísticas de jogo intangíveis, como nível, classe ou pontos de vida. O mestre tem a palavra final sobre se uma condição é válida ou não.
+área esCOrreGadIa
+elementAl, rúStiCA 1 (ConVoCAção)
+Execução: padrão; Alcance: curto; Alvo ou Área: quadrado de 3m ou 1 objeto; Duração: cena; Resistência: Reflexos (veja texto).
+Esta magia recobre uma superfície com uma substância gordurosa e escorregadia. Criaturas na área devem passar na resistência para não cair. Nas rodadas seguintes, criaturas que tentem movimentar-se pela área devem fazer testes de Acrobacia para equilíbrio (CD 10).
+Área Escorregadia pode tornar um item escorregadio. Uma criatura segurando um objeto afetado deve passar na resistência para não deixar o item cair cada vez que usá-lo.
++1 pm: aumenta a área em +1 quadrado de 1,5m.
++2 pm: muda a CD dos testes de Acrobacia para 15.
++5 pm: muda a CD dos testes de Acrobacia para 20.
+arma esPIrITual
+S. ArnAlDo, S. theoDriC 1 (ConVoCAção)
+Execução: padrão; Alcance: pessoal; Alvo: você; Duração: cena.
+Você invoca a arma preferida de seu santo, que surge flutuando a seu lado. Uma vez por rodada, quando você sofre um ataque corpo a corpo, pode usar uma reação para que a arma cause automaticamente 2d6 pontos de dano do tipo da arma — por exemplo, uma espada longa causa dano de corte —
+
+MAGIA
+
+139
+
+no oponente que fez o ataque. Esta magia se dissipa se você morrer.
++1 pm: além do normal, a arma o protege. Você recebe +1 na Defesa.
++2 pm: aumenta o bônus na Defesa em +1.
++2 pm: muda a duração para sustentada. Além do normal, uma vez por rodada, você pode gastar uma ação livre para fazer a arma acertar automaticamente um alvo adjacente. Se a arma atacar, não poderá contra-atacar até seu próximo turno. Requer 2º círculo.
++2 pm: muda o tipo do dano para essência. Requer 2º círculo.
++2 pm: aumenta o dano causado pela arma em +1d6 (bônus máximo limitado pelo círculo máximo de magia que você pode lançar).
++5 pm: invoca duas armas, permitindo que você contra-ataque (ou ataque, se usar o aprimoramento acima) duas vezes por rodada. Requer 3º círculo.
+arma máGICa
+elementAl, erUDitA, S. ArnAlDo, S. otto, S. theoDriC 1 (trAnSmUtAção)
+Execução: padrão; Alcance: toque; Alvo: 1 arma empunhada; Duração: cena.
+A arma é considerada mágica e fornece +1 nos testes de ataque e rolagens de dano (isso conta como um bônus de encanto). Caso você esteja empunhando a arma, pode usar seu atributo-chave de magias em vez do atributo original nos testes de ataque (não cumulativo com efeitos que somam este atributo).
++2 pm: aumenta o bônus em +1 (bônus máximo limitado pelo círculo máximo de magia que você pode lançar).
++2 pm: a arma causa +1d6 de dano de ácido, eletricidade, fogo ou frio, escolhido quando a magia é lançada. Este aprimoramento só pode ser usado uma vez.
++3 pm: muda o bônus de dano do aprimoramento acima para +2d6.
+armadura máGICa
+bArDo, mAGo, S. theoDriC 1 (AbJUrAção)
+Execução: padrão; Alcance: pessoal; Alvo: você; Duração: cena.
+
+Esta magia cria uma película protetora invisível, mas tangível, fornecendo +5 na Defesa. Esse bônus é cumulativo com outras magias, mas não com bônus fornecido por armaduras.
++1 pm: muda a execução para reação. Em vez do normal, você cria um escudo mágico que fornece +5 na Defesa contra o próximo ataque que sofrer até o fim do turno atual (cumulativo com o bônus fornecido pelo efeito básico desta magia e armaduras).
++2 pm: aumenta o bônus na Defesa em +1.
++2 pm: muda a duração para um dia.
+armamenTO da naTureza
+DrUiDA, rúStiCA 1 (trAnSmUtAção)
+Execução: padrão; Alcance: toque; Alvo: 1 arma (veja texto); Duração: cena.
+Você fortalece uma arma mundana primitiva (sem custo em PP, como bordão, clava, funda ou tacape), uma arma natural ou um ataque desarmado. O dano da arma aumenta em um passo e ela é considerada mágica. Ao lançar a magia, você pode mudar o tipo de dano da arma (escolhendo entre corte, impacto ou perfuração).
++1 pm: fornece +1 nos testes de ataque com a arma.
++2 pm: muda a execução para ação de movimento.
++3 pm: aumenta o bônus nos testes de ataque em +1.
++5 pm: aumenta o dano da arma em mais um passo.
+assassInO fanTasmaGórICO
+AbiSSAl 4 (neCromAnCiA)
+Execução: padrão; Alcance: longo; Alvo: 1 criatura; Duração: cena, até ser descarregada; Resistência: Vontade anula, Fortitude parcial.
+Usando os medos subconscientes do alvo, você cria uma imagem daquilo que ele mais teme. Apenas a própria vítima pode ver o Assassino Fantasmagórico com nitidez; outras criaturas presentes (incluindo o conjurador) enxergam apenas um espectro sombrio.
+Quando você lança a magia, o espectro surge adjacente a você e a vítima
+
+faz um teste de Vontade. Se ela passar, percebe que o espectro é uma ilusão e a magia é dissipada. Se falhar, acredita na existência do espectro, que então flutua 18m por rodada em direção à vítima, sempre no fim do seu turno. Ele é incorpóreo e imune a magias (exceto magias que dissipem outras).
+Se o espectro terminar seu turno adjacente à vítima, ela deve fazer um teste de Fortitude. Se passar, sofre 6d6 pontos de dano de trevas (este dano não pode reduzir o alvo a menos de 0 PV e não o deixa sangrando). Se falhar, sofre um colapso, ficando imediatamente com –1 PV e sangrando.
+O espectro persegue o alvo implacavelmente. Ele desaparece se o alvo ficar inconsciente ou se afastar além de alcance longo dele, ou se for dissipado.
+auGúrIO
+AbiSSAl, DrUiDA, oníriCA, rúStiCA, S. ArnAlDo, S. CrySniA, S. imUen 2 (ADiVinhAção)
+Execução: completa; Alcance: pessoal; Alvo: você; Duração: instantânea.
+Esta magia diz se uma ação que você tomará em breve — no máximo uma hora no futuro — trará resultados bons ou ruins. O mestre rola 1d6 em segredo; com um resultado de 2 a 6, a magia funciona e você recebe uma das seguintes respostas: “felicidade” (a ação trará bons resultados); “miséria” (a ação trará maus resultados); “felicidade e miséria” (para ambos) ou “nada” (para ações que não trarão resultados bons ou ruins).
+Com um resultado 1, a magia falha e oferece o resultado “nada”. Não há como saber se esse resultado foi dado porque a magia falhou ou não. Lançar esta magia múltiplas vezes sobre o mesmo assunto gera sempre o primeiro resultado.
+Por exemplo, se o grupo está prestes a entrar em uma câmara, o augúrio dirá “felicidade” se a câmara contém um tesouro desprotegido, “miséria” se contém um monstro, “felicidade e miséria” se houver um tesouro e um monstro ou “nada” se a câmara estiver vazia.
++3 pm: muda a execução para 1 minuto. Em vez do normal, você pode consultar um celestial, fazendo
+
+140
+
+CAPÍTULO QUATRO
+
+uma pergunta sobre um evento que acontecerá até um dia no futuro. O mestre rola a chance de falha; com um resultado de 2 a 6, você recebe uma resposta, desde uma simples frase até uma profecia ou enigma. Em geral, este uso sempre oferece pistas, indicando um caminho a tomar para descobrir a resposta que se procura. Numa falha você não recebe resposta alguma. Requer 3º círculo.
++7 pm: muda a execução para 10 minutos e a duração para 1 minuto. Em vez do normal, você consulta um celestial, podendo fazer uma pergunta por rodada, desde que ela possa ser respondida com “sim”, “não” ou “não sei” (embora poderosos, os anjos não são oniscientes). O mestre rola a chance de falha para cada pergunta. Em caso de falha, a resposta também é “não sei”. Requer 4º círculo.
++7 pm: o mestre rola 1d12; a magia só falha em um resultado 1.
++12 pm: o mestre rola 1d20; a magia só falha em um resultado 1.
+aura dIvIna
+ClériGo, DrUiDA 5 (AbJUrAção)
+Execução: padrão; Alcance: pessoal; Área: esfera com 9m de raio; Duração: cena; Resistência: Vontade parcial.
+Você se torna um conduíte de energia divina, emanando uma aura brilhante. Você e aliados dentro da área ficam imunes a efeitos de medo e recebem +10 na Defesa e em testes de resistência. Inimigos que entram na área devem fazer um teste de Vontade; em caso de falha, recebem uma condição a sua escolha entre esmorecido, debilitado ou lento até o fim da cena. O teste deve ser refeito cada vez que a criatura entrar novamente na área.
++2 pm: aumenta os bônus na Defesa e em testes de resistência em +1.
+avIsO
+AbiSSAl, elementAl, erUDitA, oníriCA, S. CrySniA 1 (ADiVinhAção)
+Execução: movimento; Alcance: longo; Alvo: 1 criatura; Duração: instantânea.
+Envia um aviso telepático para uma criatura, mesmo que não possa vê-la nem tenha linha de efeito. Escolha um tipo de aviso:
+
+Alerta: o alvo recebe +5 em seu próximo teste de Iniciativa e de Percepção dentro da cena.
+Mensagem: o alvo recebe uma mensagem sua de até 25 palavras. Vocês devem ter um idioma em comum para o alvo poder entendê-lo.
+Localização: o alvo sabe onde você está naquele momento. Se você mudar de posição, ele não saberá.
++1 pm: aumenta o alcance em um fator de 10 (90m para 900m, 900m para 9km e assim por diante).
++1 pm: se escolher mensagem, o alvo pode enviar uma resposta de até 25 palavras para você até o fim de seu próximo turno.
++2 pm: se escolher localização, muda a duração para cena. O alvo sabe onde você está mesmo que você mude de posição.
++3 pm: aumenta o número de alvos em +1.
+banImenTO
+oníriCA, rúStiCA, S. theoDriC 3 (AbJUrAção)
+Execução: 1d3+1 rodadas; Alcance: curto; Alvo: 1 criatura; Duração: instantânea; Resistência: Vontade parcial.
+Você expulsa uma criatura de volta para seu local de origem. Um alvo nativo de outro mundo, como muitos espíritos, é teletransportado de volta para um lugar aleatório de seu mundo de origem. Já um alvo morto-vivo tem sua conexão com as energias negativas rompidas, sendo reduzido a 0 PV. Se passar na resistência, em vez dos efeitos acima, o alvo fica enjoado por 1d4 rodadas.
+Se você tiver um ou mais itens que se oponham ao alvo de alguma maneira, a CD do teste de resistência aumenta em +2 por item. Por exemplo, se lançar a magia contra demônios do frio (vulneráveis a água benta e que odeiam luz e calor) enquanto segura um frasco de água benta e uma tocha acesa, a CD aumenta em +4. O mestre decide se determinado item é forte o bastante contra a criatura para isso.
++0 pm: muda a resistência para nenhuma. Em vez do normal, devolve automaticamente uma criatura conjurada (como por uma magia de convocação) para seu plano de origem.
+
+banqueTe dOs heróIs
+S. CrySniA, S. otto 3 (ConVoCAção)
+Execução: 10 minutos; Alcance: curto; Efeito: banquete para até 10 criaturas; Duração: cena.
+Após entoar uma prece, você abre o recipiente alvo e retira de dentro dele alimento e bebida para até 10 pessoas realizarem um banquete suntuoso. Isso funciona como um banquete (veja a página 120), mas o dado de bônus fornecido é 1d8. Além disso, cada comensal recebe 2d10 PV temporários.
++2 pm: aumenta o número de pessoas que podem ser alimentadas em +5.
++4 pm: muda o dado de bônus concedido para 1d10 e os PV temporários para 4d10.
+barraGem elemenTal
+DrUiDA, elementAl 5 (eVoCAção)
+Execução: padrão; Alcance: longo; Efeito: 4 esferas elementais; Duração: instantânea; Resistência: Reflexos parcial.
+Esta magia produz quatro esferas, cada uma de um tipo a sua escolha entre ácido, eletricidade, fogo e frio, que voam até um ponto a sua escolha. Quando atingem o ponto escolhido, explodem causando 6d6 pontos de dano de seu respectivo tipo numa área com 12m de raio. Um teste de Reflexos reduz o dano à metade.
+Você pode mirar cada esfera em uma criatura ou ponto diferente. Uma criatura ao alcance da explosão de mais de uma esfera deve fazer um teste de resistência para cada uma. Além disso, as esferas causam os seguintes efeitos em criaturas que falharem em seus testes de resistência:
+Ácido: vulnerável até o fim da cena.
+Elétrica: atordoado por 1 rodada (apenas uma vez por cena).
+Fogo: em chamas.
+Frio: lento até o fim da cena.
++5 pm: aumenta o dano de cada esfera em +2d6.
++5 pm: muda o tipo de dano de todas as esferas para essência (mas elas ainda causam os outros efeitos como se seu tipo de dano não mudasse).
+
+MAGIA
+
+141
+
+bênçãO
+ClériGo, rúStiCA 1 (enCAntAmento)
+Execução: padrão; Alcance: curto; Alvos: aliados; Duração: cena.
+Abençoa seus aliados, que recebem +1 em testes de ataque e rolagens de dano. Bênção anula Perdição.
++1 pm: muda o alvo para 1 cadáver e a duração para 1 semana. O cadáver não se decompõe nem pode ser transformado em morto-vivo.
++2 pm: aumenta os bônus em +1 (o bônus máximo é limitado pelo círculo máximo de magia que você pode lançar).
+bOla de fOGO
+DrUiDA, elementAl 2 (eVoCAção)
+Execução: padrão; Alcance: médio; Área: esfera com 6m de raio; Duração: instantânea; Resistência: Reflexos reduz à metade.
+Você dispara uma pequena pedra flamejante que explode com o impacto, causando 6d6 pontos de dano de fogo em todas as criaturas e objetos livres na área.
++2 pm: aumenta o dano em +2d6.
++2 pm: muda a área para efeito de esfera flamejante com tamanho Médio e a duração para cena. Em vez do normal, cria uma esfera flamejante com 1,5m de diâmetro que causa 3d6 pontos de dano a qualquer criatura no mesmo espaço. Você pode gastar uma ação de movimento para fazer a esfera voar 9m em qualquer direção. Ela é imune a dano, mas pode ser apagada com água. Uma criatura só pode sofrer dano da esfera uma vez por rodada.
++3 pm: muda a duração para um dia ou até ser descarregada. Em vez do normal, a pedra flamejante aparece em suas mãos e pode ser detonada como uma reação, descarregando a magia. A pedra pode ser usada como uma arma de arremesso com alcance curto.
+CamInhOs da naTureza
+DrUiDA, rúStiCA, S. CrySniA 1 (ConVoCAção)
+Execução: padrão; Alcance: curto; Área: criaturas escolhidas; Duração: 1 dia.
+Você invoca espíritos da natureza, pedindo que eles abram seu caminho.
+
+As criaturas afetadas recebem deslocamento +3m e ignoram penalidades por terreno difícil em terrenos naturais.
+truque: muda o alcance para pessoal e o alvo para você. Em vez do normal, você recebe +5 em testes de Sobrevivência para se orientar.
++1 pm: além do normal, a CD para rastrear os alvos em terreno natural aumenta em +10.
++2 pm: aumenta o bônus de deslocamento em +3m.
+CamPO anTImaGIa
+erUDitA, S. otto, S. theoDriC 4 (AbJUrAção)
+Execução: padrão; Alcance: pessoal; Alvo: você; Duração: sustentada.
+Você é cercado por uma barreira invisível com 3m de raio que o acompanha. Qualquer habilidade mágica ou item mágico que entre na área da barreira é suprimida enquanto estiver lá.
+Criaturas convocadas que entrem em um Campo Antimagia desaparecem. Elas reaparecem na mesma posição quando a duração do Campo Antimagia terminar — supondo que a duração da magia que as convocou ainda não tenha terminado.
+Criaturas mágicas ou imbuídas com magia durante sua criação não são diretamente afetadas pelo Campo Antimagia. Entretanto, como qualquer criatura, não poderão usar magias ou habilidades mágicas dentro dele.
+Uma magia que dissipa outras não dissipa um Campo Antimagia, e dois Campos na mesma área não se neutralizam. Artefatos não são afetados por um Campo Antimagia.
+CamPO de fOrça
+mAGo, S. ArnAlDo 2 (AbJUrAção)
+Execução: padrão; Alcance: pessoal; Alvo: você; Duração: cena.
+Esta magia cria uma película protetora sobre você. Você recebe 30 pontos de vida temporários.
++1 pm: muda a execução para reação e a duração para instantânea. Em vez do normal, você recebe RD 30 contra o próximo dano que sofrer.
++3 pm: muda os PV temporários ou a RD para 50. Requer 3º círculo.
+
++7 pm: muda os PV temporários ou a RD para 70. Requer 4º círculo.
++7 pm: muda o alcance para curto, o alvo para outra criatura ou objeto Enorme ou menor e a duração para sustentada. Em vez do normal, cria uma esfera imóvel e tremeluzente ao redor do alvo. Nenhuma criatura, objeto ou efeito de dano pode passar pela esfera, embora criaturas possam respirar normalmente. Criaturas na área podem fazer um teste de Reflexos para evitar serem aprisionadas e sempre que você se concentrar. Requer 4º círculo.
++9 pm: como o aprimoramento acima, mas tudo dentro da esfera fica praticamente sem peso. Uma vez por rodada, você pode gastar uma ação livre para flutuar a esfera e seu conteúdo 9m em uma direção. Requer 4º círculo.
+CamuflaGem IlusórIa
+bArDo, oníriCA, S. imUen 2 (ilUSão)
+Execução: padrão; Alcance: toque; Alvo: 1 criatura; Duração: cena.
+O alvo fica com sua imagem nublada, como se vista através de um líquido, recebendo os efeitos de camuflagem leve.
++3 pm: muda a duração para sustentada. A imagem do alvo fica mais distorcida, aumentando a chance de falha da camuflagem leve para 50%.
++7 pm: muda o alcance para curto e o alvo para criaturas escolhidas. Requer 4º círculo.
+Chuva áCIda
+DrUiDA, elementAl 3 (eVoCAção)
+Execução: ação padrão; Alcance: médio; Área: cilindro de 9m de raio e 30m de altura; Duração: sustentada; Resistência: Fortitude reduz à metade.
+Você evoca uma chuva de líquido ácido sobre todas as criaturas e objetos livres, que sofrem 4d6 de dano de ácido quando a magia é lançada e sempre que iniciarem um turno dentro da área afetada. Criaturas têm direito a um teste de Fortitude para reduzir o dano pela metade.
++2 pm: aumenta o dano em +2d6.
+Chuva de meTeOrOs
+DrUiDA, elementAl 5 (ConVoCAção)
+Execução: completa; Alcance: longo; Área: quadrado com 18m de
+
+142
+
+CAPÍTULO QUATRO
+
+lado; Duração: instantânea; Resistência: Reflexos parcial.
+Meteoros caem dos céus, devastando a área afetada. Criaturas na área sofrem 15d6 pontos de dano de impacto, 15d6 pontos de dano de fogo e ficam caídas e presas sob os escombros (agarradas). Uma criatura que passe no teste de resistência sofre metade do dano total e não fica caída e agarrada. Uma criatura agarrada pode escapar gastando uma ação padrão e passando em um teste de Atletismo. Toda a área afetada fica coberta de escombros, sendo considerada terreno difícil, e imersa numa nuvem de poeira (camuflagem leve). Esta magia só pode ser utilizada a céu aberto.
++2 pm: aumenta o número de meteoros que atingem a área, o que aumenta o dano em +2d6 de impacto e +2d6 de fogo.
+CírCulO da JusTIça
+oníriCA, S. ArnAlDo, S. CrySniA, S. otto, S. theoDriC 2 (AbJUrAção)
+Execução: completa; Alcance: curto; Área: esfera com 9m de raio; Duração: 1 dia; Resistência: Vontade parcial.
+Esta magia é usada em tribunais e para proteger áreas sensíveis. Criaturas na área sofrem –10 em testes de Acrobacia, Enganação, Furtividade e Ladinagem e não podem mentir deliberadamente — mas podem tentar evitar perguntas que normalmente responderiam com uma mentira (sendo evasivas ou cometendo omissões, por exemplo). Uma criatura que passe na resistência tem as penalidades reduzidas para –5 e pode mentir.
++1 pm: muda a execução para ação padrão, o alcance para pessoal, o alvo para você, a duração para cena e a resistência para nenhuma. Em vez do normal, qualquer criatura ou objeto invisível em alcance curto se torna visível. Isso não dissipa o efeito mágico; se sair do seu alcance, a criatura ou objeto voltam a ficar invisíveis.
++3 pm: muda a penalidade nas perícias para –10 (se passar na resistência) e –20 (se falhar). Requer 4º círculo.
++7 pm: muda a duração para permanente e adiciona componente material (balança de prata no valor de 500 PP).
+
+CírCulO da resTauraçãO
+DrUiDA, S. ArnAlDo 4 (eVoCAção)
+Execução: padrão; Alcance: curto; Área: esfera com 3m de raio; Duração: 5 rodadas.
+Você evoca um círculo de luz que emana uma energia poderosa. Qualquer criatura viva que termine o turno dentro do círculo recupera 3d8+3 PV e 1 PM. Mortos-vivos e criaturas que sofrem dano por luz perdem PV e PM na mesma quantidade. Uma criatura pode recuperar no máximo 5 PM por dia com esta magia.
++2 pm: aumenta a regeneração de PV em 1d8+1.
+COmandO
+AbiSSAl, bArDo, erUDitA, S. ArnAlDo, S. otto, S. theoDriC 1 (enCAntAmento)
+Execução: padrão; Alcance: curto; Alvo: 1 humanoide; Duração: 1 rodada; Resistência: Vontade anula.
+Você dá uma ordem irresistível, que o alvo deve ser capaz de ouvir (mas não precisa entender). Se falhar na resistência, ele deve obedecer ao comando em seu próprio turno da melhor maneira possível. Escolha um dos efeitos.
+Fuja: o alvo gasta seu turno se afastando de você (usando todas as suas ações).
+Largue: o alvo solta quaisquer itens que esteja segurando e não pode pegá-los novamente até o início de seu próximo turno. Como esta é uma ação livre, ele ainda pode executar outras ações (exceto pegar aquilo que largou).
+Pare: o alvo fica pasmo (apenas uma vez por cena).
+Sente-se: com uma ação livre, o alvo senta no chão (se estava pendurado ou voando, desce até o chão). Ele pode fazer outras ações, mas não se levantar até o início de seu próximo turno.
+Venha: o alvo gasta seu turno se aproximando de você (usando todas as suas ações).
++1 pm: muda o alvo para 1 criatura.
++2 pm: aumenta a quantidade de alvos em +1.
+
+COmPanheIrO fIel
+S. CrySniA, S. otto, rúStiCA 3 (ConVoCAção)
+Execução: ação padrão; Alcance: pessoal; Alvo: você; Duração: 1 dia; Resistência: Fortitude parcial.
+Você conjura uma criatura de magia que serve como seu protetor, geralmente na forma de um cão espectral. Escolha uma das funções a seguir:
+Guarda: você pode comandar que a criatura fique de guarda, seja ao seu lado ou em algum local em alcance curto de você, mesmo sem linha de visão, como do lado de fora da sua tenda ou carroça. Quando escolhe esse efeito, você define uma senha que precisa ser falada em voz alta por qualquer criatura que fique em alcance curto da criatura. Caso contrário, o companheiro emite sons (latidos, rugidos, etc) e alerta todos num raio de 30m sobre a presença do intruso. Ele então avança no intruso, causando 6d8 de dano de essência e deixando-o caído (Fortitude reduz o dano pela metade e evita a condição), e desaparece em seguida. O companheiro é capaz de ver criaturas etéreas e invisíveis e ignora ilusões.
+Parceiro: a criatura é invisível para todos exceto você e funciona como um parceiro veterano guardião e vigilante, que também é capaz de perceber criaturas etéreas ou invisíveis, avisando-o de forma telepática se uma criatura assim entrar em seu alcance curto. Você pode gastar uma ação de movimento para fazer o companheiro fiel avançar em um alvo em alcance curto, causando 6d8 de dano de essência e deixando o alvo caído (Fortitude reduz o dano pela metade e evita a condição). Se fizer isso, a criatura desaparece e a magia termina.
++4 pm: muda os bônus de Parceiro para mestre ou, na versão Guarda, aumenta o dano para 10d8 e deixa o alvo atordoado por uma rodada em vez de caído. Requer 4º círculo.
+COmPreensãO
+bArDo, erUDitA, S. CrySniA, S. otto 1 (ADiVinhAção)
+Execução: padrão; Alcance: toque; Alvo: 1 criatura ou texto; Duração: cena; Resistência: Vontade anula (veja descrição).
+
+MAGIA
+
+143
+
+Essa magia lhe confere compreensão sobrenatural. Você pode tocar um texto e entender as palavras mesmo que não conheça o idioma. Se tocar numa criatura inteligente, pode se comunicar com ela mesmo que não tenham um idioma em comum. Se tocar uma criatura não inteligente, como um animal, pode perceber seus sentimentos.
+Você também pode gastar uma ação de movimento para ouvir os pensamentos de uma criatura tocada (você “ouve” o que o alvo está pensando), mas um alvo involuntário tem direito a um teste de Vontade para proteger seus pensamentos e evitar este efeito.
++1 pm: muda o alcance para curto.
++2 pm: muda o alcance para curto e o alvo para criaturas escolhidas. Você pode entender todas as criaturas afetadas, mas só pode ouvir os pensamentos de uma por vez.
++2 pm: muda o alvo para 1 criatura. Em vez do normal, pode vasculhar os pensamentos do alvo para extrair informações. O alvo tem direito a um teste de Vontade para anular este efeito. O mestre decide se a criatura sabe ou não a informação que você procura. Requer 2º círculo.
++5 pm: muda o alcance para pessoal e o alvo para você. Em vez do normal, você pode falar, entender e escrever qualquer idioma. Requer 3º círculo.
+COmunhãO COm a naTureza
+DrUiDA, rúStiCA 3 (ADiVinhAção)
+Execução: completa; Alcance: pessoal; Alvo: você; Duração: 1 dia.
+Após uma breve conexão com as energias naturais do local, você obtém informações e intuições sobre a região em que está, numa distância equivalente a um dia de viagem. Você recebe 6d4 dados de auxílio. Enquanto a magia durar, sempre que for realizar um teste de perícia em áreas naturais, você pode gastar 2d4 (mais 2d4 para cada círculo de magias acima do 3º que puder lançar) e adicionar o resultado rolado como bônus no teste. A magia termina se você ficar sem dados.
++1 pm: muda a execução para 1 minuto e a duração para instantânea. Em vez do normal, você descobre 1d4+1 informações sobre os seguintes temas:
+
+terreno, animais, vegetais, minerais, cursos d’água e presença de criaturas antinaturais numa região natural em que você esteja. Você pode, por exemplo, descobrir a quantidade de cavernas (terreno), se uma planta rara existe (vegetais) e se há mortos-vivos (criaturas antinaturais) na região.
++3 pm: aumenta o número de dados de auxílio em +2.
++4 pm: muda o tipo dos dados de auxílio para d6.
++8 pm: muda o tipo dos dados de auxílio para d8.
+COnCeder mIlaGre
+ClériGo 4 (enCAntAmento)
+Execução: padrão; Alcance: toque; Alvo: 1 criatura; Duração: permanente até ser descarregada.
+Você transfere um pouco de seu poder divino a outra criatura. Escolha uma magia de até 2º círculo que você conheça; o alvo pode lançar essa magia uma vez, sem pagar o custo dela em PM (aprimoramentos podem ser usados, mas o alvo deve gastar seus próprios PM). Você sofre uma penalidade de –3 PM até que o alvo lance a magia.
++4 pm: muda o círculo da magia concedida para 3º e a penalidade de PM para –6.
+COnCenTraçãO de COmbaTe
+bArDo, S. theoDriC 1 (ADiVinhAção)
+Execução: livre; Alcance: pessoal; Alvo: você; Duração: 1 rodada.
+Você amplia sua percepção, antecipando movimentos dos inimigos e achando brechas em sua defesa. Quando faz um teste de ataque, você rola dois dados e usa o melhor resultado.
++2 pm: muda a execução para padrão e a duração para cena. Requer 2º círculo.
++5 pm: além do normal, ao atacar você, um inimigo deve rolar dois dados e usar o pior resultado. Requer 3º círculo.
++9 pm: muda a execução para padrão, o alcance para curto, o alvo para criaturas escolhidas e a duração para cena. Requer 4º círculo.
++14 pm: muda a execução para padrão e a duração para um dia. Além
+
+do normal, você recebe um sexto sentido que o avisa de qualquer perigo ou ameaça. Você recebe +10 na Defesa e Reflexos e fica imune às condições surpreendido e desprevenido. Requer 5º círculo.
+COndIçãO
+bArDo, rúStiCA, S. ArnAlDo 2 (ADiVinhAção)
+Execução: padrão; Alcance: curto; Alvo: até 5 criaturas; Duração: cena.
+Pela duração da magia, você sabe a posição e status (PV atuais, se estão com uma condição ou sob efeito de magia...) dos alvos. Depois de lançada, a distância dos alvos não importa — a magia só deixa de detectar um alvo se ele morrer ou for para outro plano.
++1 pm: aumenta o número de alvos em +1.
++1 pm: muda a duração para um dia.
+COne de frIO
+DrUiDA, elementAl 2 (eVoCAção)
+Execução: padrão; Alcance: pessoal; Área: cone de 9m; Duração: instantânea; Resistência: Fortitude parcial.
+Você lança uma lufada de ar gélido que causa 4d6 pontos de dano de frio (Fortitude reduz à metade). Criaturas de tamanho Médio ou menor que falhem na resistência ficam caídas e são empurradas 6m na direção oposta. Se houver uma parede ou outro objeto sólido (mas não uma criatura) no caminho, a criatura para de se mover, mas sofre +2d6 pontos de dano de impacto.
++2 pm: aumenta o dano de frio em +2d6.
++3 pm: aumenta o tamanho máximo das criaturas afetadas em uma categoria. Requer 3º círculo.
+COnJurar elemenTal
+DrUiDA, elementAl 4 (ConVoCAção)
+Execução: completa; Alcance: médio; Efeito: parceiro elemental; Duração: sustentada.
+Esta magia transforma uma porção de um elemento inerte em uma criatura elemental Grande do tipo do elemento alvo. Por exemplo, lançar esta magia numa fogueira ou tocha cria um elemental do fogo. Você pode criar elementais do ar, água, fogo e terra com essa magia. O elemental obedece a to-
+
+144
+
+CAPÍTULO QUATRO
+
+dos os seus comandos e pode funcionar como um parceiro do tipo destruidor (cuja habilidade custa apenas 2 PM para ser usada) e mais um tipo entre os indicados na lista abaixo, ambos mestres. O elemental auxilia apenas você e não conta em seu limite de parceiros.
+Ar: assassino, perseguidor ou vigilante. Dano de eletricidade.
+Água: ajudante, guardião ou médico. Dano de frio.
+Fogo: atirador, combatente ou fortão. Dano de fogo.
+Terra: combatente, guardião ou montaria. Dano de impacto.
++5 pm: o elemental muda para Enorme e recebe dois tipos de parceiro indicados no seu elemento.
++5 pm: você convoca um elemental de cada tipo. Quando lança a magia, você pode escolher se cada elemental vai auxiliar você ou um aliado no alcance. Requer 5º círculo.
+COnJurar mOnsTrO
+AbiSSAl, erUDitA 1 (ConVoCAção)
+Execução: completa; Alcance: curto; Efeito: 1 criatura conjurada; Duração: sustentada.
+Você conjura um monstro Pequeno que ataca seus inimigos. Você escolhe a aparência do monstro e o tipo de dano que ele pode causar, entre corte, impacto e perfuração. No entanto, ele não é uma criatura real, e sim um construto feito de energia. Se for destruído, 
