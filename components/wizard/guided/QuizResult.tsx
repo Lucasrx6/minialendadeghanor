@@ -60,9 +60,9 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
   const classSpells = isCaster
     ? getSpellsForClass(selectedClass).filter((s) => s.circle === 1)
     : [];
-  // Mago: 3 magias; Bardo e Druida: 2; demais: 2
+  // Mago: 3 (livro pág.57); Clérigo: 3 (livro pág.46); Bardo e Druida: 2 (livro págs.33,49)
   const spellLimit =
-    isMagoClass ? 3 :
+    isMagoClass || selectedClass === "clerigo" ? 3 :
     selectedClass === "bardo" || selectedClass === "druida" ? 2 :
     2;
   const classStartingPower = CLASS_STARTING_POWER[selectedClass]

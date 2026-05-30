@@ -9,7 +9,8 @@ export const HP_PER_LEVEL: Record<ClassId, number> = {
 
 export const MP_PER_LEVEL: Record<ClassId, number> = {
   barbaro: 3, bardo: 4, bucaneiro: 3, cacador: 4, cavaleiro: 3,
-  clerigo: 5, druida: 5, ladino: 3, mago: 6, nobre: 4, soldado: 3,
+  // Clérigo: 5+Sab (livro pág.45); Druida: 3+Sab (livro pág.49); Ladino: 4 (livro pág.53); Mago: 5+Int (livro pág.57)
+  clerigo: 5, druida: 3, ladino: 4, mago: 5, nobre: 4, soldado: 3,
 };
 
 export const KEY_ATTR: Record<ClassId, Attribute | Attribute[]> = {
@@ -18,11 +19,11 @@ export const KEY_ATTR: Record<ClassId, Attribute | Attribute[]> = {
   mago: "int", nobre: "cha", soldado: ["str", "dex"],
 };
 
-// Classes conjuradoras que somam o atributo-chave nos PM por nível (pág. 25)
-export const CASTERS_ADD_KEY_ATTR_TO_MP: ClassId[] = ["bardo", "clerigo", "mago"];
+// Classes conjuradoras que somam o atributo-chave nos PM por nível (livro págs. 33, 46, 50, 57)
+export const CASTERS_ADD_KEY_ATTR_TO_MP: ClassId[] = ["bardo", "clerigo", "druida", "mago"];
 
-// Classes que ganham nova magia por nível (druida: toda nível; bardo: níveis pares; mago: todo nível)
-export const SPELLCASTERS: ClassId[] = ["bardo", "druida", "mago"];
+// Classes que ganham nova magia por nível (mago/clerigo: todo nível; bardo/druida: níveis pares)
+export const SPELLCASTERS: ClassId[] = ["bardo", "clerigo", "druida", "mago"];
 
 // Tabela 1-4: [treinada, naoTreinada] para níveis 1..20
 export const SKILL_BONUS_TABLE: ReadonlyArray<[number, number]> = [
@@ -305,6 +306,121 @@ export function canIncreaseAttribute(
 
   return !alreadyUsedInTier;
 }
+
+// ─── Habilidades automáticas por nível de classe ─────────────────────────────
+// Mapeamento das habilidades de classe concedidas AUTOMATICAMENTE em cada nível
+// (não são poderes opcionais — são features da tabela de classe do livro)
+
+export const CLASS_LEVEL_ABILITIES: Partial<Record<ClassId, Record<number, string[]>>> = {
+  barbaro: {
+    3:  ["Instinto Selvagem +1 (rolagens de dano, Percepção e Reflexos)"],
+    5:  ["Redução de Dano 2"],
+    6:  ["Fúria +3 (pode gastar +1 PM extra para +1 nos bônus)"],
+    8:  ["Redução de Dano 4"],
+    9:  ["Instinto Selvagem +2"],
+    11: ["Fúria +4", "Redução de Dano 6"],
+    14: ["Redução de Dano 8"],
+    15: ["Instinto Selvagem +3"],
+    16: ["Fúria +5"],
+    17: ["Redução de Dano 10"],
+    20: ["Fúria Titânica (bônus da Fúria dobrado)"],
+  },
+  bardo: {
+    2:  ["Eclético (gasta 1 PM para contar como treinado em qualquer perícia por 1 teste)"],
+    5:  ["Inspiração +2"],
+    9:  ["Inspiração +3"],
+    13: ["Inspiração +4"],
+    17: ["Inspiração +5"],
+    20: ["Artista Completo (Inspiração como ação livre; custo de habilidades de bardo reduzido à metade)"],
+  },
+  bucaneiro: {
+    2:  ["Evasão (sem dano ao passar em Reflexos contra efeito de área)"],
+    3:  ["Esquiva Sagaz +1 (+1 Defesa e Reflexos com liberdade de movimentos)"],
+    5:  ["Panache (recupera 1 PM em acerto crítico ou ao reduzir inimigo a 0 PV)"],
+    7:  ["Esquiva Sagaz +2"],
+    10: ["Evasão Aprimorada (só metade do dano ao falhar em Reflexos)"],
+    11: ["Esquiva Sagaz +3"],
+    15: ["Esquiva Sagaz +4"],
+    19: ["Esquiva Sagaz +5"],
+    20: ["Sorte dos Ousados (gasta 5 PM para repetir teste; resultado 11+ conta como 20 natural)"],
+  },
+  cacador: {
+    3:  ["Explorador (escolha 1 tipo de terreno — soma Sab em Defesa e perícias neste terreno)"],
+    5:  ["Caminho do Explorador (terreno difícil sem penalidade nos terrenos de Explorador)", "Marca da Presa +1d8"],
+    7:  ["Explorador (novo terreno ou +2 num terreno já escolhido)"],
+    9:  ["Marca da Presa +1d12"],
+    11: ["Explorador"],
+    13: ["Marca da Presa +2d8"],
+    15: ["Explorador"],
+    16: ["Tradição Mágica (acesso a magias de círculos que o Caçador puder lançar)"],
+    17: ["Marca da Presa +2d10"],
+    19: ["Explorador"],
+    20: ["Mestre Caçador (Marca da Presa como ação livre; +5 PM ao reduzir alvo marcado a 0 PV)"],
+  },
+  cavaleiro: {
+    2:  ["Duelo +2 (gasta 2 PM para +2 ataque/dano contra 1 oponente por cena)"],
+    5:  ["Baluarte +4 (custo de Baluarte aumentado)", "Caminho do Cavaleiro (escolha Bastião ou Montaria)"],
+    7:  ["Baluarte estendido a aliados adjacentes (+2 PM)", "Duelo +3"],
+    9:  ["Baluarte +6"],
+    11: ["Resoluto (gasta 1 PM para refazer teste de resistência com +5)"],
+    12: ["Duelo +4"],
+    13: ["Baluarte +8"],
+    15: ["Baluarte estendido a aliados em alcance curto (+5 PM)"],
+    17: ["Baluarte +10", "Duelo +5"],
+    20: ["Bravura Final (gasta 3 PM para continuar consciente a 0 PV ou menos)"],
+  },
+  clerigo: {
+    20: ["Santidade (gasta 15 PM para lançar 3 magias do santo como ação livre sem custo)"],
+  },
+  druida: {
+    2:  ["Caminho dos Ermos (terreno difícil natural sem penalidade; CD de rastreamento +10)"],
+    20: ["Força da Natureza (custo de magias −2 PM, CD +2; dobra em terrenos naturais)"],
+  },
+  ladino: {
+    2:  ["Evasão (sem dano ao passar em Reflexos contra efeito de área)"],
+    3:  ["Ataque Furtivo +2d6"],
+    4:  ["Esquiva Sobrenatural (nunca fica surpreendido)"],
+    5:  ["Ataque Furtivo +3d6"],
+    7:  ["Ataque Furtivo +4d6"],
+    8:  ["Olhos nas Costas (não pode ser flanqueado)"],
+    9:  ["Ataque Furtivo +5d6"],
+    10: ["Evasão Aprimorada (só metade do dano ao falhar em Reflexos)"],
+    11: ["Ataque Furtivo +6d6"],
+    13: ["Ataque Furtivo +7d6"],
+    15: ["Ataque Furtivo +8d6"],
+    17: ["Ataque Furtivo +9d6"],
+    19: ["Ataque Furtivo +10d6"],
+    20: ["A Pessoa Certa para o Trabalho (gasta 5 PM para +10 em ataque furtivo ou perícia de ladino)"],
+  },
+  mago: {
+    20: ["Alta Arcana (custo de magias de mago reduzido à metade)"],
+  },
+  nobre: {
+    2:  ["Palavras Afiadas 2d6 (teste Diplomacia/Intimidação vs. Vontade → dano psíquico não letal)"],
+    3:  ["Riqueza (uma vez por aventura: teste Car+nível → recebe esse valor em PO)"],
+    4:  ["Gritar Ordens (gasta PM para dar bônus em testes de perícia a aliados em alcance curto)"],
+    5:  ["Presença Aristocrática (gasta 2 PM para negar ação hostil — Von CD Car)"],
+    6:  ["Palavras Afiadas 4d6"],
+    10: ["Palavras Afiadas 6d6"],
+    14: ["Palavras Afiadas 8d6"],
+    18: ["Palavras Afiadas 10d6"],
+    20: ["Realeza (Presença Aristocrática +5 CD; criaturas que falhem muito passam a lutar ao seu lado)"],
+  },
+  soldado: {
+    3:  ["Estratégia de Defesa (escolha Infantaria Leve +2 Defesa, ou Tropa de Choque RD 2 + armadura pesada)"],
+    5:  ["Ataque Disciplinado +2d6"],
+    6:  ["Ataque Extra (gasta 2 PM para ataque adicional na ação agredir)"],
+    7:  ["Estratégia de Defesa (Def +4 / RD 4)"],
+    9:  ["Ataque Disciplinado +3d6"],
+    10: ["Supremacia Marcial (ganha 2 PM temporários ao reduzir inimigo a 0 PV)"],
+    11: ["Estratégia de Defesa (Def +6 / RD 6)"],
+    13: ["Ataque Disciplinado +4d6"],
+    15: ["Estratégia de Defesa (Def +8 / RD 8)"],
+    17: ["Ataque Disciplinado +5d6"],
+    19: ["Estratégia de Defesa (Def +10 / RD 10)"],
+    20: ["Mestre da Batalha (dano de Ataque Disciplinado multiplicado em crítico; recupera PV igual ao dano extra)"],
+  },
+};
 
 // ─── CD padrão (Tabela 5-1) ──────────────────────────────────────────────────
 

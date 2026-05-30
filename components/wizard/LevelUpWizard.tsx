@@ -13,7 +13,7 @@ import { saveLevelUp, type LevelUpInput } from "@/app/actions/levelup";
 import {
   computeLevelUp, tierForLevel, TIER_LABELS, TIER_FLAVOR,
   SPELLCASTERS, SPELL_CIRCLES, canIncreaseAttribute,
-  maxSpellCircle, type CharacterForLevelUp, type Tier,
+  maxSpellCircle, CLASS_LEVEL_ABILITIES, type CharacterForLevelUp, type Tier,
 } from "@/lib/ghanor/leveling";
 import { getSpellsForClass, isCasterClass, type Spell } from "@/lib/ghanor/spells";
 import { getClassPowers, getGeneralPowers, type Power } from "@/lib/ghanor/powers";
@@ -81,38 +81,39 @@ export function LevelUpWizard({ character }: Props) {
   const newMaxCircle = maxSpellCircle(newClassId, newClassLevel);
   const circleJustOpened = newMaxCircle > oldMaxCircle ? newMaxCircle : undefined;
 
-  // Clérigo auto-aprende todas as magias ao desbloquear novo círculo
-  // Bardo e Druida aprendem 1 magia nos níveis pares da CLASSE (livro pág. 33 e 46)
-  const isAutoLearner = newClassId === "clerigo";
-  const isMago = newClassId === "mago";
-  const isBardo = newClassId === "bardo";
-  const isDruida = newClassId === "druida";
+  // Regras de aprendizado de magia por classe (livro págs. 33, 46, 50, 57):
+  // Mago e Clérigo: 1 magia por nível (qualquer círculo disponível)
+  // Bardo e Druida: 1 magia nos níveis PARES da classe
+  const isMago    = newClassId === "mago";
+  const isClerigo = newClassId === "clerigo";
+  const isBardo   = newClassId === "bardo";
+  const isDruida  = newClassId === "druida";
   const canPickSpell =
     isMago ||
-    (isBardo && newClassLevel % 2 === 0) ||
+    isClerigo ||
+    (isBardo  && newClassLevel % 2 === 0) ||
     (isDruida && newClassLevel % 2 === 0);
-  const hasSpellStep =
-    (canPickSpell && newMaxCircle > 0) || (isAutoLearner && !!circleJustOpened);
+  const hasSpellStep = canPickSpell && newMaxCircle > 0;
 
-  const autoGrantedSpells: string[] = (() => {
-    if (!circleJustOpened || !isCasterClass(newClassId)) return [];
-    return getSpellsForClass(newClassId)
-      .filter((s) => s.circle === circleJustOpened && !character.spells.includes(s.id))
-      .map((s) => s.id);
-  })();
+  // Nenhuma classe auto-aprende TODAS as magias de um novo círculo
+  const autoGrantedSpells: string[] = [];
 
   const availableSpells = newMaxCircle > 0
     ? getSpellsForClass(newClassId).filter(
-        (s) =>
-          s.circle <= newMaxCircle &&
-          !character.spells.includes(s.id) &&
-          !autoGrantedSpells.includes(s.id),
+        (s) => s.circle <= newMaxCircle && !character.spells.includes(s.id),
       )
     : [];
 
+  // ── Auto class abilities gained at this level ──────────────────────────────
+  const autoClassAbilities: string[] =
+    CLASS_LEVEL_ABILITIES[newClassId]?.[newClassLevel] ?? [];
+
   // ── Power calculations ─────────────────────────────────────────────────────
   const classPowers = getClassPowers(newClassId).filter(
-    (p) => !character.powers.includes(p.id),
+    (p) =>
+      !character.powers.includes(p.id) &&
+      // Filtra por nível mínimo de classe (se definido)
+      (!p.min_class_level || newClassLevel >= p.min_class_level),
   );
   const generalPowers = getGeneralPowers().filter(
     (p) => !character.powers.includes(p.id),
@@ -348,9 +349,23 @@ export function LevelUpWizard({ character }: Props) {
                 <div className="flex justify-between text-sm">
                   <span className="text-stone-400">Novo círculo de magia</span>
                   <span className="font-bold text-purple-400">
-                    {circleJustOpened}º Círculo
+                    {circleJustOpened}º Círculo desbloqueado!
                   </span>
                 </div>
+              )}
+              {autoClassAbilities.length > 0 && (
+                <>
+                  <div className="my-2 border-t border-stone-700" />
+                  <p className="mb-1 text-xs font-bold uppercase tracking-widest text-amber-400">
+                    Habilidades de classe ganhas
+                  </p>
+                  {autoClassAbilities.map((ability) => (
+                    <div key={ability} className="flex items-start gap-2 text-sm">
+                      <span className="mt-0.5 text-amber-500">✦</span>
+                      <span className="text-amber-100">{ability}</span>
+                    </div>
+                  ))}
+                </>
               )}
             </div>
 
@@ -490,23 +505,12 @@ export function LevelUpWizard({ character }: Props) {
               </div>
             )}
 
-            {/* Auto-granted (new circle opened — apenas Clérigo) */}
-            {autoGrantedSpells.length > 0 && (
+            {/* Novo círculo desbloqueado */}
+            {circleJustOpened && (
               <div className="rounded-xl border border-purple-200 bg-purple-50 p-4">
-                <p className="mb-2 text-sm font-bold text-purple-800">
-                  ✨ {circleJustOpened}º círculo desbloqueado — magias concedidas
-                  automaticamente:
+                <p className="text-sm font-bold text-purple-800">
+                  ✨ {circleJustOpened}º círculo desbloqueado — você pode escolher magias deste círculo!
                 </p>
-                <ul className="space-y-1">
-                  {autoGrantedSpells.map((id) => {
-                    const sp = getSpellsForClass(newClassId).find((s) => s.id === id);
-                    return (
-                      <li key={id} className="text-sm text-purple-700">
-                        · {sp?.name ?? id} ({sp?.mp_cost ?? "?"} PM)
-                      </li>
-                    );
-                  })}
-                </ul>
               </div>
             )}
 
@@ -518,11 +522,11 @@ export function LevelUpWizard({ character }: Props) {
               </p>
             )}
 
-            {/* Manual spell picker — Mago, Bardo par, Druida par */}
+            {/* Seleção de magia — Mago, Clérigo, Bardo par, Druida par */}
             {canPickSpell && availableSpells.length > 0 && (
               <div>
                 <p className="mb-2 text-sm font-bold text-stone-700">
-                  {isMago
+                  {isMago || isClerigo
                     ? "Escolha 1 magia para aprender (qualquer círculo disponível)"
                     : "Escolha 1 nova magia"}
                 </p>
@@ -538,14 +542,6 @@ export function LevelUpWizard({ character }: Props) {
             {canPickSpell && availableSpells.length === 0 && (
               <p className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
                 Todas as magias disponíveis para esta classe já estão aprendidas.
-              </p>
-            )}
-
-            {/* Clérigo sem novo círculo */}
-            {isAutoLearner && !circleJustOpened && (
-              <p className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
-                Clérigos recebem novas magias automaticamente ao desbloquear um novo
-                círculo.
               </p>
             )}
 

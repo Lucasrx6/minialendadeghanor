@@ -12,6 +12,8 @@ export type Power = {
   type: PowerType;
   class?: ClassId;
   tier?: Tier;
+  /** Nível mínimo NA CLASSE para poder selecionar este poder */
+  min_class_level?: number;
   activation: PowerActivation;
   prerequisite?: string;
   description: string;
@@ -255,6 +257,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "barbaro",
     tier: "veterano",
+    min_class_level: 5,
     activation: "passivo",
     prerequisite: "5º nível de bárbaro, treinado em Vontade",
     description:
@@ -266,6 +269,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "barbaro",
     tier: "veterano",
+    min_class_level: 6,
     activation: "passivo",
     prerequisite: "6º nível de bárbaro",
     description:
@@ -325,6 +329,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "barbaro",
     tier: "campeao",
+    min_class_level: 8,
     activation: "passivo",
     prerequisite: "Pele de Ferro, 8º nível de bárbaro",
     description:
@@ -353,6 +358,7 @@ export const powers: Power[] = [
     name: "Totem Espiritual",
     type: "classe",
     class: "barbaro",
+    min_class_level: 4,
     activation: "passivo",
     prerequisite: "Sab 1, 4º nível de bárbaro",
     description:
@@ -464,6 +470,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "bardo",
     tier: "veterano",
+        min_class_level: 6,
     activation: "passivo",
     prerequisite: "Int 2, 6º nível de bardo",
     description:
@@ -484,6 +491,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "bardo",
     tier: "campeao",
+        min_class_level: 10,
     activation: "passivo",
     mp_cost: 1,
     prerequisite: "Esgrima Mágica, 10º nível de bardo",
@@ -515,6 +523,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "bardo",
     tier: "veterano",
+        min_class_level: 6,
     activation: "passivo",
     prerequisite: "6º nível de bardo",
     description:
@@ -599,6 +608,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "bardo",
     tier: "campeao",
+        min_class_level: 10,
     activation: "passivo",
     mp_cost: 2,
     prerequisite: "Fascinar em Massa, Manipular, 10º nível de bardo",
@@ -700,6 +710,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "bucaneiro",
     tier: "veterano",
+        min_class_level: 6,
     activation: "passivo",
     prerequisite: "Car 1, 6º nível de bucaneiro",
     description:
@@ -870,6 +881,7 @@ export const powers: Power[] = [
     name: "Presença Paralisante",
     type: "classe",
     class: "bucaneiro",
+        min_class_level: 4,
     activation: "passivo",
     prerequisite: "Car 1, 4º nível de bucaneiro",
     description:
@@ -881,6 +893,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "bucaneiro",
     tier: "campeao",
+        min_class_level: 12,
     activation: "reação",
     mp_cost: 1,
     prerequisite: "Aparar, 12º nível de bucaneiro",
@@ -893,6 +906,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "bucaneiro",
     tier: "campeao",
+        min_class_level: 10,
     activation: "passivo",
     mp_cost: 2,
     prerequisite: "Esgrimista, 10º nível de bucaneiro",
@@ -979,6 +993,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "cacador",
     tier: "veterano",
+        min_class_level: 5,
     activation: "passivo",
     prerequisite: "Um poder de armadilha, 5º nível de caçador",
     description:
@@ -990,6 +1005,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "cacador",
     tier: "veterano",
+        min_class_level: 6,
     activation: "passivo",
     mp_cost: 1,
     prerequisite: "Ambidestria, 6º nível de caçador",
@@ -1002,6 +1018,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "cacador",
     tier: "veterano",
+        min_class_level: 6,
     activation: "passivo",
     mp_cost: 2,
     prerequisite: "6º nível de caçador",
@@ -1014,6 +1031,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "cacador",
     tier: "campeao",
+        min_class_level: 12,
     activation: "passivo",
     mp_cost: 2,
     prerequisite: "Des 4, Ambidestria, 12º nível de caçador",
@@ -1025,6 +1043,7 @@ export const powers: Power[] = [
     name: "Elo com a Natureza",
     type: "classe",
     class: "cacador",
+        min_class_level: 3,
     activation: "passivo",
     prerequisite: "Sab 1, 3º nível de caçador",
     description:
@@ -1066,6 +1085,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "cacador",
     tier: "veterano",
+        min_class_level: 6,
     activation: "passivo",
     prerequisite: "Des 2, 6º nível de caçador",
     dice: "+1d8",
@@ -1078,6 +1098,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "cacador",
     tier: "campeao",
+        min_class_level: 12,
     activation: "passivo",
     prerequisite: "Escaramuça, 12º nível de caçador",
     dice: "+1d12",
@@ -1171,6 +1192,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "cavaleiro",
     tier: "veterano",
+        min_class_level: 6,
     activation: "ação",
     mp_cost: 2,
     prerequisite: "6º nível de cavaleiro",
@@ -1211,6 +1233,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "cavaleiro",
     tier: "campeao",
+        min_class_level: 12,
     activation: "passivo",
     prerequisite: "12º nível de cavaleiro",
     description:
@@ -1283,6 +1306,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "clerigo",
     tier: "veterano",
+        min_class_level: 5,
     activation: "passivo",
     prerequisite: "5º nível de clérigo",
     description:
@@ -1356,6 +1380,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "clerigo",
     tier: "veterano",
+        min_class_level: 5,
     activation: "passivo",
     prerequisite: "Car 1, 5º nível de clérigo",
     description:
@@ -1508,6 +1533,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "druida",
     tier: "veterano",
+        min_class_level: 6,
     activation: "passivo",
     prerequisite: "Companheiro Animal, 6º nível de druida",
     description:
@@ -1538,6 +1564,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "druida",
     tier: "veterano",
+        min_class_level: 6,
     activation: "passivo",
     mp_cost: 6,
     prerequisite: "Forma Selvagem, 6º nível de druida",
@@ -1550,6 +1577,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "druida",
     tier: "campeao",
+        min_class_level: 12,
     activation: "passivo",
     mp_cost: 10,
     prerequisite: "Forma Selvagem, 12º nível de druida",
@@ -1561,6 +1589,7 @@ export const powers: Power[] = [
     name: "Força dos Penhascos",
     type: "classe",
     class: "druida",
+        min_class_level: 4,
     activation: "passivo",
     prerequisite: "4º nível de druida",
     description:
@@ -1654,6 +1683,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "ladino",
     tier: "veterano",
+        min_class_level: 5,
     activation: "ação",
     mp_cost: 3,
     prerequisite: "5º nível de ladino",
@@ -1726,6 +1756,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "ladino",
     tier: "lenda",
+        min_class_level: 13,
     activation: "passivo",
     prerequisite: "Roubo de Mana, 13º nível de ladino",
     description:
@@ -1768,6 +1799,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "ladino",
     tier: "veterano",
+        min_class_level: 6,
     activation: "reação",
     mp_cost: 2,
     prerequisite: "6º nível de ladino",
@@ -1791,6 +1823,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "ladino",
     tier: "veterano",
+        min_class_level: 7,
     activation: "passivo",
     prerequisite: "Truque Mágico, 7º nível de ladino",
     description:
@@ -1853,6 +1886,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "ladino",
     tier: "campeao",
+        min_class_level: 8,
     activation: "passivo",
     prerequisite: "Veneno Potente, 8º nível de ladino",
     description:
@@ -1924,6 +1958,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "mago",
     tier: "campeao",
+        min_class_level: 10,
     activation: "passivo",
     prerequisite: "10º nível de mago",
     description:
@@ -1935,6 +1970,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "mago",
     tier: "veterano",
+        min_class_level: 5,
     activation: "passivo",
     prerequisite: "5º nível de mago",
     description:
@@ -2014,6 +2050,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "mago",
     tier: "veterano",
+        min_class_level: 5,
     activation: "passivo",
     prerequisite: "5º nível de mago",
     description:
@@ -2025,6 +2062,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "mago",
     tier: "campeao",
+        min_class_level: 9,
     activation: "passivo",
     prerequisite: "Segredo Aprimorado, 9º nível de mago",
     description:
@@ -2092,6 +2130,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "nobre",
     tier: "campeao",
+        min_class_level: 8,
     activation: "passivo",
     prerequisite: "8º nível de nobre",
     description:
@@ -2103,6 +2142,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "nobre",
     tier: "veterano",
+        min_class_level: 6,
     activation: "ação",
     mp_cost: 2,
     prerequisite: "6º nível de nobre",
@@ -2133,6 +2173,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "nobre",
     tier: "veterano",
+        min_class_level: 6,
     activation: "ação",
     mp_cost: 1,
     prerequisite: "Int 1, treinado em Guerra, 6º nível de nobre",
@@ -2155,6 +2196,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "nobre",
     tier: "campeao",
+        min_class_level: 8,
     activation: "passivo",
     prerequisite: "8º nível de nobre",
     description:
@@ -2176,6 +2218,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "nobre",
     tier: "campeao",
+        min_class_level: 8,
     activation: "passivo",
     mp_cost: 5,
     uses_per_scene: 1,
@@ -2199,6 +2242,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "nobre",
     tier: "veterano",
+        min_class_level: 6,
     activation: "passivo",
     mp_cost: 2,
     prerequisite: "6º nível de nobre",
@@ -2211,6 +2255,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "nobre",
     tier: "campeao",
+        min_class_level: 8,
     activation: "ação",
     mp_cost: 6,
     prerequisite: "Língua de Prata, 8º nível de nobre",
@@ -2242,6 +2287,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "nobre",
     tier: "campeao",
+        min_class_level: 10,
     activation: "passivo",
     prerequisite: "Autoridade Feudal, 10º nível de nobre",
     description:
@@ -2326,6 +2372,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "soldado",
     tier: "veterano",
+        min_class_level: 5,
     activation: "passivo",
     prerequisite: "5º nível de soldado",
     description:
@@ -2397,6 +2444,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "soldado",
     tier: "lenda",
+        min_class_level: 12,
     activation: "passivo",
     mp_cost: 2,
     prerequisite: "Especialização em Arma com a arma escolhida, 12º nível de soldado",
@@ -2409,6 +2457,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "soldado",
     tier: "campeao",
+        min_class_level: 10,
     activation: "passivo",
     prerequisite: "Treinado em Guerra, 10º nível de soldado",
     description:
@@ -2439,6 +2488,7 @@ export const powers: Power[] = [
     type: "classe",
     class: "soldado",
     tier: "veterano",
+        min_class_level: 6,
     activation: "ação",
     mp_cost: 2,
     prerequisite: "6º nível de soldado",
@@ -2489,17 +2539,15 @@ export function getGeneralPowers(): Power[] {
   return powers.filter((p) => p.type === "geral" || p.type === "combate");
 }
 
-/** Poder de classe concedido automaticamente ao criar o personagem (nível 1). */
+/**
+ * Poder de classe que toda personagem de nível 1 já possui ao ser criada.
+ * Apenas para classes onde a habilidade de 1º nível É um poder de classe
+ * selecionável na lista. Demais classes têm features automáticas (não poderes).
+ *
+ * Livro: Bárbaro→Fúria, Bardo→Inspiração, Ladino→Ataque Furtivo
+ */
 export const CLASS_STARTING_POWER: Partial<Record<import("./types").ClassId, string>> = {
-  barbaro:   "furia",
-  bardo:     "inspiracao",
-  bucaneiro: "manobra_audaciosa",
-  cacador:   "inimigo_favorito",
-  cavaleiro: "desafio",
-  clerigo:   "expulsar_mortos_vivos",
-  druida:    "forma_animal",
-  ladino:    "ataque_furtivo",
-  mago:      "familiar",
-  nobre:     "autoridade",
-  soldado:   "linha_de_batalha",
+  barbaro: "furia",
+  bardo:   "inspiracao",
+  ladino:  "ataque_furtivo",
 };

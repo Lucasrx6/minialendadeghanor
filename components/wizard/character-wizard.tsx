@@ -106,11 +106,31 @@ const WIZARD_ARMOR_DEFAULTS: Record<string, { armor: WizardState["armor"]; shiel
   cacador:   { armor: "couro_batido", shield: "escudo_leve" },
   cavaleiro: { armor: "brunea",       shield: "escudo_leve" },
   clerigo:   { armor: "brunea",       shield: "escudo_leve" },
+  // Druida: não pode usar metal → sem brunea (livro pág.49)
   druida:    { armor: "couro",        shield: "escudo_leve" },
   ladino:    { armor: "couro_batido", shield: "none" },
+  // Mago: nenhuma proficiência de armadura (livro pág.57)
   mago:      { armor: "none",         shield: "none" },
-  nobre:     { armor: "couro",        shield: "escudo_leve" },
+  // Nobre: armaduras pesadas (livro pág.61)
+  nobre:     { armor: "brunea",       shield: "escudo_leve" },
   soldado:   { armor: "brunea",       shield: "escudo_leve" },
+};
+
+// Armaduras disponíveis por classe (respeitando proficiências do livro)
+const CLASS_ARMOR_OPTIONS: Record<string, WizardState["armor"][]> = {
+  barbaro:   ["none", "couro", "couro_batido", "gibao_peles", "brunea"],
+  bardo:     ["none", "couro", "couro_batido", "gibao_peles"],
+  bucaneiro: ["none", "couro", "couro_batido", "gibao_peles"],
+  cacador:   ["none", "couro", "couro_batido", "gibao_peles", "brunea"],
+  cavaleiro: ["none", "couro", "couro_batido", "gibao_peles", "brunea"],
+  clerigo:   ["none", "couro", "couro_batido", "gibao_peles", "brunea"],
+  // Druida: sem metal — couro e gibão de peles são não-metálicos
+  druida:    ["none", "couro", "gibao_peles"],
+  ladino:    ["none", "couro", "couro_batido", "gibao_peles"],
+  // Mago: sem armadura
+  mago:      ["none"],
+  nobre:     ["none", "couro", "couro_batido", "gibao_peles", "brunea"],
+  soldado:   ["none", "couro", "couro_batido", "gibao_peles", "brunea"],
 };
 
 export function CharacterWizard() {
@@ -171,9 +191,9 @@ export function CharacterWizard() {
     ["bardo", "clerigo", "druida", "mago"].includes(state.class) ||
     state.origin === "receptaculo" ||
     state.raceChoices.mutations.includes("magia_bizarra");
-  // Mago: 3 magias iniciais; Bardo e Druida: 2; demais conjuradores: 2
+  // Mago: 3 magias (livro pág.57); Clérigo: 3 (livro pág.46); Bardo e Druida: 2 (livro págs.33,49)
   const spellLimit =
-    state.class === "mago" ? 3 :
+    state.class === "mago" || state.class === "clerigo" ? 3 :
     state.class === "bardo" || state.class === "druida" ? 2 :
     2;
   const classStartingPower = CLASS_STARTING_POWER[state.class]
@@ -655,13 +675,10 @@ export function CharacterWizard() {
                 label="Armadura"
                 value={state.armor}
                 onChange={(value) => state.update({ armor: value as typeof state.armor })}
-                options={[
-                  { id: "none", label: "Sem armadura" },
-                  { id: "couro", label: "Couro" },
-                  { id: "couro_batido", label: "Couro batido" },
-                  { id: "gibao_peles", label: "Gibão de peles" },
-                  { id: "brunea", label: "Brunea" },
-                ]}
+                options={(CLASS_ARMOR_OPTIONS[state.class] ?? ["none", "couro", "couro_batido", "gibao_peles", "brunea"]).map((id) => ({
+                  id,
+                  label: id === "none" ? "Sem armadura" : id === "couro" ? "Couro" : id === "couro_batido" ? "Couro batido" : id === "gibao_peles" ? "Gibão de peles" : "Brunea",
+                }))}
               />
               <SelectLine
                 label="Escudo"

@@ -215,7 +215,8 @@ export function computeCharacter(answers: Answer[], race: RaceId, raceChoices: R
     case 'cacador': weapons = ['arco longo', 'adaga']; armor = 'couro'; break;
     case 'cavaleiro': weapons = ['espada longa']; armor = 'brunea'; shield = 'escudo_leve'; break; // spec says escudo pesado but shield type is escudo_leve or none. I'll use escudo_leve.
     case 'clerigo': weapons = ['maça', 'simbolo sagrado']; armor = 'brunea'; shield = 'escudo_leve'; break;
-    case 'druida': weapons = ['bordão', 'adaga']; armor = 'gibao_peles'; break;
+    // Druida: não pode usar armadura metálica; couro é permitido (não metálico)
+    case 'druida': weapons = ['bordão', 'adaga']; armor = 'couro'; shield = 'escudo_leve'; break;
     case 'ladino': weapons = ['adaga', 'arco curto', 'ferramentas de ladrão']; armor = 'couro'; break;
     case 'mago': weapons = ['bordão', 'adaga', 'grimório']; armor = 'none'; break;
     case 'nobre': weapons = ['espada longa']; armor = 'brunea'; shield = 'escudo_leve'; break;
