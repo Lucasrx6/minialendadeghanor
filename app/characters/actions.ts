@@ -234,6 +234,7 @@ export async function saveGuidedCharacter(input: {
   origin: string;
   extraOrigin?: string;
   class: string;
+  tradition?: string;
   answers: any[];
   computed: any;
   silverPieces: number;
@@ -280,7 +281,7 @@ export async function saveGuidedCharacter(input: {
       race: input.race,
       race_choices: input.raceChoices,
       class: input.class,
-      class_choices: {},
+      class_choices: input.tradition ? { tradition: input.tradition } : {},
       origin: input.origin,
       origin_choices: { extraOrigin: input.extraOrigin },
       trained_skills: build.trainedSkills,

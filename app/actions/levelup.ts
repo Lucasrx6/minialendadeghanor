@@ -131,6 +131,32 @@ export async function saveLevelUp(raw: LevelUpInput): Promise<{ success: true; n
 
   if (updateError) return { success: false, error: updateError.message };
 
+  // Renda do Aristocrata: 300 PP × novo nível, concedida ao subir de nível
+  const isAristocrata =
+    character.origin === "aristocrata" ||
+    (character as { extra_origin?: string }).extra_origin === "aristocrata";
+  if (isAristocrata) {
+    const rendaPc = result.newLevel * 300 * 10; // 300 PP × nível, convertido para PC
+    const { data: charMoney } = await admin
+      .from("characters")
+      .select("money_pc")
+      .eq("id", input.characterId)
+      .single();
+    const currentMoney = (charMoney?.money_pc ?? 0) as number;
+    const newBalance = currentMoney + rendaPc;
+    await admin
+      .from("characters")
+      .update({ money_pc: newBalance })
+      .eq("id", input.characterId);
+    await admin.from("money_transactions").insert({
+      character_id: input.characterId,
+      user_id: user.id,
+      amount_pc: rendaPc,
+      reason: `Renda aristocrática — nível ${result.newLevel} (${result.newLevel * 300} PP)`,
+      balance_after_pc: newBalance,
+    });
+  }
+
   revalidatePath(`/characters/${input.characterId}`);
   revalidatePath("/characters");
 

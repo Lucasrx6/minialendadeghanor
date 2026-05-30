@@ -886,6 +886,16 @@ export function CharacterSheet({
             {classById[character.class as keyof typeof classById]?.firstLevelAbility && (
               <p className="text-sm">{classById[character.class as keyof typeof classById]?.firstLevelAbility}</p>
             )}
+            {character.class === "mago" && (character.class_choices as Record<string, string> | null)?.tradition && (
+              <p className="text-sm font-semibold text-purple-700">
+                Tradição: {(character.class_choices as Record<string, string>).tradition
+                  .replace("abissal", "Abissal")
+                  .replace("elemental", "Elemental")
+                  .replace("erudita", "Erudita")
+                  .replace("onirica", "Onírica")
+                  .replace("rustica", "Rústica")}
+              </p>
+            )}
             {(raceById[character.race as keyof typeof raceById]?.abilities?.length ?? 0) > 0 && (
               <p className="text-sm">{raceById[character.race as keyof typeof raceById]?.abilities.join("; ")}</p>
             )}
@@ -1250,6 +1260,13 @@ function FullSheetTab({
                       {classById[character.class as keyof typeof classById]?.name ?? character.class}
                     </p>
                     <p className="leading-snug">{classAbility}</p>
+                    {character.class === "mago" && (character.class_choices as Record<string, string> | null)?.tradition && (
+                      <p className="mt-1 font-semibold text-purple-700">
+                        Tradição: {(character.class_choices as Record<string, string>).tradition
+                          .replace("abissal", "Abissal").replace("elemental", "Elemental")
+                          .replace("erudita", "Erudita").replace("onirica", "Onírica").replace("rustica", "Rústica")}
+                      </p>
+                    )}
                   </div>
                 )}
                 {raceAbilities.length > 0 && (

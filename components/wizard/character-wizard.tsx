@@ -32,8 +32,9 @@ import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
 import { classes } from "@/lib/ghanor/classes";
+import { ARCANE_TRADITIONS } from "@/lib/ghanor/traditions";
 import { getSpellsForClass, type Spell, type SpellEffectType } from "@/lib/ghanor/spells";
-import { getGeneralPowers, powerById, CLASS_STARTING_POWER, type Power } from "@/lib/ghanor/powers";
+import { getGeneralPowers, getClassPowers, powerById, CLASS_STARTING_POWER, type Power } from "@/lib/ghanor/powers";
 import { origins } from "@/lib/ghanor/origins";
 import { aberrantMutations, races } from "@/lib/ghanor/races";
 import {
@@ -170,13 +171,18 @@ export function CharacterWizard() {
     ["bardo", "clerigo", "druida", "mago"].includes(state.class) ||
     state.origin === "receptaculo" ||
     state.raceChoices.mutations.includes("magia_bizarra");
-  const spellLimit = state.class === "mago"
-    ? Math.max(2, finalAttrs.int * 2)
-    : 3;
+  // Mago: 3 magias iniciais; Bardo e Druida: 2; demais conjuradores: 2
+  const spellLimit =
+    state.class === "mago" ? 3 :
+    state.class === "bardo" || state.class === "druida" ? 2 :
+    2;
   const classStartingPower = CLASS_STARTING_POWER[state.class]
     ? powerById[CLASS_STARTING_POWER[state.class]!]
     : undefined;
   const generalPowers = getGeneralPowers();
+  const classPowersForPick = getClassPowers(state.class as ClassId).filter(
+    (p) => p.id !== CLASS_STARTING_POWER[state.class],
+  );
 
   function setAttr(attr: Attribute, value: number) {
     const min = state.attrMethod === "points" ? -1 : -2;
@@ -476,12 +482,35 @@ export function CharacterWizard() {
                     ]}
                   />
                 )}
+                {state.class === "mago" && (
+                  <div className="col-span-full space-y-2">
+                    <SelectLine
+                      label="Tradição Arcana"
+                      value={state.classChoices.tradition ?? "erudita"}
+                      onChange={(value) => state.update({ classChoices: { ...state.classChoices, tradition: value } })}
+                      options={ARCANE_TRADITIONS.map((t) => ({ id: t.id, label: t.name }))}
+                    />
+                    {(() => {
+                      const chosen = ARCANE_TRADITIONS.find(
+                        (t) => t.id === (state.classChoices.tradition ?? "erudita"),
+                      );
+                      return chosen ? (
+                        <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 text-xs text-purple-800 space-y-1">
+                          <p className="font-bold">{chosen.name}</p>
+                          <p className="italic text-purple-600">{chosen.flavor}</p>
+                          <p><span className="font-semibold">Preço da magia: </span>{chosen.preco_da_magia}</p>
+                          <p><span className="font-semibold">Segredo básico: </span>{chosen.segredo_basico}</p>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                )}
                 <label className="text-sm font-semibold">
                   Detalhe livre da classe
                   <Input
                     value={state.classChoices.note ?? ""}
                     onChange={(event) => state.update({ classChoices: { ...state.classChoices, note: event.target.value } })}
-                    placeholder="Santo, juramento, tradição, inimigo..."
+                    placeholder="Santo, juramento, inimigo predileto..."
                   />
                 </label>
               </div>
@@ -597,6 +626,7 @@ export function CharacterWizard() {
             <PowerPickerSection
               classStartingPower={classStartingPower}
               generalPowers={generalPowers}
+              classPowers={classPowersForPick}
               selected={state.powers}
               onChange={(ids) => state.update({ powers: ids })}
             />
@@ -923,11 +953,13 @@ function SpellPickerSection({
 
 function PowerPickerSection({
   classStartingPower,
+  classPowers,
   generalPowers,
   selected,
   onChange,
 }: {
   classStartingPower: Power | undefined;
+  classPowers: Power[];
   generalPowers: Power[];
   selected: string[];
   onChange: (ids: string[]) => void;
@@ -935,87 +967,93 @@ function PowerPickerSection({
   const [expanded, setExpanded] = useState<string | null>(null);
 
   function togglePower(id: string) {
-    if (selected.includes(id)) {
-      onChange(selected.filter((s) => s !== id));
-    } else {
-      onChange([id]);
-    }
+    // Permite apenas 1 seleção — deseleciona se clicar no mesmo
+    onChange(selected.includes(id) ? [] : [id]);
+  }
+
+  function renderPowerCard(power: Power, locked?: boolean) {
+    const isSelected = selected.includes(power.id);
+    const isOpen = expanded === power.id;
+    return (
+      <div
+        key={power.id}
+        className={cn(
+          "rounded-lg border transition",
+          locked
+            ? "border-stone-200 bg-stone-50"
+            : isSelected
+              ? "border-amber-800 bg-amber-50"
+              : "border-amber-900/10 bg-white/70",
+        )}
+      >
+        <div className="flex items-center gap-3 p-3">
+          {locked ? (
+            <Lock size={14} className="shrink-0 text-stone-400" />
+          ) : (
+            <button
+              className={cn(
+                "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition",
+                isSelected ? "border-amber-700 bg-amber-700" : "border-stone-300",
+              )}
+              onClick={() => togglePower(power.id)}
+              aria-pressed={isSelected}
+            >
+              {isSelected && <span className="h-2 w-2 rounded-full bg-white" />}
+            </button>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="font-black text-stone-950">{power.name}</p>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
+              <span className="capitalize">{power.activation}</span>
+              {power.prerequisite && (
+                <span className="text-amber-700">· req. {power.prerequisite}</span>
+              )}
+            </div>
+          </div>
+          <button
+            className="shrink-0 text-stone-400"
+            onClick={() => setExpanded(isOpen ? null : power.id)}
+            aria-label={isOpen ? "Recolher" : "Expandir"}
+          >
+            {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </button>
+        </div>
+        {isOpen && (
+          <p className="border-t border-amber-900/10 p-3 pt-2 text-sm text-stone-700">
+            {power.description}
+          </p>
+        )}
+      </div>
+    );
   }
 
   return (
     <Card className="space-y-4">
       <SectionTitle>Habilidades</SectionTitle>
+      <p className="text-xs text-stone-500">Escolha 1 poder (de classe ou geral) para começar.</p>
 
       {classStartingPower && (
         <div>
           <p className="mb-2 text-xs font-semibold uppercase text-stone-400">Poder de classe (automático)</p>
-          <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
-            <div className="flex items-center gap-2">
-              <Lock size={14} className="shrink-0 text-stone-400" />
-              <span className="flex-1 font-black text-stone-950">{classStartingPower.name}</span>
-              <span className="text-xs capitalize text-stone-500">{classStartingPower.activation}</span>
-              <button
-                className="shrink-0 text-stone-400"
-                onClick={() => setExpanded(expanded === classStartingPower.id ? null : classStartingPower.id)}
-                aria-label={expanded === classStartingPower.id ? "Recolher" : "Expandir"}
-              >
-                {expanded === classStartingPower.id ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-              </button>
-            </div>
-            {expanded === classStartingPower.id && (
-              <p className="mt-2 border-t border-stone-200 pt-2 text-sm text-stone-700">
-                {classStartingPower.description}
-              </p>
-            )}
+          {renderPowerCard(classStartingPower, true)}
+        </div>
+      )}
+
+      {classPowers.length > 0 && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase text-stone-400">
+            Poderes de classe (escolha 1)
+          </p>
+          <div className="space-y-2">
+            {classPowers.filter((p) => !p.tier).map((power) => renderPowerCard(power))}
           </div>
         </div>
       )}
 
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase text-stone-400">Poder geral (escolha 1)</p>
+        <p className="mb-2 text-xs font-semibold uppercase text-stone-400">Poderes gerais e de combate (escolha 1)</p>
         <div className="space-y-2">
-          {generalPowers.map((power) => {
-            const isSelected = selected.includes(power.id);
-            const isOpen = expanded === power.id;
-            return (
-              <div
-                key={power.id}
-                className={cn(
-                  "rounded-lg border transition",
-                  isSelected ? "border-amber-800 bg-amber-50" : "border-amber-900/10 bg-white/70",
-                )}
-              >
-                <div className="flex items-center gap-3 p-3">
-                  <button
-                    className={cn(
-                      "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition",
-                      isSelected ? "border-amber-700 bg-amber-700" : "border-stone-300",
-                    )}
-                    onClick={() => togglePower(power.id)}
-                    aria-pressed={isSelected}
-                  >
-                    {isSelected && <span className="h-2 w-2 rounded-full bg-white" />}
-                  </button>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-black text-stone-950">{power.name}</p>
-                    <p className="text-xs capitalize text-stone-500">{power.activation}</p>
-                  </div>
-                  <button
-                    className="shrink-0 text-stone-400"
-                    onClick={() => setExpanded(isOpen ? null : power.id)}
-                    aria-label={isOpen ? "Recolher" : "Expandir"}
-                  >
-                    {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                  </button>
-                </div>
-                {isOpen && (
-                  <p className="border-t border-amber-900/10 p-3 pt-2 text-sm text-stone-700">
-                    {power.description}
-                  </p>
-                )}
-              </div>
-            );
-          })}
+          {generalPowers.map((power) => renderPowerCard(power))}
         </div>
       </div>
     </Card>

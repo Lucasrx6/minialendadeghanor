@@ -81,8 +81,9 @@ export const TIER_THRESHOLDS = [5, 11, 17] as const;
 export const SPELL_CIRCLES: Record<ClassId, Record<number, number>> = {
   mago:    { 1: 1, 5: 2, 9: 3, 13: 4, 17: 5 },
   clerigo: { 1: 1, 5: 2, 9: 3, 13: 4, 17: 5 },
-  druida:  { 1: 1, 5: 2, 9: 3, 13: 4, 17: 5 },
-  bardo:   { 1: 1, 5: 2, 9: 3, 13: 4, 17: 5 },
+  // Bardo e Druida: 2º círculo no 6º nível, 3º no 10º, 4º no 14º (sem 5º círculo)
+  bardo:   { 1: 1, 6: 2, 10: 3, 14: 4 },
+  druida:  { 1: 1, 6: 2, 10: 3, 14: 4 },
   // Demais classes não têm círculos
   barbaro: {}, bucaneiro: {}, cacador: {}, cavaleiro: {},
   ladino: {}, nobre: {}, soldado: {},

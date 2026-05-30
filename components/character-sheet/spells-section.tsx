@@ -28,6 +28,7 @@ import {
   FlaskConical,
   Atom,
 } from "lucide-react";
+import { SpellImage } from "@/components/ui/SpellImage";
 import { RollDialog } from "@/components/dice/RollDialog";
 import { spellElementToHitEffect } from "@/components/dice/HitEffect";
 import { spellById, spellByName, spells as ALL_SPELLS, type SpellEffectType, type SpellElement, type Spell } from "@/lib/ghanor/spells";
@@ -442,9 +443,11 @@ function SpellCard({
           </span>
         )}
 
-        <ec.Icon
-          size={32}
-          style={{ color: ec.iconClr, filter: `drop-shadow(0 2px 6px ${ec.border}80)` }}
+        <SpellImage
+          id={spell.id}
+          name={spell.name}
+          borderColor={ec.border}
+          iconFallback={<ec.Icon size={20} style={{ color: ec.iconClr }} />}
         />
         <p className="text-[11px] font-black leading-tight line-clamp-2 px-1" style={{ color: ec.txtClr }}>
           {spell.name}

@@ -14,6 +14,7 @@ import {
   powerById,
   type Power,
 } from "@/lib/ghanor/powers";
+import { ARCANE_TRADITIONS } from "@/lib/ghanor/traditions";
 import { Shield, ChevronDown, ChevronRight, Lock } from "lucide-react";
 import { BackstoryGenerator } from "@/components/wizard/BackstoryGenerator";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
   const [selectedOriginIndex, setSelectedOriginIndex] = useState(0);
   const [selectedSpells, setSelectedSpells] = useState<string[]>([]);
   const [selectedPower, setSelectedPower] = useState("");
+  const [selectedTradition, setSelectedTradition] = useState("erudita");
   const [history, setHistory] = useState("");
 
   const selectedClass = computed.suggestedClasses[selectedClassIndex] as ClassId;
@@ -54,14 +56,22 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
 
   // Spell / power data
   const isCaster = isCasterClass(selectedClass);
+  const isMagoClass = selectedClass === "mago";
   const classSpells = isCaster
     ? getSpellsForClass(selectedClass).filter((s) => s.circle === 1)
     : [];
-  const spellLimit = 2;
+  // Mago: 3 magias; Bardo e Druida: 2; demais: 2
+  const spellLimit =
+    isMagoClass ? 3 :
+    selectedClass === "bardo" || selectedClass === "druida" ? 2 :
+    2;
   const classStartingPower = CLASS_STARTING_POWER[selectedClass]
     ? powerById[CLASS_STARTING_POWER[selectedClass]!]
     : undefined;
   const generalPowers = getGeneralPowers();
+  const classPowersAvailable = getClassPowers(selectedClass).filter(
+    (p) => p.id !== CLASS_STARTING_POWER[selectedClass] && !p.tier,
+  );
 
   const handleSave = () => {
     startTransition(async () => {
@@ -83,6 +93,7 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
           origin: selectedOrigin,
           extraOrigin: undefined,
           class: selectedClass,
+          tradition: isMagoClass ? selectedTradition : undefined,
           answers,
           computed,
           silverPieces: rolls.reduce((s, r) => s + r, 0),
@@ -232,12 +243,50 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
         </div>
       </Card>
 
+      {/* Tradição Arcana — só para Mago */}
+      {isMagoClass && (
+        <Card className="mb-8 space-y-4 p-6">
+          <div>
+            <h3 className="text-lg font-black text-stone-950">Tradição Arcana</h3>
+            <p className="text-sm text-stone-500">
+              Escolha a tradição que define suas magias e seus segredos arcanos.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {ARCANE_TRADITIONS.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setSelectedTradition(t.id)}
+                className={cn(
+                  "rounded-xl border p-4 text-left transition",
+                  selectedTradition === t.id
+                    ? "border-purple-600 bg-purple-50"
+                    : "border-stone-200 bg-white/70 hover:border-purple-300",
+                )}
+              >
+                <p className="font-black text-stone-950">{t.name}</p>
+                <p className="mt-1 text-xs text-stone-600 line-clamp-2">{t.flavor}</p>
+              </button>
+            ))}
+          </div>
+          {(() => {
+            const t = ARCANE_TRADITIONS.find((t) => t.id === selectedTradition);
+            return t ? (
+              <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 text-xs text-purple-800 space-y-1">
+                <p><span className="font-bold">Preço da magia: </span>{t.preco_da_magia}</p>
+                <p><span className="font-bold">Segredo básico: </span>{t.segredo_basico}</p>
+              </div>
+            ) : null;
+          })()}
+        </Card>
+      )}
+
       {/* Habilidades */}
       <Card className="mb-8 space-y-5 p-6">
         <div>
           <h3 className="text-lg font-black text-stone-950">Habilidades</h3>
           <p className="text-sm text-stone-500">
-            Poder de classe concedido automaticamente + 1 poder geral à sua escolha.
+            Poder de classe concedido automaticamente + 1 poder adicional à sua escolha.
           </p>
         </div>
 
@@ -250,9 +299,27 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
           </div>
         )}
 
+        {classPowersAvailable.length > 0 && (
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase text-stone-400">
+              Poderes de classe (escolha 1)
+            </p>
+            <div className="space-y-2">
+              {classPowersAvailable.map((p) => (
+                <GuidedPowerCard
+                  key={p.id}
+                  power={p}
+                  selected={selectedPower === p.id}
+                  onSelect={() => setSelectedPower(selectedPower === p.id ? "" : p.id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
         <div>
           <p className="mb-2 text-xs font-semibold uppercase text-stone-400">
-            Poder geral (escolha 1)
+            Poderes gerais e de combate (escolha 1)
           </p>
           <div className="space-y-2">
             {generalPowers.map((p) => (

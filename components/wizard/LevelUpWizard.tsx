@@ -36,6 +36,7 @@ type Props = {
     name: string;
     class: string;
     class_levels: Record<string, number>;
+    class_choices?: Record<string, string>;
     spells: string[];
     powers: string[];
     levelUpHistory: Array<{ to_level: number; attr_increased: string | null }>;
@@ -80,10 +81,16 @@ export function LevelUpWizard({ character }: Props) {
   const newMaxCircle = maxSpellCircle(newClassId, newClassLevel);
   const circleJustOpened = newMaxCircle > oldMaxCircle ? newMaxCircle : undefined;
 
-  const isAutoLearner = newClassId === "clerigo" || newClassId === "druida";
+  // Clérigo auto-aprende todas as magias ao desbloquear novo círculo
+  // Bardo e Druida aprendem 1 magia nos níveis pares da CLASSE (livro pág. 33 e 46)
+  const isAutoLearner = newClassId === "clerigo";
   const isMago = newClassId === "mago";
   const isBardo = newClassId === "bardo";
-  const canPickSpell = isMago || (isBardo && toLevel % 2 === 0);
+  const isDruida = newClassId === "druida";
+  const canPickSpell =
+    isMago ||
+    (isBardo && newClassLevel % 2 === 0) ||
+    (isDruida && newClassLevel % 2 === 0);
   const hasSpellStep =
     (canPickSpell && newMaxCircle > 0) || (isAutoLearner && !!circleJustOpened);
 
@@ -472,7 +479,18 @@ export function LevelUpWizard({ character }: Props) {
               <h2 className="text-xl font-black text-stone-950">Magias</h2>
             </div>
 
-            {/* Auto-granted (new circle opened) */}
+            {/* Tradição do Mago */}
+            {isMago && character.class_choices?.tradition && (
+              <div className="rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-800">
+                <span className="font-bold">Tradição Arcana: </span>
+                {(character.class_choices.tradition as string)
+                  .replace("abissal", "Abissal").replace("elemental", "Elemental")
+                  .replace("erudita", "Erudita").replace("onirica", "Onírica").replace("rustica", "Rústica")}
+                {" "}— suas magias e poderes dependem desta tradição.
+              </div>
+            )}
+
+            {/* Auto-granted (new circle opened — apenas Clérigo) */}
             {autoGrantedSpells.length > 0 && (
               <div className="rounded-xl border border-purple-200 bg-purple-50 p-4">
                 <p className="mb-2 text-sm font-bold text-purple-800">
@@ -492,15 +510,15 @@ export function LevelUpWizard({ character }: Props) {
               </div>
             )}
 
-            {/* Bardo odd level */}
-            {isBardo && toLevel % 2 !== 0 && (
+            {/* Bardo/Druida: nível ímpar de classe — sem magia nova */}
+            {(isBardo || isDruida) && newClassLevel % 2 !== 0 && (
               <p className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
-                Bardos aprendem uma nova magia apenas nos <strong>níveis pares</strong>.
-                Nenhuma escolha necessária.
+                {isBardo ? "Bardos" : "Druidas"} aprendem uma nova magia apenas nos{" "}
+                <strong>níveis pares da classe</strong>. Nenhuma escolha necessária agora.
               </p>
             )}
 
-            {/* Manual spell picker */}
+            {/* Manual spell picker — Mago, Bardo par, Druida par */}
             {canPickSpell && availableSpells.length > 0 && (
               <div>
                 <p className="mb-2 text-sm font-bold text-stone-700">
@@ -523,11 +541,11 @@ export function LevelUpWizard({ character }: Props) {
               </p>
             )}
 
-            {/* Clerigo/Druida without new circle */}
+            {/* Clérigo sem novo círculo */}
             {isAutoLearner && !circleJustOpened && (
               <p className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
-                Novas magias são concedidas automaticamente quando um novo círculo é
-                desbloqueado.
+                Clérigos recebem novas magias automaticamente ao desbloquear um novo
+                círculo.
               </p>
             )}
 
