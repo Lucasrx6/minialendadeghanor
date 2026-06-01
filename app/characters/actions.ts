@@ -12,6 +12,7 @@ import {
   getMovement,
   getRequiredClassSkills,
   getSize,
+  mergeSkillsForSave,
 } from "@/lib/ghanor/rules";
 import {
   STARTER_KITS,
@@ -37,6 +38,7 @@ async function grantStarterKit(
   wizardArmor: string,
   wizardShield: string,
   moneyPc: number,
+  originId?: string,
 ) {
   const admin = createAdminClient();
   const hasMartial = hasMartialProficiency(classId);
@@ -79,15 +81,22 @@ async function grantStarterKit(
   // Dinheiro inicial: 4d6 PP
   const rolls = Array.from({ length: 4 }, () => crypto.randomInt(1, 7));
   const startingPp = rolls.reduce((s, r) => s + r, 0);
-  const startingPc = startingPp * 10;
-  const newBalance = moneyPc + startingPc;
+  let startingPc = startingPp * 10;
+  let reasonParts = [`Dinheiro inicial: ${startingPp} PP (4d6: ${rolls.join("+")})`];
 
+  // Aristocrata: joias no valor de 100 PP = 1.000 PC (livro pág.68)
+  if (originId === "aristocrata") {
+    startingPc += 1000;
+    reasonParts.push("Joias de origem aristocrata: 100 PP");
+  }
+
+  const newBalance = moneyPc + startingPc;
   await admin.from("characters").update({ money_pc: newBalance }).eq("id", characterId);
   await admin.from("money_transactions").insert({
     character_id: characterId,
     user_id: userId,
     amount_pc: startingPc,
-    reason: `Dinheiro inicial: ${startingPp} PP (4d6: ${rolls.join("+")})`,
+    reason: reasonParts.join(" + "),
     balance_after_pc: newBalance,
   });
 }
@@ -113,7 +122,7 @@ export async function saveCharacter(input: WizardState) {
     classChoices: input.classChoices,
     armor: input.armor,
     shield: input.shield,
-    trainedSkills: [...new Set([...getRequiredClassSkills(input), ...collectOriginSkills(input), ...input.trainedSkills])],
+    trainedSkills: mergeSkillsForSave(getRequiredClassSkills(input), collectOriginSkills(input), input.trainedSkills),
   };
   const attrs = getFinalAttributes(build);
 
@@ -161,7 +170,7 @@ export async function saveCharacter(input: WizardState) {
   if (error) throw new Error(error.message);
 
   // Kit inicial automático
-  await grantStarterKit(data.id, user.id, input.class, input.armor, input.shield, 0).catch(() => null);
+  await grantStarterKit(data.id, user.id, input.class, input.armor, input.shield, 0, input.origin).catch(() => null);
 
   revalidatePath("/characters");
   return data.id as string;
@@ -314,7 +323,7 @@ export async function saveGuidedCharacter(input: {
   if (error) throw new Error(error.message);
 
   // Kit inicial automático
-  await grantStarterKit(data.id, user.id, input.class, input.computed.armor ?? "none", input.computed.shield ?? "none", 0).catch(() => null);
+  await grantStarterKit(data.id, user.id, input.class, input.computed.armor ?? "none", input.computed.shield ?? "none", 0, input.origin).catch(() => null);
 
   revalidatePath("/characters");
   return data.id as string;

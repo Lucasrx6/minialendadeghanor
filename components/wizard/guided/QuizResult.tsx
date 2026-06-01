@@ -15,6 +15,7 @@ import {
   type Power,
 } from "@/lib/ghanor/powers";
 import { ARCANE_TRADITIONS } from "@/lib/ghanor/traditions";
+import { getMagoTraditionSpells } from "@/lib/ghanor/tradition-spells";
 import { Shield, ChevronDown, ChevronRight, Lock } from "lucide-react";
 import { BackstoryGenerator } from "@/components/wizard/BackstoryGenerator";
 import { cn } from "@/lib/utils";
@@ -57,8 +58,14 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
   // Spell / power data
   const isCaster = isCasterClass(selectedClass);
   const isMagoClass = selectedClass === "mago";
+  // Mago: filtra por tradição arcana escolhida (livro pág.57)
+  const magoTraditionIds = isMagoClass
+    ? new Set(getMagoTraditionSpells(selectedTradition, 1))
+    : null;
   const classSpells = isCaster
-    ? getSpellsForClass(selectedClass).filter((s) => s.circle === 1)
+    ? getSpellsForClass(selectedClass).filter(
+        (s) => s.circle === 1 && (magoTraditionIds === null || magoTraditionIds.has(s.id)),
+      )
     : [];
   // Mago: 3 (livro pág.57); Clérigo: 3 (livro pág.46); Bardo e Druida: 2 (livro págs.33,49)
   const spellLimit =
@@ -69,9 +76,12 @@ export function QuizResult({ computed, touches, answers, race, raceChoices, onRe
     ? powerById[CLASS_STARTING_POWER[selectedClass]!]
     : undefined;
   const generalPowers = getGeneralPowers();
-  const classPowersAvailable = getClassPowers(selectedClass).filter(
-    (p) => p.id !== CLASS_STARTING_POWER[selectedClass] && !p.tier,
-  );
+  // Apenas Bárbaro, Bardo e Ladino têm poder de classe no nível 1 — os demais começam no nível 2.
+  const classPowersAvailable = CLASS_STARTING_POWER[selectedClass]
+    ? getClassPowers(selectedClass).filter(
+        (p) => p.id !== CLASS_STARTING_POWER[selectedClass] && !p.tier && !p.min_class_level,
+      )
+    : [];
 
   const handleSave = () => {
     startTransition(async () => {

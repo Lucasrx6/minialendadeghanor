@@ -844,40 +844,71 @@ export function CharacterSheet({
       <div className="flex flex-col gap-4">
         <Card>
           <SectionTitle>Perícias</SectionTitle>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {(character.trained_skills ?? []).map((skillId) => {
+          {(() => {
+            const trainedIds = character.trained_skills ?? [];
+            const trainedSet = new Set(trainedIds);
+            // Perícias não treinadas que podem ser usadas sem treinamento (livro pág.80)
+            const untrainedUsable = allSkills.filter(s => !s.trainedOnly && !trainedSet.has(s.id));
+            const penCtx = {
+              characterClass: character.class,
+              equippedArmor: equippedArmor?.items ? {
+                armor_defense_bonus: equippedArmor.items.armor_defense_bonus ?? 0,
+                armor_penalty: equippedArmor.items.armor_penalty ?? 0,
+                armor_category: equippedArmor.items.armor_category,
+              } : undefined,
+              equippedShield: equippedShield?.items ? {
+                armor_defense_bonus: equippedShield.items.armor_defense_bonus ?? 0,
+                armor_penalty: equippedShield.items.armor_penalty ?? 0,
+              } : undefined,
+            };
+            const renderSkillBtn = (skillId: string, key: string, trained: boolean) => {
               const skill = skillById[skillId];
               const bonus = calculateSkillBonus(build, skillId);
-              const penalty = getArmorPenaltyForSkill(skillId, armorPenalty, {
-                characterClass: character.class,
-                equippedArmor: equippedArmor?.items ? {
-                  armor_defense_bonus: equippedArmor.items.armor_defense_bonus ?? 0,
-                  armor_penalty: equippedArmor.items.armor_penalty ?? 0,
-                  armor_category: equippedArmor.items.armor_category,
-                } : undefined,
-                equippedShield: equippedShield?.items ? {
-                  armor_defense_bonus: equippedShield.items.armor_defense_bonus ?? 0,
-                  armor_penalty: equippedShield.items.armor_penalty ?? 0,
-                } : undefined,
-              });
+              const penalty = getArmorPenaltyForSkill(skillId, armorPenalty, penCtx);
               const total = bonus + penalty;
               return (
                 <button
-                  key={skillId}
+                  key={key}
                   onClick={() => openSkillRoll(skillId)}
-                  className="group flex items-center justify-between rounded-md bg-white/70 px-3 py-2 text-sm text-left transition hover:bg-amber-50 hover:shadow-sm"
-                  title={`Rolar teste de ${skill?.name ?? skillId}${penalty < 0 ? ` (penalidade armadura ${penalty})` : ""}`}
+                  className={`group flex items-center justify-between rounded-md px-3 py-2 text-sm text-left transition ${trained ? "bg-white/70 hover:bg-amber-50 hover:shadow-sm" : "bg-stone-50/50 hover:bg-stone-100"}`}
+                  title={`Rolar teste de ${skill?.name ?? skillId}${penalty < 0 ? ` (penalidade armadura ${penalty})` : ""}${!trained ? " (sem treinamento)" : ""}`}
                 >
-                  <span className="font-medium">{skill?.name ?? skillId}</span>
-                  <span className={`flex items-center gap-1 font-bold ${penalty < 0 ? "text-red-600" : "text-amber-900"}`}>
+                  <span className={`${trained ? "font-medium" : "text-stone-400"}`}>
+                    {skill?.name ?? skillId}
+                  </span>
+                  <span className={`flex items-center gap-1 font-bold ${penalty < 0 ? "text-red-600" : trained ? "text-amber-900" : "text-stone-400"}`}>
                     {total >= 0 ? "+" : ""}{total}
                     {penalty < 0 && <span className="text-[10px] text-red-400">(pen.)</span>}
                     <Dices size={12} className="text-amber-400 opacity-0 group-hover:opacity-100 transition" />
                   </span>
                 </button>
               );
-            })}
-          </div>
+            };
+            return (
+              <div className="mt-3 space-y-3">
+                {/* Treinadas */}
+                {trainedIds.length > 0 && (
+                  <div>
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">Treinadas</p>
+                    <div className="grid gap-1.5 sm:grid-cols-2">
+                      {trainedIds.map((id, i) => renderSkillBtn(id, `t-${id}-${i}`, true))}
+                    </div>
+                  </div>
+                )}
+                {/* Não treinadas usáveis */}
+                {untrainedUsable.length > 0 && (
+                  <details>
+                    <summary className="cursor-pointer text-[10px] font-bold uppercase tracking-wider text-stone-400 hover:text-stone-600">
+                      Sem treinamento ({untrainedUsable.length})
+                    </summary>
+                    <div className="mt-1.5 grid gap-1 sm:grid-cols-2">
+                      {untrainedUsable.map(s => renderSkillBtn(s.id, `u-${s.id}`, false))}
+                    </div>
+                  </details>
+                )}
+              </div>
+            );
+          })()}
         </Card>
 
         <Card>
@@ -1210,43 +1241,67 @@ function FullSheetTab({
           {/* Perícias */}
           <Card>
             <SectionTitle>Perícias</SectionTitle>
-            {(character.trained_skills ?? []).length === 0 ? (
-              <p className="mt-2 text-sm text-stone-400">Nenhuma perícia treinada.</p>
-            ) : (
-              <div className="mt-2 space-y-0.5">
-                {(character.trained_skills ?? []).map((skillId) => {
-                  const skill = skillById[skillId];
-                  const bonus = calculateSkillBonus(build, skillId);
-                  const penalty = getArmorPenaltyForSkill(skillId, armorPenalty, {
-                    characterClass: character.class,
-                    equippedArmor: equippedArmor?.items ? {
-                      armor_defense_bonus: equippedArmor.items.armor_defense_bonus ?? 0,
-                      armor_penalty: equippedArmor.items.armor_penalty ?? 0,
-                      armor_category: equippedArmor.items.armor_category,
-                    } : undefined,
-                    equippedShield: equippedShield?.items ? {
-                      armor_defense_bonus: equippedShield.items.armor_defense_bonus ?? 0,
-                      armor_penalty: equippedShield.items.armor_penalty ?? 0,
-                    } : undefined,
-                  });
-                  const total = bonus + penalty;
-                  return (
-                    <button
-                      key={skillId}
-                      onClick={() => openSkillRoll(skillId)}
-                      className="group flex w-full items-center justify-between rounded-md bg-white/70 px-2.5 py-1.5 text-sm transition hover:bg-amber-50 hover:shadow-sm"
-                    >
-                      <span className="text-left font-medium">{skill?.name ?? skillId}</span>
-                      <span className={`flex items-center gap-1 font-bold ${penalty < 0 ? "text-red-600" : "text-amber-900"}`}>
-                        {total >= 0 ? "+" : ""}{total}
-                        {penalty < 0 && <span className="text-[10px] text-red-400">(pen.)</span>}
-                        <Dices size={11} className="text-amber-400 opacity-0 transition group-hover:opacity-100" />
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            {(() => {
+              const trainedIds = character.trained_skills ?? [];
+              const trainedSet = new Set(trainedIds);
+              const untrainedUsable = allSkills.filter(s => !s.trainedOnly && !trainedSet.has(s.id));
+              const penCtx = {
+                characterClass: character.class,
+                equippedArmor: equippedArmor?.items ? {
+                  armor_defense_bonus: equippedArmor.items.armor_defense_bonus ?? 0,
+                  armor_penalty: equippedArmor.items.armor_penalty ?? 0,
+                  armor_category: equippedArmor.items.armor_category,
+                } : undefined,
+                equippedShield: equippedShield?.items ? {
+                  armor_defense_bonus: equippedShield.items.armor_defense_bonus ?? 0,
+                  armor_penalty: equippedShield.items.armor_penalty ?? 0,
+                } : undefined,
+              };
+              const mkRow = (skillId: string, key: string, trained: boolean) => {
+                const skill = skillById[skillId];
+                const bonus = calculateSkillBonus(build, skillId);
+                const penalty = getArmorPenaltyForSkill(skillId, armorPenalty, penCtx);
+                const total = bonus + penalty;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => openSkillRoll(skillId)}
+                    className={`group flex w-full items-center justify-between rounded px-2 py-1 text-sm transition ${trained ? "hover:bg-amber-50" : "hover:bg-stone-100"}`}
+                  >
+                    <span className={trained ? "font-medium" : "text-stone-400"}>{skill?.name ?? skillId}</span>
+                    <span className={`flex items-center gap-1 font-bold tabular-nums ${penalty < 0 ? "text-red-600" : trained ? "text-amber-900" : "text-stone-400"}`}>
+                      {total >= 0 ? "+" : ""}{total}
+                      {penalty < 0 && <span className="text-[10px] text-red-400">(pen.)</span>}
+                      <Dices size={11} className="opacity-0 transition group-hover:opacity-60" />
+                    </span>
+                  </button>
+                );
+              };
+              return (
+                <div className="mt-2 space-y-2">
+                  {/* Treinadas */}
+                  {trainedIds.length > 0 && (
+                    <div>
+                      <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">Treinadas</p>
+                      <div className="space-y-0.5">
+                        {trainedIds.map((id, i) => mkRow(id, `t-${id}-${i}`, true))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Não treinadas usáveis */}
+                  {untrainedUsable.length > 0 && (
+                    <details>
+                      <summary className="cursor-pointer text-[10px] font-bold uppercase tracking-wider text-stone-400 hover:text-stone-600 select-none">
+                        Sem treinamento ({untrainedUsable.length})
+                      </summary>
+                      <div className="mt-1 space-y-0.5">
+                        {untrainedUsable.map(s => mkRow(s.id, `u-${s.id}`, false))}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              );
+            })()}
           </Card>
 
           {/* Habilidades passivas */}

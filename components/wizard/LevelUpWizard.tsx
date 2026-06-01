@@ -16,6 +16,7 @@ import {
   maxSpellCircle, CLASS_LEVEL_ABILITIES, type CharacterForLevelUp, type Tier,
 } from "@/lib/ghanor/leveling";
 import { getSpellsForClass, isCasterClass, type Spell } from "@/lib/ghanor/spells";
+import { getMagoTraditionSpells } from "@/lib/ghanor/tradition-spells";
 import { getClassPowers, getGeneralPowers, type Power } from "@/lib/ghanor/powers";
 import { classById, classes } from "@/lib/ghanor/classes";
 import { cn } from "@/lib/utils";
@@ -98,9 +99,16 @@ export function LevelUpWizard({ character }: Props) {
   // Nenhuma classe auto-aprende TODAS as magias de um novo círculo
   const autoGrantedSpells: string[] = [];
 
+  // Para Mago: filtra magias disponíveis pela tradição arcana escolhida
+  const magoTradition = isMago ? (character.class_choices?.tradition as string | undefined) : undefined;
+  const traditionSpellIds = isMago ? new Set(getMagoTraditionSpells(magoTradition, newMaxCircle)) : null;
+
   const availableSpells = newMaxCircle > 0
     ? getSpellsForClass(newClassId).filter(
-        (s) => s.circle <= newMaxCircle && !character.spells.includes(s.id),
+        (s) =>
+          s.circle <= newMaxCircle &&
+          !character.spells.includes(s.id) &&
+          (traditionSpellIds === null || traditionSpellIds.has(s.id)),
       )
     : [];
 

@@ -34,7 +34,9 @@ import { Input, Textarea } from "@/components/ui/input";
 import { classes } from "@/lib/ghanor/classes";
 import { ARCANE_TRADITIONS } from "@/lib/ghanor/traditions";
 import { getSpellsForClass, type Spell, type SpellEffectType } from "@/lib/ghanor/spells";
+import { getMagoTraditionSpells } from "@/lib/ghanor/tradition-spells";
 import { getGeneralPowers, getClassPowers, powerById, CLASS_STARTING_POWER, type Power } from "@/lib/ghanor/powers";
+import { mergeSkillsForSave, REPEATABLE_SKILLS } from "@/lib/ghanor/rules";
 import { origins } from "@/lib/ghanor/origins";
 import { aberrantMutations, races } from "@/lib/ghanor/races";
 import {
@@ -173,7 +175,7 @@ export function CharacterWizard() {
       classChoices: state.classChoices,
       armor: state.armor,
       shield: state.shield,
-      trainedSkills: [...new Set([...getRequiredClassSkills(state), ...collectOriginSkills(state), ...state.trainedSkills])],
+      trainedSkills: mergeSkillsForSave(getRequiredClassSkills(state), collectOriginSkills(state), state.trainedSkills),
     }),
     [state],
   );
@@ -186,7 +188,13 @@ export function CharacterWizard() {
   const skillChoiceLimit = selectedClass.chooseSkills + Math.max(finalAttrs.int, 0);
   const userChosenSkills = state.trainedSkills.filter((s) => !autoGrantedSkills.includes(s));
   const remainingPoints = 10 - pointBuySpent(state.baseAttributes);
-  const circle1Spells = getSpellsForClass(state.class).filter((s) => s.circle === 1);
+  // Para Mago: filtra por tradição arcana escolhida (livro pág.57 — lista específica por tradição)
+  const magoTradition = state.class === "mago" ? (state.classChoices.tradition as string | undefined) : undefined;
+  const circle1Spells = state.class === "mago"
+    ? getSpellsForClass("mago").filter(
+        (s) => s.circle === 1 && getMagoTraditionSpells(magoTradition, 1).includes(s.id),
+      )
+    : getSpellsForClass(state.class).filter((s) => s.circle === 1);
   const canUseMagic =
     ["bardo", "clerigo", "druida", "mago"].includes(state.class) ||
     state.origin === "receptaculo" ||
@@ -200,9 +208,13 @@ export function CharacterWizard() {
     ? powerById[CLASS_STARTING_POWER[state.class]!]
     : undefined;
   const generalPowers = getGeneralPowers();
-  const classPowersForPick = getClassPowers(state.class as ClassId).filter(
-    (p) => p.id !== CLASS_STARTING_POWER[state.class],
-  );
+  // Apenas Bárbaro, Bardo e Ladino têm poder de classe no nível 1 (livro págs.31,33,53).
+  // Para as demais classes, poderes de classe começam no nível 2 — não oferecer na criação.
+  const classPowersForPick = CLASS_STARTING_POWER[state.class]
+    ? getClassPowers(state.class as ClassId).filter(
+        (p) => p.id !== CLASS_STARTING_POWER[state.class] && !p.tier && !p.min_class_level,
+      )
+    : [];
 
   function setAttr(attr: Attribute, value: number) {
     const min = state.attrMethod === "points" ? -1 : -2;
@@ -789,8 +801,12 @@ function ChoiceGrid({
   return (
     <div className="grid gap-2 sm:grid-cols-2">
       {options.map((option) => {
-        const checked = selected.includes(option.id);
-        const disabled = !checked && selected.length >= limit;
+        const count = selected.filter(v => v === option.id).length;
+        const isRepeatable = REPEATABLE_SKILLS.has(option.id);
+        const checked = count > 0;
+        // Desabilitado se atingiu o limite E não está selecionado (ou, para repetíveis, já tem 2)
+        const disabled = (!checked && selected.length >= limit) ||
+          (isRepeatable && count >= 2 && selected.length >= limit);
         return (
           <label
             key={option.id}
@@ -806,6 +822,12 @@ function ChoiceGrid({
               onChange={() => onChange(toggleChoice(selected, option.id))}
             />
             {option.label}
+            {/* Indica quantas vezes Ofício está selecionado */}
+            {isRepeatable && count > 0 && (
+              <span className="ml-auto rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                ×{count}
+              </span>
+            )}
           </label>
         );
       })}
@@ -843,6 +865,14 @@ function SelectLine({
 }
 
 function toggleChoice(values: string[], value: string) {
+  // Perícias repetíveis (ex: Ofício) podem ser adicionadas múltiplas vezes
+  if (REPEATABLE_SKILLS.has(value)) {
+    const count = values.filter(v => v === value).length;
+    if (count === 0) return [...values, value];
+    if (count === 1) return [...values, value]; // permite segunda instância
+    // terceiro clique remove ambas
+    return values.filter(v => v !== value);
+  }
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
 }
 

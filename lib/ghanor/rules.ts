@@ -225,3 +225,30 @@ export function dedupeSkillsWithDuplicateBonuses(skills: string[]) {
   }
   return { trained, duplicates };
 }
+
+/**
+ * Perícias que podem ser treinadas múltiplas vezes (cada instância representa
+ * um tipo diferente). Livro pág. 82: "Ofício na verdade são várias perícias
+ * diferentes" (Armeiro, Artesão, Alquimista, Alfaiate, etc.).
+ */
+export const REPEATABLE_SKILLS = new Set(["oficio"]);
+
+/**
+ * Mescla listas de perícias permitindo que REPEATABLE_SKILLS apareçam mais
+ * de uma vez (para casos como dois Ofícios diferentes), mas deduplicando as
+ * demais perícias normalmente.
+ */
+export function mergeSkillsForSave(...lists: string[][]): string[] {
+  const all = lists.flat();
+  const seenNonRepeatable = new Set<string>();
+  const result: string[] = [];
+  for (const id of all) {
+    if (REPEATABLE_SKILLS.has(id)) {
+      result.push(id); // sempre inclui — podem existir múltiplos
+    } else if (!seenNonRepeatable.has(id)) {
+      seenNonRepeatable.add(id);
+      result.push(id);
+    }
+  }
+  return result;
+}
